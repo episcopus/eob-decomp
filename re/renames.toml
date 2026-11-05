@@ -10152,3 +10152,30 @@ new = "StepMapPhase"
 kind = "function"
 why = "0ACD:0753 steps gMapPhase (ds:DCAA) 1, 2, 1 and moves the cursor; nothing calls it (no near call and no stored far pointer in EOB.EXE or its overlays)"
 date = "2026-11-04"
+
+[[rename]]
+id = "intro/097F:0002=GetPageBuffer"
+addr = "intro/097F:0002"
+old = "GetPagePtr"
+new = "GetPageBuffer"
+kind = "function"
+why = "One name for the module linked twice: INTRO 097F:0002 is the twin of EOB 19EC:0002, GetPageBuffer (src/E19EC.C), returns MK_FP(gPageSegs[kind | 1], 0); reviews i0aed and iov0 (P6)"
+date = "2026-11-04"
+
+[[rename]]
+id = "intro/ds:1EE2=gClearPage"
+addr = "intro/ds:1EE2"
+old = "gClearDrawPage"
+new = "gClearPage"
+kind = "global"
+why = "One name for one driver slot: INTRO ds:1EE2 is the slot EOB calls gClearPage at ds:8056 (src/E07C8.C) and src/drivers/MCGA.ASM:57 exports; it zeroes 0x7D00 words of the draw page; reviews i0892 and iov0 (P6)"
+date = "2026-11-04"
+
+[[rename]]
+id = "intro/ds:19E6=gOverlayCacheUp"
+addr = "intro/ds:19E6"
+old = "gOverlayCacheOn"
+new = "gOverlayCacheUp"
+kind = "global"
+why = "One name for the twin flag: INTRO ds:19E6 is EOB's ds:3056 gOverlayCacheUp (src/E07C8.C:80), set to 1 after InitOverlayCache and checked by ShutdownGame; review i0892 (P6)"
+date = "2026-11-04"

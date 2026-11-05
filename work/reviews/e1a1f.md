@@ -1,10 +1,32 @@
 # Review: e1a1f
 
-Reviewer: rev-sonnet
-Commit reviewed: a5be789509d66824797b8c0f8bf768d6387eaee5
+Reviewer: p6-rev-2
+Commit reviewed: 651ac776e76787e5c5cde14f8d51e2931475c4f0 (P6 round; the earlier round read a5be789)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round P6 (2026-11-04), commit 651ac776e76787e5c5cde14f8d51e2931475c4f0
+
+Judged the diff a5be789..651ac77 on src/E1A1F.C: P6 changed no name in this unit. The header
+dropped the sentence "Names and types are placeholders until the callers name them" and the
+DrawBox comment was added; DrawBox and gDrawLine keep their names.
+
+The names are backed: gDrawLine (ds:8062) is called with (x1, y1, x2, y2, colour) by the
+callers 0D1C:0454 and 16A5:07C3, and DrawBox draws four axis-aligned lines through it after
+clamping each corner to 0..319 and 0..199. The new comment matches the code. No new name needs
+evidence; no name claims more than the bytes show.
+
+- [ ] should (carried) src/E1A1F.C:1-4: the header now cites the two callers for the argument
+  order, but not the other users of ds:8062 (1547:00BD, 00DC, 00F0; 1C0E:0BCE) that support the
+  name gDrawLine. The earlier round's suggestion still applies if a fuller header is wanted.
+- [ ] should (carried) src/E1A1F.C:9: the name DrawBox is still the ambiguous one the earlier
+  round noted; the new comment says "outline", so the name no longer misleads, but
+  DrawRectOutline would be clearer.
+- [ ] note The new DrawBox comment (1A1F:000C) is accurate: four edges through gDrawLine after
+  the clamps.
+
+No open must-fix. The unit passes.
 
 ## Findings
 

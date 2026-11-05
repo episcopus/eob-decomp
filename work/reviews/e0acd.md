@@ -1,7 +1,7 @@
 # Review: e0acd
 
-Reviewer: rev-haiku (rounds 1 to 3)
-Commit reviewed: 7ff86a7 (round 3; round 2 reviewed 6003a3d, round 1 reviewed 3648a5c)
+Reviewer: p6-rev-9
+Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -13,6 +13,48 @@ Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompi
 
 Line numbers are src/E0ACD.C unless another file is named. Callee addresses are the ones the
 comments should cite.
+
+## Round P6 (2026-11-04), commit ce0608f367ed01b1b1df84e254eef04d1a734b27
+
+Later round (playbook 70). Judged the names and comments the Phase 6 diff changed since 7ff86a7 in `src/E0ACD.C`, against `re/renames.toml` and `re/fields.toml`. The diff is a large name and comment rewrite: the 35 action handlers and the globals they use take Phase 6 names, the private `Entry14` and `gTable8DD2` views give way to `gItems`, and the comments follow. `make match FILE=src/E0ACD.C` 35 of 35 (4182 bytes); `make readability UNIT=e0acd` 0 findings.
+
+The names are backed: `MoveForward` (0ACD:04F8), `MoveBackward` (0529), `TurnLeft` (056C), `TurnRight` (0593), `MoveLeft` (05BA), `MoveRight` (05FF), `OpenInventory` (0034), `SelectPrevMember` (008C), `SelectNextMember` (00EB), `ToggleCharacterInfo` (018E), `ClickInventorySlot` (01C0), `RestorePortraitPanel` (01E3), `PickOrSwapMember` (0264), `CancelMemberSwap` (0393), `ClickHandSlot` (0415), `ThrowMouseItem` (0494), `ClickFloorItem` (0644), `FeedInventoryMember` (08D1), `ActivateWallAhead` (08E7), `MoveHandCursor` (091C), `MoveKeyCursor` (0A34), `HandleMapKey` (0D9D) and `PollMapInput` (0E6C), and the globals `gMatchedNodeKey` (ds:FC82), `gPickViewPos` (ds:EFB2), `gPickFirstItem` (ds:F3BA), `gViewPosAhead` (ds:374A), `gViewToCellPos` (ds:1A1B), `gGameLoadState` (ds:A998), `gMouseItem` (ds:FBCE), `gFont6x6` (ds:A9C0), `gViewFrontSide` (ds:A9C6), `gMapPhase` (ds:DCAA), `gHandSplitY` (ds:36B0), `gLeftButtonMode` (ds:5E1C), `gSlotNeighbours` (ds:36D0), `gFrontPosByDir` (ds:373C), `gMemberSide` (ds:3744), `gDirectAction` (ds:F542), `gNextRandomSoundTick` (ds:FC5A), `gUnreadPartyCellCopy` (ds:FC58), `gGameTicks` (ds:8492), `gUnreadButtonChanges` (ds:8134), `gCgaMapPlayfld` (2069:0000), `gCgaMapInvent` (2067:0000), `gWallTrigger` (ds:EFD2) and `gRestoreRectToPage` (ds:804A). Each `why` in `re/renames.toml` matches the code at the address.
+
+The comments the diff rewrote are correct where they make new claims: `OpenInventory` names the portrait callback, `MoveBlocked` names the movement keys, the six movement handlers say what they do, `RestorePortraitPanel` and `PickOrSwapMember` use the gStagingPage buffer, `ActivateWallAhead` names the wall handler, `HandleMapKey` records that gMapPhase 5 never occurs, and `RunMapLoop` names the random-sound cell. What remains is old wording that the diff did not touch, now contradictory with the new names. It is noted below, not a must-fix: the previous review accepted it, and the later-round rule says text no fix touched is a note.
+
+Should (clarity; not blocking):
+
+- [ ] should src/E0ACD.C:183 (OpenInventory): the first sentence is new and right, but the second says "the action mode gMatchedNodeKey". Its why (ds:FC82) says the value is the matched node key (1 the first key word, 2 the second, 0 a mouse hit), not a mode. Say "when gMatchedNodeKey is nonzero".
+- [ ] should src/E0ACD.C:402 (ThrowMouseItem): "the 'use item on the selected character' action" is the old label; its why says the two view nodes launch the mouse item through AddDDEffect. Say it throws the mouse item.
+- [ ] should src/E0ACD.C:77 (gViewFrontSide): "an offset into a gMaze record" is vague; its why says it is `(gPartyDir + 2) & 3`, the wall side of the visible cell that faces the party.
+- [ ] should src/E0ACD.C:131 (gGameTicks): the comment cites `src/EOV6.C`, but its why says the INT 1Ch handler is at E1D8F.ASM 1D8F:006E.
+- [ ] should src/E0ACD.C:636 (MoveHandCursor): "the 'turn' action" is the old label; its why says it moves the keyboard cursor over the portraits and "does not turn the party".
+- [ ] should src/E0ACD.C:696 (MoveKeyCursor): "the row/character turn dispatcher" is the old label; its why says it moves the keyboard cursor over the hands (mode 0) or the inventory slots (mode 1).
+
+Notes (for the next reader):
+
+- [ ] note src/E0ACD.C:28 (gMatchedNodeKey): "an action mode" is old text (the old gFC82 comment); the name now says matched node key, and re/renames.toml ds:FC82 gives 1/2 for the matched key word and 0 for a mouse hit.
+- [ ] note src/E0ACD.C:75 (gMaze): "nine-byte object records" is old text; re/renames.toml ds:B894 says one nine-byte record per map cell (walls, monster count at +4, item list at +5).
+- [ ] note src/E0ACD.C:76 (gWallTypeFlags): "per-object bit flags" is old text; re/renames.toml ds:194B says flags per wall type, and 0ACD:0644 tests bits 0, 1 and 3 (`& 0xB`).
+- [ ] note src/E0ACD.C:106 (gHandSplitY): "a per-slot word" is old text; re/renames.toml ds:36B0 says six words, one per party member, the y split of the two hands.
+- [ ] note src/E0ACD.C:113 (gFrontPosByDir): "two entries per page" is old text; the index is gPartyDir * 2 at 0ACD:0A61, and re/renames.toml ds:373C says two per facing.
+- [ ] note src/E0ACD.C:134-135 (gCgaMapPlayfld): "the PLAYFLD sheet" is old text; re/renames.toml 2069:0000 says a 32-byte 16 to 4 colour map passed as LoadScreenImage's `extra` argument, not a pixel sheet.
+- [ ] note src/E0ACD.C:136-137 (gCgaMapInvent): "the INVENT sheet" is old text; re/renames.toml 2067:0000 says a 32-byte 16 to 4 colour map, "never a pixel buffer".
+- [ ] note src/E0ACD.C:955 (EnterMapScreen): "LoadScreenImage (into gCgaMapPlayfld and gCgaMapInvent)" is old text with the new names; the two are the `extra` colour-map argument (lines 972-973), not the destination (page 5, srcKind 5).
+- [ ] note src/E0ACD.C:983 (ResetMapScreen): "the page gPartyDir" is old text; gPartyDir is the party's facing 0..3 (re/renames.toml ds:FBCC), not a page.
+- [ ] note src/E0ACD.C:201 and :222 (SelectPrevMember, SelectNextMember): the comments still say "the action mode" for gMatchedNodeKey; the lines were not changed by the diff.
+- [ ] note src/E0ACD.C:505-512 (ClickFloorItem): "The per-page, per-slot kind" and "then RunCellScript" are old text; the code indexes slotKind[gPartyDir][slot] (537) and runs RunCellScript(cell, 8) (541) before SetMouseItem(removed) (542).
+- [ ] note src/E0ACD.C:623 (ActivateWallAhead): "Derives a key ... passes the key" is old text; StepCell returns a cell and DispatchWallHandler runs on the cell ahead (re/renames.toml 0ACD:08E7).
+- [ ] note src/E0ACD.C:74 (gViewDirty): "when an action took effect" is old text; re/renames.toml ds:DF4C says whenever something visible changes, and RunMapLoop redraws while it is set.
+- [ ] note src/E0ACD.C:129 (gNextRandomSoundTick): "the map timeout counter" is old text; re/renames.toml ds:FC5A says the next tick for the random sound 0x1E on levels 1..3.
+- [ ] note src/E0ACD.C:130 (gUnreadPartyCellCopy): "the party's cell saved by the map loop" does not say no code reads it; re/renames.toml ds:FC58 says RunMapLoop copies gPartyCell into it and no file in src/ reads it.
+- [ ] note src/E0ACD.C:132 (gUnreadButtonChanges): "set to 0 by the map screen" is old text; re/renames.toml ds:8134 says the INT 33h handler ORs the changed button bits into it and no code reads it.
+- [ ] note the `re/renames.toml` rows for gCgaMapPlayfld and gCgaMapInvent say kind = "function" although both are data segments; the source declares them as arrays and the matcher accepts them. A registry metadata point for the tool owner, not a source fix.
+- [ ] note the Phase 6 names are used in the other units: StepCell and MemberIs in E0BD2.C and E122E.C, CanPlaceItemInSlot in E0BD2.C, RunCellScript in E1414.C and E122E.C, LoadLevel and NoOpAfterMapLoad in the overlay units. No old name remains in src/ for the checked functions and globals.
+
+Round P6 verdict: review passed. No must-fix is open. The Phase 6 names are backed by re/renames.toml and re/fields.toml, the changed comments that make new claims are right, and the old wording that contradicts them is noted for the next reader.
+
+Evidence: `make match FILE=src/E0ACD.C` 35 of 35 (4182 of 4182 bytes); `make readability UNIT=e0acd` 0 findings. Nothing escalated: no matcher, spec or pin question.
 
 ## Round 3 (at 7ff86a7)
 

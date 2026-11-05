@@ -30,8 +30,7 @@ extern int (far *gAllocFailHook)(void); /*@ ds:810A */
    0000:6384 in this large model build, a far pointer fill. */
 
 extern void far *NormalizePtr(void far *p); /*@ 1BA8:0072: normalizes a far pointer to DX:AX (its
-                                              body calls _NormFar, src/E1BA8.ASM:81-90); the name
-                                              stays a placeholder */
+                                              body calls _NormFar, src/E1BA8.ASM:81-90) */
 extern int EvictFile(unsigned size, unsigned char flags); /*@ 1C0E:0E5B: first retry before the
                                                               OOM hook (src/E1C0E.C:631) */
 extern void SetVideoMode(int mode); /*@ 1DDD:002D: INT 10h AH=0 set video mode (src/E1DDD.C:43) */

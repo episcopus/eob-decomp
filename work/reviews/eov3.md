@@ -17,7 +17,7 @@ Judged: the changes since 6118e25 in src/EOV3.C and re/symbols.toml. The diff is
 
 #### Round P6 must-fix
 
-- [ ] must-fix src/EOV3.C:827 and :829 (LoadGame header, changed in this diff): the header says the sprite cut runs "for each character whose identifiedNameIndex is nonzero" and "a character with identifiedNameIndex nonzero ... sets `flag`". The code tests `rec->status != 0` at :892 and :904, not `identifiedNameIndex`. `status` is the byte at +01; `identifiedNameIndex` is a different field. Say `status`. Evidence: src/EOV3.C:892 and :904.
+- [x] must-fix src/EOV3.C:827 and :829 (LoadGame header, changed in this diff): the header says the sprite cut runs "for each character whose identifiedNameIndex is nonzero" and "a character with identifiedNameIndex nonzero ... sets `flag`". The code tests `rec->status != 0` at :892 and :904, not `identifiedNameIndex`. `status` is the byte at +01; `identifiedNameIndex` is a different field. Say `status`. Evidence: src/EOV3.C:892 and :904. Fixed in def28b2.
 
 #### Round P6 should
 

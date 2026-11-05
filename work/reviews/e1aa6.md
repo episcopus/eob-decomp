@@ -1,10 +1,41 @@
 # Review: e1aa6
 
-Reviewer: rev-sonnet
-Commit reviewed: 427c22f1f43a9db1d4fd16c14b6b09a1fbd4586f
+Reviewer: p6-rev-2
+Commit reviewed: e747e98badac5959ccf15c8a28e293e3983b2f3b (P6 round; the earlier round read 427c22f)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round P6 (2026-11-04), commit e747e98badac5959ccf15c8a28e293e3983b2f3b
+
+Judged the diff 427c22f..e747e98 on src/E1AA6.C: the header drops "Placeholder names"; the
+gDrawText and PrintInt parameters are renamed a, b, c, d -> x, y, colour, flag; a PrintInt
+comment is added.
+
+Evidence checked against re/renames.toml (ds:80CA=gDrawText: its callers 082C:0864 to 08FF
+pass a far string, x, y, a colour and a flag; no struct field in re/fields.toml). The parameter
+names match that WHY and the callers in src/E1BA4.C, src/E16A5.C, src/EOV0.C and src/E1547.C.
+The gDrawText name is unchanged and is backed by the rename log; the P6 diff did not introduce
+a new name in this unit.
+
+The earlier round's duplicate-name should is resolved: src/E1BA4.C now declares gDrawText
+(was gFn80CA). Its prototype is still () there, so the "one prototype" part of that should
+remains. The other two shoulds also remain: the header does not cite the gDrawText evidence,
+and char far *text is redundant under -ml.
+
+- [ ] should (carried) src/E1AA6.C:1-5: the header does not cite the gDrawText evidence (the
+  callers at 082C:0864 to 08FF passing a far string, x, y, a colour and a flag); add one
+  sentence, as the earlier round asked.
+- [ ] should (carried) src/E1AA6.C:7 and src/E1BA4.C:7: the name is now gDrawText in both, but
+  E1BA4.C still declares it with (); use the typed prototype there too.
+- [ ] should (carried) src/E1AA6.C:7: char far *text is redundant with -ml; harmless, but say
+  so if the far is meant to be visible.
+- [ ] note The new parameter names x, y, colour, flag match the callers' order and the rename
+  log; the PrintInt comment is accurate.
+- [ ] note The earlier round's notes still hold: PrintInt is itoa(value, buf, 10) and a call
+  through ds:80CA; the buffer is 30 bytes.
+
+No open must-fix. The names are backed by the evidence and the callers use them consistently.
 
 ## Findings
 

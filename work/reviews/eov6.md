@@ -1,7 +1,7 @@
 # Review: eov6
 
-Reviewer: rev-haiku
-Commit reviewed: eb60bf7 (main, round 4; round 3 reviewed b71e380, round 2 dbf4ce2, round 1 4afb5a6)
+Reviewer: p6-rev-11
+Commit reviewed: P6 round at ce0608f (main); round 4 at eb60bf7; round 3 at b71e380; round 2 at dbf4ce2; round 1 at 4afb5a6
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -10,6 +10,14 @@ The matcher already proved the bytes; do not re-prove them, read for meaning.
 
 Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
 (with the commit that fixes it); `should` and `note` do not block.
+
+### Round P6 (2026-11-04, reviewed at ce0608f)
+
+Later round. Changed since eb60bf7: the P6 naming pass, `git diff eb60bf7 HEAD -- src/EOV6.C`; 136 insertions, 171 deletions; names and comments only. The names checked against re/renames.toml and re/fields.toml; the changed comments against the code at each address. The matcher still proves the bytes (6 of 6).
+
+No must-fix in the changed lines. The P6 names are backed by the registry: gDrawPage ds:8115, gPanelFillColour ds:F57E, gCurFont ds:FE4E, gFont8x8 ds:FE5A, gFont6x6 ds:A9C0, gSpells ds:1344, gClericSpells ds:151F, gMonsters ds:8A82, gCampStrings 2003:0000, gQuietMonsterUpdate ds:F442, gGameTicks ds:8492; the functions SetFont 1A47:0169, MemberIs 0D1C:0670, IsWearingRing 0D1C:0163, DrawFramedPanel 0D1C:0C21, UpdateMonsters 08E6:0CC8, CopyRegion 19F3:000E, AskYesNo 2102:0039. The changed comments match the code: the CampLoop damage/regain and the AreMonstersNear calls (ovl6:0000), ShowHoursRested uses gDrawPage and gPanelFillColour (ovl6:0858), AreMonstersNear uses gQuietMonsterUpdate and UpdateMonsters (ovl6:09D2), HasSpellsToRegain reads the spell slots (ovl6:0A92).
+
+The Round 4 shoulds are still open (not blocking): the stale cites in src/E082C.C:465, src/E177D.C:98, src/E0A72.C:87 and src/E19F3.C:12 are in other units' files; the CampLoop header wrap at src/EOV6.C:117-118 remains ragged. The "not complete" matcher note remains.
 
 ### Round 4 (rev-haiku, at eb60bf7)
 

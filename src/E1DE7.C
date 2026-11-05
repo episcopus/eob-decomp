@@ -145,8 +145,8 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
    second and third edge runs re-read the global gTextLeft (1DE7:01FE and 1DE7:021C) where the
    corners and the first and fourth runs use the local copy taken at 1DE7:00E9. The re-reads come
    after four gDrawCell8x8 calls (:175-181) and the DrawTileRun call at :183; nothing in this unit
-   writes gTextLeft between them, but gDrawCell8x8's far target is not identified, so the two values
-   are equal only if that code does not write it: the read is presumably dead, not proven to be. */
+   writes gTextLeft between them, and gDrawCell8x8 (driver export 5, the cell draw; its MCGA body,
+   mcga.ovl 06AF, src/drivers/MCGA.ASM:459, writes only the draw page): the re-read is dead. */
 /*@ 1DE7:00C9 */ void DrawTextFrame(int style)
 {
     int left;
@@ -247,9 +247,9 @@ extern unsigned far *gFrameTable[]; /*@ ds:113B */
    gTextRow * font height below the window top and the column gTextCol * font width right of its
    left edge. When that row has no room for a full line left, the scroll hook ds:8117 is called
    (gated by ds:8110), then the visible lines are copied from one font height lower to the top:
-   CopyRegion (19F3:000E, a front end whose far target is not identified, src/E19F3.C) is passed the
-   origins (gTextLeft, gTextTop + font height) and (gTextLeft, gTextTop) with width gTextWidth and height `bottomLine`, which
-   reads as a scroll up by one line (the copy's far target is not identified), and the bottom line
+   CopyRegion (19F3:000E, src/E19F3.C, the front end over gCopyRegion, the driver's page-to-page
+   copy, export 3, mcga.ovl 05D4) is passed the origins (gTextLeft, gTextTop + font height) and
+   (gTextLeft, gTextTop) with width gTextWidth and height `bottomLine`: a scroll up by one line. The bottom line
    is refilled through ds:806A (the gFillRect slot); the text is then drawn on that line.
    `newline` non-zero advances to the next row at once (gTextRow++ from wherever it was, :288); zero
    instead advances the column by strlen(text), wrapping to the next row only when the text no

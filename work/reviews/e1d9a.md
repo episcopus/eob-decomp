@@ -1,5 +1,13 @@
 # Review: e1d9a
 
+## Round P6 (2026-11-04), commit 39d85cdcb71f673d7aafdc133a116c43ae11f606
+
+Reviewer: p6-rev-2. Commit reviewed: 39d85cdcb71f673d7aafdc133a116c43ae11f606 (P6 round; the earlier round read bcbb85e).
+
+The diff bcbb85e..39d85cd on src/E1D9A.ASM is empty: P6 changed no name or comment in this unit. The eight names (_Unpack1 to _Unpack4, _ReadCode1, _ReadCode2, _NormDest, _UnpackScratch) are the Round 5 names and are backed by re/symbols.toml and the callers (src/E1B82.C:69 to :72). The Round 5 shoulds are still open: the QUIRK marks for the Unpack1/Unpack2 output limit and the code at or above the fill level, the _ReadCode2 state names, the unused scratch bytes, and the EQU names for the LCW opcodes. The Round 5 notes on the dw at 1D9A:010F/0111, the whitepaper section name and the routed cites also stand.
+
+No open must-fix. The unit passes.
+
 Reviewer: rev-haiku
 Commit reviewed: 0633cfc (review/e1d9a at start; `make match FILE=src/E1D9A.ASM` 8 of 8 match, exit 0; `make readability UNIT=e1d9a` 0 findings)
 

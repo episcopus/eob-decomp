@@ -1,5 +1,27 @@
 # Review: e1de7
 
+# Round P6
+
+Reviewer: p6-rev-2
+Commit reviewed: 890ba548a2790afd8c74e2d1743c0d4c748b5721 (P6 round; the earlier round read 5648364)
+
+Playbook 70, later round. Judge the changed names and comments since 5648364.
+
+Checked: `make match FILE=src/E1DE7.C` 9 of 9 functions, 2619 bytes; `make readability UNIT=e1de7` 0 findings. The diff 5648364..890ba54 changes names and comments: gDraw805A -> gDrawCell8x8 (ds:805A), gDraw805E -> gDrawIndexedTile (ds:805E), g8119 -> gScrollHookSeg (ds:8119), gStatusLine -> gDrawPage (ds:8115), ClipRect -> CopyRegion (19F3:000E), and the struct Region fields attr1/attr2/column/row -> textAttr1/textAttr2/textCol/textRow (now in EOB.H).
+
+Evidence checked against re/renames.toml (ds:805A=gDrawCell8x8, ds:805E=gDrawIndexedTile, ds:8119=gScrollHookSeg, ds:8115=gDrawPage, 19F3:000E=CopyRegion) and re/fields.toml (Region +08 textAttr1, +0A textAttr2, +0C textCol, +0E textRow). The names match their WHYs: gDrawCell8x8 is MCGA export 5 (mcga.ovl 06AF, eight rows of eight bytes), gDrawIndexedTile is export 6 (the tile number mapped through the byte table), gScrollHookSeg is the segment word of gScrollHook, gDrawPage is the page the driver draws to, CopyRegion is the wrapper over the page-to-page copy ds:8052/gCopyRegion (MCGA export 3), and the Region fields are the E1DE7 text state. The callers in src/E07C8.C, src/E16A5.C, src/EOV5.C and src/E19F3.C use the new names. The EOB.H comments match the field names.
+
+## Findings
+
+- [x] must-fix src/E1DE7.C:148, :250, :252: three changed lines still say the far target is not identified, but the P6 rename evidence identifies it. Line 148 (the DrawTextFrame QUIRK) says "gDrawCell8x8's far target is not identified"; the WHY of ds:805A names it MCGA export 5 (mcga.ovl 06AF, eight rows of eight bytes), which draws the cell and does not write gTextLeft. Lines 250 and 252 (the DrawTextLine comment) say "a front end whose far target is not identified" and "the copy's far target is not identified"; the WHY of 19F3:000E and ds:8052 names it the driver's page-to-page copy (gCopyRegion, MCGA export 3, mcga.ovl 05D4). Say what the targets are, or drop the "not identified" clauses; the QUIRK's equality caution can stay only if it names the cell draw and says why it does not write gTextLeft. Fixed in 6af4a72: :148 now names the cell draw (export 5, mcga.ovl 06AF, writes only the draw page) and calls the re-read dead; :250-252 name gCopyRegion (export 3, mcga.ovl 05D4).
+- [ ] should src/E1DE7.C:35, :37: the comments on the text attributes still say attr1 and attr2; the fields are now textAttr1 and textAttr2 in EOB.H (re/fields.toml).
+- [ ] note the earlier round's note on the ds:806A parameter name (colour here and in src/E082C.C:64; pattern in other units) and the -G claim (src/E1DE7.C:16-17) still stand; no change asked.
+- [ ] note The struct Region moved to src/EOB.H; the field names textAttr1, textAttr2, textCol and textRow are backed by re/fields.toml and the EOB.H comments match. No finding.
+
+## Summary
+
+The P6 names are backed by re/renames.toml and re/fields.toml, and the callers use them. The one must-fix is three stale "far target is not identified" clauses in changed lines: the P6 rename evidence identifies both targets (MCGA export 5 for gDrawCell8x8, MCGA export 3/gCopyRegion for CopyRegion). The should is the attr1/attr2 comments. The unit fails until the three clauses are corrected.
+
 # Round 9
 
 Reviewer: rev-haiku

@@ -1,7 +1,7 @@
 # Review: e0cf7
 
-Reviewer: rev-sonnet
-Commit reviewed: c4668b944cf6a293de040c022dc8ca5c2e535bf0
+Reviewer: p6-rev-3 (round P6; round 1 by rev-sonnet, rounds 2 to 5 by rev-haiku)
+Commit reviewed: ce0608f (round P6, 2026-11-04; diffed against 16f40c7, the Fifth review's commit). Round 1 read c4668b9.
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
@@ -162,3 +162,16 @@ Playbook 70, read for meaning. `make match FILE=src/E0CF7.C`: 6 of 6 (591 bytes)
 ### Summary
 
 The unit matches (6 of 6) and reads clearly from its source. Its names, comments and table constants agree with the bytes, the callers and the tables. No must-fix this round. Two shoulds: the gFlag reader list omits the Action0264 readers (and one reader is still unidentified), and the QUIRK 0CF7:0028 mark appears once where the same behaviour is in seven loops. Names standing on purpose: gFlag ("Purpose unknown", three writers, the readers listed above), gTable1a to gTable5 and BuildList1 to BuildList5 (table numbering only). ListInit, ListAdd and gList have evidence. Nothing here is a matcher or spec question, so no escalation. Verdict: review-passed (no must-fix; the shoulds do not block).
+
+## Sixth review (P6 round: p6-rev-3, 2026-11-04, commit ce0608f)
+
+Reviewer: p6-rev-3. Commit reviewed: ce0608f (main; src/E0CF7.C last changed in d0ed4202, the shared-header commit). The Fifth review was at 16f40c7 and passed with no must-fix (two open shoulds below it). The P6 diff on src/E0CF7.C is one change: the local `struct Node` definition and its six-line comment are replaced by `#include "EOB.H"`. No other line of the file changed, and re/symbols.toml has no e0cf7 entry in the P6 range. `make match FILE=src/E0CF7.C` 6 of 6 (591 bytes); `make readability UNIT=e0cf7` 0 findings; `make names UNIT=e0cf7` 0 placeholder functions, globals or fields and 1 `Purpose unknown` (gFlag).
+
+The include is right: the struct this file uses is the shared one, and the six functions only touch `node->next`, whose type (`struct Node far *`) and offset (+00) are the same in src/EOB.H:237. The match proves the same bytes. The two open shoulds of the Fifth review (the partial gFlag reader list at :46-57 and the missing QUIRK marks on the other seven `gList = ListAdd(...)` loops) are not must-fix and stay as they are; P6 changed neither line, and the E16A5.C line cite they use in the gList comment is now stale (below).
+
+Notes (not blocking):
+
+- note src/E0CF7.C:22-25: the gList comment cites "E16A5.C:139-143" for DispatchKeyWait. After P6 that range is inside the dispatcher's header prose; DispatchKeyWait is at src/E16A5.C:113-130. The claim (DispatchKeyWait walks the list) still holds; cite :113-130 or the address 16A5:005A.
+- note src/E0CF7.C:1-6: the removed struct comment carried the record-size evidence (60-byte grid, 56 to 60 bytes, E16A5.C's tile36 at +36/+37 and E1658.C's +33). The new shared struct in src/EOB.H:233-270 says the records sit on a 60-byte grid and the units name the first 0x3A bytes, but the 56-byte reading is no longer stated anywhere in this file. That is information lost, not a wrong claim; a reader of this unit should know the record size is not proven. EOB.H's owner could keep that sentence.
+- note src/E0CF7.C:10-21 and :46-57: the two open shoulds of the Fifth review (the gFlag reader list is partial and reads as complete; QUIRK 0CF7:0028 is marked on only one of the eight `ListAdd` loops) are unchanged by P6 and still stand for the next pass.
+- note src/EOB.H:365-375: this file's old #defines are not here (E0CF7.C never had the NODE_* names; it has TABLE*_COUNT only), so nothing moved into EOB.H from this unit except the struct. The shared header's `struct Node` keeps the callback30 return and the NodeData union that the E16A5/E1658 reviews discuss; this file does not use them.

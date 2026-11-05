@@ -30,7 +30,7 @@ extern void (far *gCopyPage)(); /*@ ds:8046 */
 }
 
 /* 19EC:002A: copies page `from` to page `to` through the graphics driver's page copy gCopyPage
-   (ds:8046, its export 7), when both pages exist and are not one segment; `driverArg3` and
+   (ds:8046, its export 0, mcga.ovl 04F8), when both pages exist and are not one segment; `driverArg3` and
    `driverArg4` go to the driver unchanged. */
 /*@ 19EC:002A */ void CopyPage(int from, int to, int driverArg3, int driverArg4)
 {

@@ -1,5 +1,27 @@
 # Review: e1e8b
 
+# Round P6 (2026-11-04), commit ce0608f
+
+Reviewer: p6-rev-1
+Commit reviewed: ce0608f (main; review/e1e8b was ce0608f when this round began and no fast-forward was needed). The last review round was Round 10 at c182ad7. Since c182ad7, src/E1E8B.ASM changed by the Phase 6 rename: f1E8B_0185 is ShutdownOverlayManager, in the PUBLIC/PROC/ENDP labels and in the header comment. The diff is 4 insertions and 4 deletions. The names do not change the machine code; this round judges only whether the changed name and comment are true and consistent.
+
+Later round (playbook 70). Judged: the diff since c182ad7 for src/E1E8B.ASM (the rename and its comment) and the name and comment it introduces. The Round 10 must-fix items are all ticked and their text is unchanged; the Round 10 note on the 07D7 wording is unchanged.
+
+Checked: `make match FILE=src/E1E8B.ASM` 30 of 30 (2329 bytes), exit 0; `make readability UNIT=e1e8b` 0 findings. Evidence used this round: `git diff c182ad7 HEAD -- src/E1E8B.ASM` (the rename and the comment); `grep -n -A7 "addr = \"1E8B:0185\"" re/renames.toml` (the two entries, :2139 and :7197).
+
+## Findings
+
+Each finding is a checkbox. `must-fix` blocks `make review-pass` until a decompiler ticks it off
+(with the commit that fixes it); `should` and `note` do not block.
+
+- [x] must-fix src/E1E8B.ASM:240-244 (the 1E8B:0185 header): "the file keeps the placeholder ShutdownOverlayManager rather than a name that claims a role" is false, and so is the opening "Purpose unknown" for the role. The P6 rename replaced f1E8B_0185 with ShutdownOverlayManager, and re/renames.toml:7197 (the later entry, 2026-11-03) backs the name: "Closes the overlay file and swaps the interrupt vector back through SwapAndReopenOverlayFile when the handle 20B5:00B8 is open (1E8B:0190), then calls the manager's two near hooks at 20B5:0014 and 20B5:0012; the teardown half of InitOverlayManager." The name claims the teardown role the later why establishes; "placeholder ... rather than a name that claims a role" contradicts it. The earlier entry (re/renames.toml:2139, 2026-11-02) had reverted the name because no caller was found; the later entry restores it with the teardown evidence. Say the teardown half of InitOverlayManager and keep "Purpose unknown" only for the two hooks and the missing caller. Fixed in 6af4a72: the header says the teardown half of InitOverlayManager; Purpose unknown stays for the two hooks, and the missing caller is kept.
+- [ ] note the Round 10 must-fix items (the 04D0, 086F and 07D7 cites) are all ticked and their text is unchanged by the P6 diff. The Round 10 note on the 07D7 wording (a link word of 1 ends the walk) remains; the P6 diff did not touch it.
+- [ ] note re/renames.toml has two entries for 1E8B:0185: :2139 (new = f1E8B_0185, 2026-11-02) and :7197 (new = ShutdownOverlayManager, 2026-11-03). The later entry is the current name; the earlier one's why says the descriptive name is a claim beyond the evidence. A note for the next ledger edit: the earlier entry is superseded.
+
+## Summary
+
+One must-fix item is open. The P6 rename replaced f1E8B_0185 with ShutdownOverlayManager, and the later rename entry backs the name (the teardown half of InitOverlayManager). The header comment still says "the file keeps the placeholder ShutdownOverlayManager rather than a name that claims a role", which is false: the name claims the teardown role the rename's why establishes. The matcher is 30 of 30 and readability is 0 findings; the machine code is unchanged. The unit does not pass (review-failed) until the header comment is rewritten.
+
 # Round 10
 
 Reviewer: rev-haiku

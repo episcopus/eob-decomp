@@ -1,10 +1,50 @@
 # Review: e1ddd
 
-Reviewer: rev-haiku
-Commit reviewed: 81b2233f24aa88499596cd2ea3dd4226d495da7b
+Reviewer: p6-rev-2
+Commit reviewed: d3391d6da34006ee3c1476339fac7460db591f8e (P6 round; the earlier round read 81b2233)
 
 Playbook 70. Judge what a matching file can still get wrong: names, types, comments, structure.
 The matcher already proved the bytes; do not re-prove them, read for meaning.
+
+## Round P6 (2026-11-04), commit d3391d6da34006ee3c1476339fac7460db591f8e
+
+Judged the diff 81b2233..d3391d6 on src/E1DDD.C: f1DDD_0006 -> GetVideoMode (1DDD:0006),
+f1DDD_002D -> SetVideoMode (1DDD:002D); g84A0 -> gRestoreMode (ds:84A0), g84A2 ->
+gBiosVideoModes (ds:84A2), gFF46 -> gVideoInRegs (ds:FF46), gFF36 -> gVideoOutRegs (ds:FF36);
+f60BD -> int86 (0000:60BD); function comments are added and the header is updated.
+
+Evidence checked against re/renames.toml (1DDD:0006=GetVideoMode, 1DDD:002D=SetVideoMode,
+0000:60BD=int86, ds:84A0=gRestoreMode, ds:84A2=gBiosVideoModes, ds:FF46=gVideoInRegs,
+ds:FF36=gVideoOutRegs; no struct field in re/fields.toml). The names match their WHYs:
+GetVideoMode is INT 10h AH=0Fh and returns AL; SetVideoMode is INT 10h AH=00h from the
+seven-word table or gRestoreMode; the four globals are the int86 in/out unions and the mode
+table and restore mode; int86 is the runtime int86 at 0000:60BD. The callers in src/E07C8.C,
+src/I0892.C and src/E19BC.C use the new names; the E19BC.C extern is now void SetVideoMode,
+which closes the earlier cross-unit should.
+
+The earlier round's first three shoulds are resolved: the functions have real names and
+per-function comments. The other shoulds still stand: gBiosVideoModes is still unsized and the
+gBiosVideoModes[7] read is not tagged QUIRK 1DDD:002D; the four globals still have address-only
+declaration comments; the int86 name is still untagged [H]; the int86 comment is still misplaced;
+and the whitepaper still says atol where the bytes say an int result.
+
+- [ ] should (carried) src/E1DDD.C:30: gBiosVideoModes is still unsized and the gBiosVideoModes[7]
+  read (ds:84B0) is not tagged QUIRK 1DDD:002D; size it 8 or say so in the declaration.
+- [ ] should (carried) src/E1DDD.C:29-32: the four globals still have address-only declaration
+  comments; put what is known there (the int86 in/out AX words, the argv[5] restore mode, the
+  seven-word mode table).
+- [ ] should (carried) src/E1DDD.C:28: the int86 name is still untagged [H]; the header says the
+  routine is not in build/re/rtl_compare.json.
+- [ ] should (carried) src/E1DDD.C:34: the int86 comment still sits between the declarations and
+  GetVideoMode; move it onto the int86 declaration.
+- [ ] should (carried) docs/design/WHITEPAPER.md:115: the whitepaper still calls argv[5] atol;
+  the bytes say an int result (owner: the whitepaper).
+- [ ] note The new names are backed and the callers use them; the E19BC.C extern is now void
+  SetVideoMode, closing the earlier cross-unit should.
+- [ ] note The earlier round's notes still hold: the 1DDD:0000..0005 tail, GetVideoMode's lack
+  of a far call site, the ds:84B0 runtime caveat, and the g84A0 type.
+
+No open must-fix. The names are backed by the evidence and the callers use them consistently.
 
 ## Findings
 

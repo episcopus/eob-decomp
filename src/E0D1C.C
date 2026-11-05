@@ -597,7 +597,7 @@ int GetCurrentItem(void);
    asks FindBestUndeadTurner for the best qualifying party member (its low byte the member's value, its
    high byte the member's index) and rolls 1d20. It lists the gMonsters indices whose ds:8A82 monster
    record's cell equals key (08E6:17FD) and, for each monster whose ds:1A3B record's m0F has bit 2
-   set and whose flags has bit 4 clear, sets gDeferMonsterHits, marks the monster (m16 |= 0x10) and runs
+   set and whose flags has bit 4 clear, sets gDeferMonsterHits, marks the monster (flags |= 0x10) and runs
    TryTurnMonster(obj, roll, member value), ORing the results. When any monster turned it formats "%s
    uses the power to turn undead!" (ds:550E) with the best member's name, draws it, plays sound
    0x5F and runs 0EF3:06E7 and 08E6:0E48. gDeferMonsterHits is cleared at the end on the normal path. Called

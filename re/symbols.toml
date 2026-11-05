@@ -1494,7 +1494,7 @@ evidence = ["segment"]
 name = "EditTextField"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0425"
@@ -1505,7 +1505,7 @@ evidence = ["far", "frame"]
 name = "WaitTicks"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0458"
@@ -1516,7 +1516,7 @@ evidence = ["far", "frame"]
 name = "RollDice"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_04c4"
@@ -1527,7 +1527,7 @@ evidence = ["far", "frame"]
 name = "DrawRect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_051b"
@@ -1538,7 +1538,7 @@ evidence = ["far", "near", "frame"]
 name = "LoadScreenImage"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_05ec"
@@ -1549,7 +1549,7 @@ evidence = ["frame"]
 name = "LoadOverlayScreen"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0613"
@@ -1560,7 +1560,7 @@ evidence = ["far", "near", "frame"]
 name = "IsPointInsideRect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_063b"
@@ -1570,7 +1570,7 @@ size = 70
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 name = "DrawShapeClipped"
 
 [[function]]
@@ -1581,7 +1581,7 @@ size = 70
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 name = "DrawShapeClippedFlipped"
 
 [[function]]
@@ -1592,7 +1592,7 @@ size = 70
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 name = "DrawShapeClippedRemapped"
 
 [[function]]
@@ -1603,7 +1603,7 @@ size = 64
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 name = "DrawShapeClippedRemapFlipped"
 
 [[function]]
@@ -1615,7 +1615,7 @@ evidence = ["frame"]
 name = "DrawBevelBox"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_07a4"
@@ -1626,7 +1626,7 @@ evidence = ["far", "frame"]
 name = "SwapChars"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_07c5"
@@ -1637,7 +1637,7 @@ evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
 name = "SwapBlocks"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_081a"
@@ -1648,7 +1648,7 @@ evidence = ["near", "frame"]
 name = "ShowMemoryDiagnostics"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0898"
@@ -1659,7 +1659,7 @@ evidence = ["far", "frame"]
 name = "DrawShadowText"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_090a"
@@ -1670,7 +1670,7 @@ evidence = ["frame"]
 name = "DrawShadowInt"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0974"
@@ -1681,7 +1681,7 @@ evidence = ["far", "frame"]
 name = "NumberWidthLong"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_09a6"
@@ -1692,7 +1692,7 @@ evidence = ["far", "frame"]
 name = "NumberWidthInt"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_09d5"
@@ -1703,7 +1703,7 @@ evidence = ["far", "frame"]
 name = "DrawFilledPanel"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0a53"
@@ -1714,7 +1714,7 @@ evidence = ["frame"]
 name = "QuitGame"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0a5d"
@@ -1725,7 +1725,7 @@ evidence = ["far", "frame"]
 name = "ClickInRect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0a7d"
@@ -1736,7 +1736,7 @@ evidence = ["frame"]
 name = "ReadFileBytes"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0ab4"
@@ -1747,7 +1747,7 @@ evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
 name = "ClampOrWrap"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0ae8"
@@ -1758,7 +1758,7 @@ evidence = ["frame"]
 name = "FormatName"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0b0e"
@@ -1769,7 +1769,7 @@ evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
 name = "DrawTextAndMemoryReport"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0b43"
@@ -1780,7 +1780,7 @@ evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
 name = "DelaySecondsThenKey"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e082c_0b8f"
@@ -1791,7 +1791,7 @@ evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
 name = "SayAndPlaySound"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e08e6_000b"
@@ -2363,7 +2363,7 @@ evidence = ["near", "segment"]
 name = "MoveBlocked"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 
 [[function]]
 id = "e0acd_0028"
@@ -2374,7 +2374,7 @@ evidence = ["frame"]
 name = "GetActionResult"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 
 [[function]]
 id = "e0acd_0034"
@@ -2384,7 +2384,7 @@ size = 88
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "OpenInventory"
 
 [[function]]
@@ -2395,7 +2395,7 @@ size = 95
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "SelectPrevMember"
 
 [[function]]
@@ -2406,7 +2406,7 @@ size = 163
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "SelectNextMember"
 
 [[function]]
@@ -2417,7 +2417,7 @@ size = 50
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "ToggleCharacterInfo"
 
 [[function]]
@@ -2428,7 +2428,7 @@ size = 35
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "ClickInventorySlot"
 
 [[function]]
@@ -2439,7 +2439,7 @@ size = 129
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "RestorePortraitPanel"
 
 [[function]]
@@ -2450,7 +2450,7 @@ size = 303
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "PickOrSwapMember"
 
 [[function]]
@@ -2461,7 +2461,7 @@ size = 58
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "CancelMemberSwap"
 
 [[function]]
@@ -2473,7 +2473,7 @@ evidence = ["frame"]
 name = "StepActionRow"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 
 [[function]]
 id = "e0acd_0415"
@@ -2483,7 +2483,7 @@ size = 127
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "ClickHandSlot"
 
 [[function]]
@@ -2494,7 +2494,7 @@ size = 100
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "ThrowMouseItem"
 
 [[function]]
@@ -2505,7 +2505,7 @@ size = 49
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "MoveForward"
 
 [[function]]
@@ -2516,7 +2516,7 @@ size = 67
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "MoveBackward"
 
 [[function]]
@@ -2527,7 +2527,7 @@ size = 39
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "TurnLeft"
 
 [[function]]
@@ -2538,7 +2538,7 @@ size = 39
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "TurnRight"
 
 [[function]]
@@ -2549,7 +2549,7 @@ size = 69
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "MoveLeft"
 
 [[function]]
@@ -2560,7 +2560,7 @@ size = 69
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "MoveRight"
 
 [[function]]
@@ -2572,7 +2572,7 @@ evidence = ["frame"]
 notes = "unblocked 2026-11-01: the two copies are local ARRAY initialisers (char pageVolume[4] = {...}; char slotKind[4][4] = {...};), the F_SCOPY@ segment-first form the whitepaper records (2.1.1, eov6), and the rest then matched (271 bytes). It copies the per-page volume adjustment into pageVolume and the per-page per-slot kind into slotKind, then: slot < 2 uses gSoundVolume, otherwise gSoundVolume + pageVolume[gFBCC] gated by g194B[gB894[vol*9+gA9C6]] & 0xB; the current item (f0D1C_02DC) is queued with InsertListItem(head, vol, f0D1C_02DC(), kind) or the first matching entry removed with RemoveListItem(head, kind, -1) and shown with SetMouseItem. The 0x16 frame is the 20-byte arrays plus one int (removed); slot and vol are register variables and slot is reused to hold the kind so tc100 needs only SI and DI."
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "ClickFloorItem"
 
 [[function]]
@@ -2583,7 +2583,7 @@ size = 57
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "StepMapPhase"
 
 [[function]]
@@ -2594,7 +2594,7 @@ size = 84
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "SelectClickedMember"
 
 [[function]]
@@ -2606,7 +2606,7 @@ evidence = ["far", "near", "frame"]
 name = "EatFood"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 
 [[function]]
 id = "e0acd_08d1"
@@ -2616,7 +2616,7 @@ size = 22
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "FeedInventoryMember"
 
 [[function]]
@@ -2627,7 +2627,7 @@ size = 53
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "ActivateWallAhead"
 
 [[function]]
@@ -2639,7 +2639,7 @@ evidence = ["near", "frame"]
 notes = "matched 2026-11-01: the two character searches are `do { ... } while (!f0D1C_0670(gA99A, 1)); gF51A = v;` loops, not `for(;;) { ...; if (f0D1C_0670(gA99A, 1)) { gF51A = v; break; } }`. With the for(;;) form the compiler cross-jumps case 0's `gF51A = 0` into case 2's and case 2's `gF51A = 1` into case 0's (11 bytes shorter); with the do/while the two stores stay apart, as the original has them."
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "MoveHandCursor"
 
 [[function]]
@@ -2651,7 +2651,7 @@ evidence = ["near"]
 name = "SetActionRow"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 
 [[function]]
 id = "e0acd_0a34"
@@ -2662,7 +2662,7 @@ evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
 notes = "matched 2026-11-01: case 0 is `Turn091C(dir); goto done;` and case 1 falls through to `done: return;`, not `break`. With a plain switch/break the compiler cross-jumps the two calls' argument cleanup (`pop cx` after each), one byte shorter than the original."
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "MoveKeyCursor"
 
 [[function]]
@@ -2674,7 +2674,7 @@ evidence = ["near", "frame"]
 name = "MoveListItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 
 [[function]]
 id = "e0acd_0ba6"
@@ -2686,7 +2686,7 @@ notes = "unblocked 2026-11-01: the store at 0ACD:0C7F is `mov [gF3BA], ax` (3-by
 name = "PickListItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 
 [[function]]
 id = "e0acd_0d9d"
@@ -2696,7 +2696,7 @@ size = 207
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "HandleMapKey"
 
 [[function]]
@@ -2707,7 +2707,7 @@ size = 30
 evidence = ["near"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 name = "PollMapInput"
 
 [[function]]
@@ -2719,7 +2719,7 @@ evidence = ["far", "frame"]
 name = "RunMapLoop"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 
 [[function]]
 id = "e0acd_0f72"
@@ -2730,7 +2730,7 @@ evidence = ["far", "frame"]
 name = "EnterMapScreen"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 
 [[function]]
 id = "e0acd_1033"
@@ -2741,7 +2741,7 @@ evidence = ["far", "frame"]
 name = "ResetMapScreen"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-9"
 
 [[function]]
 id = "e0bd2_000e"
@@ -2998,7 +2998,7 @@ evidence = ["near", "segment"]
 name = "ListInit"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e0cf7_0028"
@@ -3009,7 +3009,7 @@ evidence = ["far", "frame"]
 name = "BuildList1"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e0cf7_00b4"
@@ -3020,7 +3020,7 @@ evidence = ["far", "frame"]
 name = "BuildList2"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e0cf7_0140"
@@ -3031,7 +3031,7 @@ evidence = ["far", "frame"]
 name = "BuildList3"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e0cf7_01cc"
@@ -3042,7 +3042,7 @@ evidence = ["far", "frame"]
 name = "BuildList4"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e0cf7_0211"
@@ -3053,7 +3053,7 @@ evidence = ["far", "frame"]
 name = "BuildList5"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e0d1c_0006"
@@ -5396,7 +5396,7 @@ evidence = ["near", "segment"]
 name = "FindMaskBit"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e14ef_0078"
@@ -5407,7 +5407,7 @@ evidence = ["near", "frame"]
 name = "BlinkText"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e14ef_00e1"
@@ -5418,7 +5418,7 @@ evidence = ["near", "frame"]
 name = "IsPointInRect"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e14ef_0107"
@@ -5429,7 +5429,7 @@ evidence = ["frame"]
 name = "CountMaskBits"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e14ef_0154"
@@ -5440,7 +5440,7 @@ evidence = ["frame"]
 name = "DrawOptionList"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e14ef_0274"
@@ -5452,7 +5452,7 @@ notes = "matched 2026-11-01 with `-B` (TCC -S, then TASM with SMART off): the fo
 name = "UpdateOptionList"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1547_0009"
@@ -5551,7 +5551,7 @@ evidence = ["near", "segment"]
 name = "LinkNode"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_001e"
@@ -5562,7 +5562,7 @@ evidence = ["far", "near", "frame"]
 name = "ListAdd"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_0073"
@@ -5573,7 +5573,7 @@ evidence = ["frame"]
 name = "ToggleNode"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_0154"
@@ -5584,7 +5584,7 @@ evidence = ["frame"]
 name = "DisableNode"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_017b"
@@ -5595,7 +5595,7 @@ evidence = ["frame"]
 name = "EnableNode"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_01a2"
@@ -5606,7 +5606,7 @@ evidence = ["frame"]
 name = "FindNode"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_01e6"
@@ -5617,7 +5617,7 @@ evidence = ["frame"]
 name = "ClearNode"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_02f5"
@@ -5628,7 +5628,7 @@ evidence = ["frame"]
 name = "SetNode"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_03d6"
@@ -5639,7 +5639,7 @@ evidence = ["frame"]
 name = "InsertNode"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_04a7"
@@ -5650,7 +5650,7 @@ evidence = ["frame"]
 name = "IsNodeEnabled"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_04bb"
@@ -5661,7 +5661,7 @@ evidence = ["frame"]
 name = "IsNodeOn"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1658_04ca"
@@ -5672,7 +5672,7 @@ evidence = ["frame"]
 name = "GetNodeState1"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e16a5_0009"
@@ -6243,7 +6243,7 @@ evidence = ["far", "segment"]
 name = "_PrintString"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e19ec_0002"
@@ -6286,7 +6286,7 @@ size = 137
 evidence = ["far", "segment"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 name = "CopyRegion"
 
 [[function]]
@@ -6298,7 +6298,7 @@ evidence = ["segment"]
 level = "L2"
 match_flags = "tasm /mx"
 notes = "the segment-start marker byte (data, not code); CompressLcw follows at 19FC:0008 (see e19fc_0008)"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 name = "PadBeforeCompressLcw"
 
 [[function]]
@@ -6311,7 +6311,7 @@ name = "CompressLcw"
 level = "L2"
 match_flags = "tasm /mx"
 notes = "split by hand from the map's single entry at 19FC:0007: the map's start is the marker byte (_f19FC_0007), the code begins at 19FC:0008 (the 55 8B EC frame), which functions.py did not see because the byte before it is not a ret; not produced by make map"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1a16_000b"
@@ -6322,7 +6322,7 @@ evidence = ["far", "near", "segment"]
 name = "WaitFrames"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1a16_0027"
@@ -6333,7 +6333,7 @@ evidence = ["far", "frame"]
 name = "WaitFrame"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1a19_0006"
@@ -6344,7 +6344,7 @@ evidence = ["far", "segment"]
 name = "_FindLastDrive"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1a19_003b"
@@ -6355,7 +6355,7 @@ evidence = ["far", "frame"]
 name = "_IsLastLogicalDrive"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1a1f_000c"
@@ -6366,7 +6366,7 @@ evidence = ["far", "segment"]
 name = "DrawBox"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1a29_000f"
@@ -6453,7 +6453,7 @@ size = 356
 evidence = ["far", "segment"]
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-2"
 name = "LoadFont"
 
 [[function]]
@@ -6464,7 +6464,7 @@ size = 37
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-2"
 name = "SetFont"
 
 [[function]]
@@ -6475,7 +6475,7 @@ size = 54
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-2"
 name = "TextWidth"
 
 [[function]]
@@ -6487,7 +6487,7 @@ evidence = ["segment"]
 name = "HardErrHandler"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1a63_0019"
@@ -6498,7 +6498,7 @@ evidence = ["far", "frame"]
 name = "InstallHardErr"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1a65_000e"
@@ -6509,7 +6509,7 @@ evidence = ["far", "segment"]
 name = "CalibrateRetrace"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1a72_0006"
@@ -6520,7 +6520,7 @@ evidence = ["segment"]
 name = "_Int3FHandler"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1a72_00da"
@@ -6531,7 +6531,7 @@ evidence = ["far"]
 name = "InitMouse"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1a72_0285"
@@ -6542,7 +6542,7 @@ evidence = ["far", "frame"]
 name = "RemoveMouseHandler"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1a72_02a6"
@@ -6553,7 +6553,7 @@ evidence = ["far", "frame"]
 name = "IsMouseInRect"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1a72_02fa"
@@ -6564,7 +6564,7 @@ evidence = ["far"]
 name = "_EnableInterrupts"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1a72_02fc"
@@ -6575,7 +6575,7 @@ evidence = ["far"]
 name = "_DisableInterrupts"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1a72_02fe"
@@ -6586,7 +6586,7 @@ evidence = ["frame"]
 name = "_SetFarPointer"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1a72_033a"
@@ -6597,7 +6597,7 @@ evidence = ["frame"]
 name = "_GetFarPointer"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aa6_000f"
@@ -6608,7 +6608,7 @@ evidence = ["far", "segment"]
 name = "PrintInt"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1aaa_0005"
@@ -6629,7 +6629,7 @@ size = 535
 evidence = ["segment"]
 level = "L2"
 notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aad_0223"
@@ -6640,7 +6640,7 @@ evidence = ["near"]
 name = "_TranslateKey"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aad_038e"
@@ -6651,7 +6651,7 @@ evidence = ["far"]
 name = "_ReadKey"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aad_0409"
@@ -6662,7 +6662,7 @@ evidence = ["far"]
 name = "_ReadKeySpecial"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aad_0471"
@@ -6673,7 +6673,7 @@ evidence = ["far"]
 name = "_IsKeyPending"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aad_0480"
@@ -6684,7 +6684,7 @@ evidence = ["far"]
 name = "_FlushKeyBuffer"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aad_048d"
@@ -6695,7 +6695,7 @@ evidence = ["near"]
 name = "_DequeueKeyEvent"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aad_053a"
@@ -6706,7 +6706,7 @@ evidence = ["far"]
 name = "_WaitGameKey"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aad_0588"
@@ -6717,7 +6717,7 @@ evidence = ["far"]
 name = "_WaitGameKey2"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aad_05d3"
@@ -6728,7 +6728,7 @@ evidence = ["far"]
 name = "_WaitKeyEvent"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aad_05f1"
@@ -6739,7 +6739,7 @@ evidence = ["far", "near", "frame"]
 name = "_GetKeyState"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aad_0718"
@@ -6750,7 +6750,7 @@ evidence = ["far"]
 name = "_InstallKeyboard"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aad_09f6"
@@ -6761,7 +6761,7 @@ evidence = ["far"]
 name = "_RemoveKeyboard"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aad_0a1f"
@@ -6772,7 +6772,7 @@ evidence = ["frame"]
 name = "_QueueInputEvent"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aad_0b0e"
@@ -6783,7 +6783,7 @@ evidence = ["far", "frame"]
 name = "_HandleMouseButtons"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aad_0b9c"
@@ -6794,7 +6794,7 @@ evidence = ["near"]
 name = "_QueueMouseEvent"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aad_0bf1"
@@ -6805,7 +6805,7 @@ evidence = ["near"]
 name = "_SetKeyDownBit"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aad_0c17"
@@ -6816,7 +6816,7 @@ evidence = ["near"]
 name = "_ProcessKeyEvent"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1aad_0d26"
@@ -6827,7 +6827,7 @@ evidence = ["near"]
 name = "_InjectRecordedKey"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1b82_0009"
@@ -6838,7 +6838,7 @@ evidence = ["far", "segment"]
 name = "LoadFile"
 level = "L2"
 match_flags = "-ml -O -Z -G -P"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1b82_0041"
@@ -6849,7 +6849,7 @@ evidence = ["far", "frame"]
 name = "LoadPacked"
 level = "L2"
 match_flags = "-ml -O -Z -G -P"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1b82_00c7"
@@ -6861,7 +6861,7 @@ notes = "2026-11-01: the format byte is sign-extended to long and the switch run
 name = "Unpack"
 level = "L2"
 match_flags = "-ml -O -Z -G -P"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1b82_0217"
@@ -6872,7 +6872,7 @@ evidence = ["far"]
 name = "SetUnpackBuffer"
 level = "L2"
 match_flags = "-ml -O -Z -G -P"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1ba4_000c"
@@ -6882,7 +6882,7 @@ size = 57
 evidence = ["far", "segment"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-2"
 name = "PrintLong"
 
 [[function]]
@@ -6937,7 +6937,7 @@ size = 1
 evidence = ["segment"]
 level = "L2"
 notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1bb1_0002"
@@ -6948,7 +6948,7 @@ evidence = ["far"]
 name = "SetMousePointerShape"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1bbe_0001"
@@ -6958,7 +6958,7 @@ size = 1
 evidence = ["segment"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 name = "PadBeforeHidePointer"
 
 [[function]]
@@ -6970,7 +6970,7 @@ evidence = ["far", "near"]
 name = "_HidePointer"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1bbe_00ed"
@@ -6981,7 +6981,7 @@ evidence = ["far", "near", "frame"]
 name = "_ShowPointer"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1bbe_01fe"
@@ -6992,7 +6992,7 @@ evidence = ["far", "frame"]
 name = "_HidePointerZone"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1bbe_02c2"
@@ -7003,7 +7003,7 @@ evidence = ["far", "frame"]
 name = "_ShowPointerZone"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1bbe_0307"
@@ -7014,7 +7014,7 @@ evidence = ["far", "frame"]
 name = "LockHidePointer"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1bbe_0332"
@@ -7025,7 +7025,7 @@ evidence = ["far", "frame"]
 name = "LockShowPointer"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-3"
 
 [[function]]
 id = "e1bf3_000d"
@@ -7035,7 +7035,7 @@ size = 1
 evidence = ["segment"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-3"
 notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
 name = "PadBeforePlacePointer"
 
@@ -7047,7 +7047,7 @@ size = 121
 evidence = ["near"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-3"
 name = "PlacePointer"
 
 [[function]]
@@ -7058,7 +7058,7 @@ size = 33
 evidence = ["frame"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-3"
 name = "MovePointerTo"
 
 [[function]]
@@ -7069,7 +7069,7 @@ size = 41
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-3"
 name = "MovePointerBy"
 
 [[function]]
@@ -7080,7 +7080,7 @@ size = 1
 evidence = ["segment"]
 level = "L2"
 notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c00_0002"
@@ -7091,7 +7091,7 @@ evidence = ["near"]
 name = "_LoadOverlayImage"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c00_0055"
@@ -7102,7 +7102,7 @@ evidence = ["far", "frame"]
 name = "_RunOverlayRequest"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_000c"
@@ -7113,7 +7113,7 @@ evidence = ["segment"]
 name = "SetFileSize"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_0046"
@@ -7124,7 +7124,7 @@ evidence = ["near", "frame"]
 name = "RetryFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_00aa"
@@ -7135,7 +7135,7 @@ evidence = ["near", "frame"]
 name = "FatalError"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_00db"
@@ -7146,7 +7146,7 @@ evidence = ["far", "frame"]
 name = "FileOpen"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_03bb"
@@ -7157,7 +7157,7 @@ evidence = ["far", "frame"]
 name = "FileClose"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_0400"
@@ -7168,7 +7168,7 @@ evidence = ["far", "frame"]
 name = "FileRead"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_0578"
@@ -7179,7 +7179,7 @@ evidence = ["far", "frame"]
 name = "FileWrite"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_06e5"
@@ -7190,7 +7190,7 @@ evidence = ["frame"]
 name = "SeekFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_091b"
@@ -7201,7 +7201,7 @@ evidence = ["far", "frame"]
 name = "CheckFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_0a35"
@@ -7212,7 +7212,7 @@ evidence = ["far", "near", "frame"]
 name = "DeleteFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_0a9d"
@@ -7223,7 +7223,7 @@ evidence = ["far", "frame"]
 name = "ResetFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_0add"
@@ -7234,7 +7234,7 @@ evidence = ["near", "frame"]
 name = "DisplayFileError"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_0d9b"
@@ -7244,7 +7244,7 @@ size = 40
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 name = "ShowFileError"
 
 [[function]]
@@ -7256,7 +7256,7 @@ evidence = ["near", "frame"]
 name = "FindEvictableFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_0e5b"
@@ -7267,7 +7267,7 @@ evidence = ["far", "near", "frame"]
 name = "EvictFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_0ee7"
@@ -7278,7 +7278,7 @@ evidence = ["near", "frame"]
 name = "FreeAllCachedFiles"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_0f6e"
@@ -7289,7 +7289,7 @@ evidence = ["near", "frame"]
 name = "BuildFileCache"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_1161"
@@ -7300,7 +7300,7 @@ evidence = ["far", "frame"]
 name = "IsFileInMemory"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_11d3"
@@ -7311,7 +7311,7 @@ evidence = ["far", "frame"]
 name = "FindLoadedFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_1240"
@@ -7322,7 +7322,7 @@ evidence = ["far", "frame"]
 name = "ReadFromMemory"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_1310"
@@ -7333,7 +7333,7 @@ evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -G"
 name = "LocateOverlayFile"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_13bb"
@@ -7344,7 +7344,7 @@ evidence = ["far", "frame"]
 name = "ExpandTextWindow"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_13e7"
@@ -7355,7 +7355,7 @@ evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -G"
 name = "InitOverlayCache"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_13fd"
@@ -7366,7 +7366,7 @@ evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -G"
 name = "ShutdownOverlayCache"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_1411"
@@ -7377,7 +7377,7 @@ evidence = ["far", "frame"]
 name = "DropFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_144e"
@@ -7388,7 +7388,7 @@ evidence = ["far", "frame"]
 name = "LoadFileSlot"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_1645"
@@ -7399,7 +7399,7 @@ evidence = ["far", "frame"]
 name = "FindFile"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_168e"
@@ -7410,7 +7410,7 @@ evidence = ["far", "frame"]
 name = "ResolveFileLink"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_171a"
@@ -7421,7 +7421,7 @@ evidence = ["frame"]
 name = "ClearSearchAllDrives"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_1724"
@@ -7432,7 +7432,7 @@ evidence = ["frame"]
 name = "SetSearchAllDrives"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1c0e_172e"
@@ -7443,7 +7443,7 @@ evidence = ["far", "frame"]
 name = "LookupFileEntry"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-1"
 
 [[function]]
 id = "e1d8c_0000"
@@ -7464,7 +7464,7 @@ size = 14
 evidence = ["segment"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-3"
 name = "ReadTickCount"
 
 [[function]]
@@ -7475,7 +7475,7 @@ size = 40
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-3"
 name = "InstallTickHandler"
 
 [[function]]
@@ -7486,7 +7486,7 @@ size = 131
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-3"
 name = "RemoveTickHandler"
 
 [[function]]
@@ -7498,7 +7498,7 @@ evidence = ["segment"]
 name = "_UnpackScratch"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1d9a_0013"
@@ -7509,7 +7509,7 @@ evidence = ["far"]
 name = "_Unpack4"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1d9a_0113"
@@ -7520,7 +7520,7 @@ evidence = ["far"]
 name = "_Unpack3"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1d9a_0162"
@@ -7531,7 +7531,7 @@ evidence = ["near"]
 name = "_NormDest"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1d9a_018b"
@@ -7542,7 +7542,7 @@ evidence = ["far"]
 name = "_Unpack1"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1d9a_0299"
@@ -7553,7 +7553,7 @@ evidence = ["near"]
 name = "_ReadCode1"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1d9a_02cb"
@@ -7564,7 +7564,7 @@ evidence = ["far"]
 name = "_Unpack2"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1d9a_03cc"
@@ -7575,7 +7575,7 @@ evidence = ["near"]
 name = "_ReadCode2"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 
 [[function]]
 id = "e1ddd_0006"
@@ -7585,7 +7585,7 @@ size = 39
 evidence = ["segment"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 name = "GetVideoMode"
 
 [[function]]
@@ -7596,7 +7596,7 @@ size = 67
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-2"
 name = "SetVideoMode"
 
 [[function]]
@@ -7607,7 +7607,7 @@ size = 13
 evidence = ["far", "segment"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-2"
 name = "IsInVerticalRetrace"
 
 [[function]]
@@ -7618,7 +7618,7 @@ size = 44
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-sonnet"
+review = "passed 2026-11-04 p6-rev-2"
 name = "WaitRetrace"
 
 [[function]]
@@ -9507,7 +9507,7 @@ name = "CampLoop"
 notes = "matched 2026-11-01: whole function, 2018 bytes. Names: f0858 prints Hours rested, f09D2 tests monsters near, f0A92 tests ready to rest, f0B9B draws the warning box, f07E2 finds the most wounded member. The +0008 copy is a local ARRAY initialiser (unsigned char counters[6]), whose type the counters compare shows (mov dl/mov dh,0 zero extends). The five sibling calls are forward same-file calls: TCC emits a far call (9A), the overlay build rewrites it to nop; push cs; call near of the same length."
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-11"
 
 [[function]]
 id = "eov6_07e2"
@@ -9517,7 +9517,7 @@ size = 118
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-11"
 name = "FindMostWoundedMember"
 
 [[function]]
@@ -9528,7 +9528,7 @@ size = 378
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-11"
 name = "ShowHoursRested"
 
 [[function]]
@@ -9539,7 +9539,7 @@ size = 192
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-11"
 name = "AreMonstersNear"
 
 [[function]]
@@ -9550,7 +9550,7 @@ size = 265
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-11"
 name = "HasSpellsToRegain"
 
 [[function]]
@@ -9561,7 +9561,7 @@ size = 287
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-11"
 name = "ShowCampMessage"
 
 [[function]]
@@ -10267,7 +10267,7 @@ size = 20
 level = "L2"
 match_flags = "twin e19ec"
 evidence = ["far", "segment"]
-name = "GetPagePtr"
+name = "GetPageBuffer"
 
 [[function]]
 id = "i097f_0016"
