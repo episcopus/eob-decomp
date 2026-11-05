@@ -19,7 +19,7 @@ sound and state.
 | Decisions | the nine answered by the human 2026-11-04, the five follow-ups (A to E) 2026-11-05 (section "Decisions"). Linux and Windows deferred by the human 2026-11-05: macOS only for now. Left for the human: install the newest LLVM (section "What the human installs") |
 | M1 tc2c for every C unit | done 2026-11-05 except the LLVM pin, which waits for the human's install: `make port` translates all 41 C units of `EOB.EXE` (609 functions) with none refused, compiles them with `-Werror` and links them; what is still a stub is 63 assembly routines (M3) and 23 library functions that need the machine (section "M1") |
 | M2 the per-function test | the machinery done 2026-11-05: `make port-hybrid` (section "M2"); on the five `EOB.EXE` goldens 129 of the 594 functions with an entry are reached, 118 are the same as the original on every call tested (635 calls), none differ, 11 are reached only where they wait for an interrupt (M3). The rest of the check, every function of `src/`, needs sessions that reach them |
-| M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), and the interrupt handlers' units `E1D8F`, `E1AAD`, `E1948`, `E_TEXT` with the retrace `E1DE4` (35 routines in all), each the same as the original on every call tested; the C-unit clock in the oracle and the five `.clock.json` recordings ("The interrupts and the C clock"); the machine boots to the oracle's memory byte for byte, and its DOS, INT 10h for MCGA, BIOS time, INT 33h driver and ports (PIC, PIT, 61h, 60h, retrace, DAC, AdLib) answer every one of the 335,055 service calls and port accesses of the five goldens as the oracle does. the machine's wait delivers the recorded interrupts to spinning routines (`port/runtime/irq.c`); 14 library functions on the machine (`port/runtime/tcdos.c`: the files, `int86`, `time`, `rand`), each the same as the original's on every call tested. Next: the far heap, the other 10 units |
+| M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), and the interrupt handlers' units `E1D8F`, `E1AAD`, `E1948`, `E_TEXT` with the retrace `E1DE4` (35 routines in all), each the same as the original on every call tested; the C-unit clock in the oracle and the five `.clock.json` recordings ("The interrupts and the C clock"); the machine boots to the oracle's memory byte for byte, and its DOS, INT 10h for MCGA, BIOS time, INT 33h driver and ports (PIC, PIT, 61h, 60h, retrace, DAC, AdLib) answer every one of the 335,055 service calls and port accesses of the five goldens as the oracle does. the machine's wait delivers the recorded interrupts to spinning routines (`port/runtime/irq.c`); 19 library functions on the machine (`port/runtime/tcdos.c`: the files, `int86`, `time`, `rand`; `tcheap.c`: the far heap), each the same as the original's on every call tested. Next: the other 10 units |
 | M4 to M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
@@ -598,8 +598,43 @@ make port-hybrid && .venv/bin/python tests/port_asm/library.py
 - Found on the way: the bench entered interrupt code the C reaches without setting the CPU's flags
   as the INT leaves them (only the pushed copy), so a handler that returns with `RETF 2` or reads its
   flags saw stale ones (`Bench.oracle_int`). Unicorn takes `INT 6` for its invalid-opcode exception.
-- Still stubs: `chsize`, `exit`, `hardretn`, `heapcheck` (the goldens never call them) and the far
-  heap (next).
+- **The far heap** (`port/runtime/tcheap.c`): `farmalloc`, `farfree`, `realloc` (the large model's,
+  `farrealloc` with the size as a long), `farcoreleft`, `farheapwalk`, found the same way, on a bench
+  that has run the start-up to `main` (the heap the game starts with). What the original does:
+  - its words: `_psp` DG:0079, the heap's base DG:0083, the break level DG:0087 and the heap's top
+    DG:008B (far pointers, A000:0000 for the top), the program's DOS memory in 1 KB units DG:85C6;
+    and in the library's code segment at 0000:70B0 the first block, the last, the rover, DS (written
+    by every call) and `realloc`'s size as a long;
+  - a block takes (size + 4 + 15) / 16 paragraphs (none for 0 or more than FFFFh), its header at
+    seg:0000: the size, then the previous block's segment (the first block's own) in use or 0 free; a
+    free block keeps the previous block at +8 and its two ring links at +4 and +6; the pointer is
+    seg:0004;
+  - the free ring: a freed block goes in just after the rover on the +6 side; an allocation looks at
+    the rover, then along +6, and takes the first block big enough, from its high end (the rest stays
+    free in place) or whole when it fits exactly (+8 back to +2); a block taken out moves the rover to
+    its +4 neighbour; with none, the block comes from the break level, refused past the heap's top;
+  - a freed block is marked free first (+8, then 0 at +2) even when it then joins the free block
+    before it; it joins a free block after it too, and the link to the block before is written where
+    the block keeps it (+8 when free); the last block goes back to the break level, with a free
+    block before it;
+  - the break level sets DOS's memory block (4Ah, ES the PSP) to (break - PSP) / 40h + 1 KB, no
+    further than the heap's top, whenever that count changes;
+  - `realloc`: NULL allocates; fewer paragraphs split the block and free the tail (the last block's
+    break level just comes down); more allocate a new block, copy the old data (paragraphs * 16 - 4
+    bytes) and free the old one, never growing in place; a size of 0 frees and returns what the free
+    left in DX:AX, which the game never asks for (the port returns NULL);
+  - `farcoreleft` is (top - break) * 16 - 16; `farheapwalk` gives the block after the one given (the
+    first for NULL) with its size in bytes and whether it is in use, 2, then 5 at the end.
+- **Proven** by `tests/port_asm/heap.py` (slow set): 1,500 random steps of allocations from 0 bytes to
+  past the top, frees in random order and `realloc` shrinking, keeping and growing, with
+  `farcoreleft` and whole walks: 2,241 calls, all the same; three more seeds of 3,000 steps, about
+  20,000 calls, all the same. Three wrong drafts were each caught: a freed block not marked before
+  joining the one before it, a header written for the last block's freed tail, the link to the
+  block before written at +2 of a free block.
+  On the five goldens the heap's entries are reached 774 times at 400 samples, all the same; with the
+  whole library in C under them, the goldens reach 168 functions, 157 the same on every call, none
+  different, the same 11 waiting for interrupts.
+- Still stubs: `chsize`, `exit`, `hardretn`, `heapcheck`; the goldens never call them.
 
 ## M2: the per-function test (2026-11-05)
 
