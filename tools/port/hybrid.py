@@ -315,6 +315,9 @@ class Bench:
             m.ww(ss, sp + 4, (r.flags & 0x0CD5) | 0x0202)
             for k in REG_NAMES:
                 m.set(k, getattr(r, k))
+            # the CPU's flags as the INT leaves them: those pushed, IF and TF cleared (a handler that returns
+            # with RETF 2, or reads its flags, sees them)
+            m.uc.reg_write(UC_X86_REG_EFLAGS, ((r.flags & 0x0CD5) | 0x0002) & ~0x0300)
             m.set("ss", ss)
             m.set("sp", sp)
             m.set("cs", seg)

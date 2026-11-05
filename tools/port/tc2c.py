@@ -52,6 +52,11 @@ SYSINC = ROOT / "port" / "include" / "tc" / "sys"  # the library headers, in pla
 TCLIB_H = ROOT / "port" / "include" / "tclib.h"   # what the port's runtime provides
 LITERALS = ROOT / "port" / "literals.json"        # where each literal is (tools/port/literals.py)
 ASM_C = ROOT / "port" / "asm"                     # the assembly routines, hand-written in C (M3)
+# the library functions the runtime writes on the machine (M3): each definition marked with the library
+# routine's address in EOB.EXE, `/*@ 0000:XXXX library */`, so the per-function test calls it beside the
+# original's
+LIB_C = [ROOT / "port" / "runtime" / "tcdos.c", ROOT / "port" / "runtime" / "tcheap.c"]
+LIBRARY_MARK = re.compile(r"/\*@ ([0-9A-F]{4}):([0-9A-F]{4}) library \*/\s*(\w+)\s+(tcl_\w+)\s*\(([^)]*)\)")
 # `/*@ SSSS:OOOO */` before a routine; `/*@ SSSS:OOOO interrupt */` before an interrupt handler (entered
 # through a vector, `void f(void)`, which keeps every register and returns with IRET). A `static` routine
 # so marked is the unit's own helper (its address documents it); it is not registered.
@@ -322,7 +327,8 @@ def place_literals(lits: list[bytes], dgroup: bytes) -> list[int]:
 # ---- the program: what every unit needs to know ------------------------------------------------
 
 class Program:
-    def __init__(self, image: Path | None, layout: Path | None, asm_c: list[Path] | None = None):
+    def __init__(self, image: Path | None, layout: Path | None, asm_c: list[Path] | None = None,
+                 lib_c: list[Path] | None = None):
         self.dgroup = b""
         if image is not None:
             f = image.read_bytes()
@@ -370,6 +376,23 @@ class Program:
                 own = (m.group(6), params, m.group(4))
                 self.handwritten[m.group(7)] = (int(m.group(1), 16), int(m.group(2), 16), f.name, bool(m.group(3)),
                                                 own)
+        # the library functions the runtime has on the machine, at the library's addresses: tcl_name ->
+        # (segment, offset, file, (return type, parameter types))
+        self.libentries: dict[str, tuple] = {}
+        for f in (lib_c if lib_c is not None else LIB_C):
+            if not f.exists():
+                continue
+            for m in LIBRARY_MARK.finditer(f.read_text()):
+                params = []
+                for x in m.group(5).split(","):
+                    x = x.strip()
+                    if x in ("", "void"):
+                        continue
+                    params.append("va" if x.startswith("const u8 *") else x.split()[0])
+                if "va" in params:
+                    params = params[:params.index("va")] + ["va"]       # its size parameter follows
+                self.libentries[m.group(4)] = (int(m.group(1), 16), int(m.group(2), 16), f.name,
+                                               (m.group(3), params))
 
     def canonical(self, name: str):
         """The one prototype of a function: its definition's; else, among its declarations, a
@@ -1365,6 +1388,36 @@ def hybrid_table(units, prog, handwritten) -> str:
         out += ["}", ""]
         rows.append('    {0x%04X, 0x%04X, %d, 0x%04X, "%s", "%s", th_%s, %d, %d, %d},'
                     % (seg, off, ovl, code_off, name, where, name, rb, o, isr))
+    # the library functions the runtime has on the machine (port/runtime), at the library's addresses
+    for name, (seg, off, where, (ret, params)) in sorted(prog.libentries.items()):
+        args, o = [], 0
+        for x in params:
+            if x == "va":
+                # a variadic function's arguments: as many bytes as a caller could push, read from the
+                # stack where they would lie (open's mode)
+                args += ["va_", "(u16)sizeof va_"]
+                continue
+            w = 4 if OWN_SIZE[x] > 2 else 2
+            args.append("(%s)tc_ld_u%d(tc_fp_add(a_, %d))" % (x, 8 * w, o))
+            o += w
+        out.append("static u32 th_%s(void)" % name)
+        out.append("{")
+        out.append("    farptr a_ = TC_MKFP(tc_ss, (u16)(tc_sp + 4u));")
+        if "va" in params:
+            out += ["    u8 va_[8];", "    unsigned i_;", "    for (i_ = 0; i_ < sizeof va_; i_++) {",
+                    "        va_[i_] = tc_ld_u8(tc_fp_add(a_, (u16)(%d + i_)));" % o, "    }"]
+        if not args:
+            out.append("    (void)a_;")
+        call = "%s(%s)" % (name, ", ".join(args))
+        if ret == "void":
+            out += ["    %s;" % call, "    return 0;"]
+            rb = 0
+        else:
+            rb = OWN_SIZE[ret]
+            out.append("    return (u32)(u%d)%s;" % (8 * rb, call))
+        out += ["}", ""]
+        rows.append('    {0x%04X, 0x%04X, -1, 0x0000, "%s", "port/runtime/%s", th_%s, %d, %d, 0},'
+                    % (seg, off, name, where, name, rb, o))
     out.append("const tc_hybrid_entry tc_hybrid_entries[] = {")
     out += rows
     out += ["};", "const unsigned tc_hybrid_entry_count = %d;" % len(rows), ""]
@@ -1380,10 +1433,13 @@ def main(argv=None) -> int:
                     help="TLINK's segment table and the overlay stubs (make overlays)")
     ap.add_argument("--asm", type=Path, nargs="*", default=None,
                     help="the files of port/asm to register (default: every one; the build passes its list)")
+    ap.add_argument("--lib", type=Path, nargs="*", default=None,
+                    help="the runtime's files with library functions on the machine (default: LIB_C)")
     ap.add_argument("units", nargs="+", type=Path)
     a = ap.parse_args(argv)
     a.out.mkdir(parents=True, exist_ok=True)
-    prog = Program(a.image if a.image.exists() else None, a.layout if a.layout.exists() else None, a.asm)
+    prog = Program(a.image if a.image.exists() else None, a.layout if a.layout.exists() else None, a.asm,
+                   a.lib)
     done = []
     try:
         units = []

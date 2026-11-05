@@ -19,7 +19,7 @@ sound and state.
 | Decisions | the nine answered by the human 2026-11-04, the five follow-ups (A to E) 2026-11-05 (section "Decisions"). Linux and Windows deferred by the human 2026-11-05: macOS only for now. Left for the human: install the newest LLVM (section "What the human installs") |
 | M1 tc2c for every C unit | done 2026-11-05 except the LLVM pin, which waits for the human's install: `make port` translates all 41 C units of `EOB.EXE` (609 functions) with none refused, compiles them with `-Werror` and links them; what is still a stub is 63 assembly routines (M3) and 23 library functions that need the machine (section "M1") |
 | M2 the per-function test | the machinery done 2026-11-05: `make port-hybrid` (section "M2"); on the five `EOB.EXE` goldens 129 of the 594 functions with an entry are reached, 118 are the same as the original on every call tested (635 calls), none differ, 11 are reached only where they wait for an interrupt (M3). The rest of the check, every function of `src/`, needs sessions that reach them |
-| M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), and the interrupt handlers' units `E1D8F`, `E1AAD`, `E1948`, `E_TEXT` with the retrace `E1DE4` (35 routines in all), each the same as the original on every call tested; the C-unit clock in the oracle and the five `.clock.json` recordings ("The interrupts and the C clock"); the machine boots to the oracle's memory byte for byte, and its DOS, INT 10h for MCGA, BIOS time, INT 33h driver and ports (PIC, PIT, 61h, 60h, retrace, DAC, AdLib) answer every one of the 335,055 service calls and port accesses of the five goldens as the oracle does. the machine's wait delivers the recorded interrupts to spinning routines (`port/runtime/irq.c`). Next: the library functions on the machine, the other 10 units |
+| M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), and the interrupt handlers' units `E1D8F`, `E1AAD`, `E1948`, `E_TEXT` with the retrace `E1DE4` (35 routines in all), each the same as the original on every call tested; the C-unit clock in the oracle and the five `.clock.json` recordings ("The interrupts and the C clock"); the machine boots to the oracle's memory byte for byte, and its DOS, INT 10h for MCGA, BIOS time, INT 33h driver and ports (PIC, PIT, 61h, 60h, retrace, DAC, AdLib) answer every one of the 335,055 service calls and port accesses of the five goldens as the oracle does. the machine's wait delivers the recorded interrupts to spinning routines (`port/runtime/irq.c`); 14 library functions on the machine (`port/runtime/tcdos.c`: the files, `int86`, `time`, `rand`), each the same as the original's on every call tested. Next: the far heap, the other 10 units |
 | M4 to M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
@@ -545,6 +545,61 @@ make golden CLOCK=1 [CHECK=1] [NAME=x]          # the C-clock recordings beside 
 - The proof: `tests/unit/test_port.py` (slow set), `test_the_c_unit_clock` (the two counts over 5
   million instructions; every recording reproduced) and the assembly fuzz test, which now calls the
   handler and the retrace routines.
+
+### The library on the machine (2026-11-05)
+
+```
+make port-hybrid && .venv/bin/python tests/port_asm/library.py
+```
+
+- `port/runtime/tcdos.c` has the Borland library functions that need the machine or keep the library's
+  own data: `rand`, `srand`, `getdisk`, `setdisk`, `time` (with `tzset` and `dostounix`), `int86`,
+  `harderr`, and the files: `open`, `close`, `read`, `write`, `lseek`, `filelength`, `remove`. Each
+  definition is marked with the library routine's address, `/*@ 0000:XXXX library */`; tc2c reads the
+  marks (`--lib`, `LIBRARY_MARK`) and gives each an entry in the per-function test's table, named
+  `tcl_<name>`, so `hybrid.Direct` calls the original routine and the C side by side and the goldens'
+  test stops at the library's own entries. In the hybrid build the translated callers now call the C
+  library, so every caller tested in a golden tests it too.
+- **How the behaviour is known.** The library is library (AGENTS.md): nothing is translated from its
+  code. Each function is written from its documented behaviour, then the original is called on the
+  bench with chosen arguments and its DOS calls, the bytes it writes and its results are recorded
+  (scratch observers on `hybrid.Direct` and on the goldens' calls), and the C is made to do the same.
+  What was found that way:
+  - the library's data: `errno` DG:007D, `_doserrno` DG:879A, the file table `_openfd` DG:8758 (20
+    flag words, FFFFh when closed) and `_fmode` DG:8780 just after it, `rand`'s 32-bit state DG:8784,
+    `timezone` DG:8818 and `daylight` DG:881C, `tzname`'s two 4-byte buffers DG:FFDC, the handler
+    `harderr` installs DG:FFD6 (INT 24h then goes to the library's own handler at 0000:6014);
+  - the error exit (`ioerror`): a DOS code 0 to 58h sets `_doserrno` to it and `errno` from an
+    89-entry table (derived by `int86` on a handler that returns each code with the carry set); 59h
+    and up count as 57h; minus an `errno` of 35 or less sets it, `_doserrno` FFFFh; below that, 57h;
+  - `int86` executes its INT with the flags of the library's byte compare of the interrupt number
+    against 25h (below it) or 26h (above it), its test for `absread` and `abswrite`, and the caller's
+    IF; with the carry back it takes the error exit with AX;
+  - `open`: 3Dh with AL from the access bits, then IOCTL 0 (the device bit, 2000h); with `O_CREAT`,
+    4300h first: an existing file is opened (error 50h with `O_EXCL`), a missing one created with 3Ch,
+    read-only unless the mode has `S_IWRITE`, with `errno` left at 2 by the failed 4300h; the flag word
+    is the access less `O_CREAT`, `O_TRUNC` and `O_EXCL`, with 1000h when either of the first two was
+    given; `O_TRUNC` writes nothing at the start; no text or binary bit takes `_fmode`'s;
+  - the flag word's 0200h is the end of the file: `read` returns 0 without DOS while it is set, and
+    `lseek` clears it, even when it fails; a write sets 1000h; `O_APPEND` seeks to the end first; only
+    `close` checks a handle against the 20 (error 6, no DOS call), and it marks the handle closed even
+    when DOS refuses;
+  - `filelength` reads the position, the end, and seeks back.
+- Text-mode reads and writes, `int86` with INT 25h or 26h, and a `TZ` in the environment stop with
+  the port's words: the game's handles are all binary, and its environment has no `TZ`.
+- **Proven** by `tests/port_asm/library.py` (slow set, 891 calls, all the same): `rand` 300 times with
+  reseeds; the disk; `time` at two times of day; `int86` for every interrupt number, to handlers that
+  return the carry clear or set, through the whole error table and its limits, and through the
+  machine's INT 10h and 21h; the files in every access mode, on files that are there and not, every
+  whence, the end-of-file bit, the append path, handles past the table. On the five goldens the
+  library entries are reached 2,719 times at 200 samples (13 of the 14 functions; `setdisk` is not),
+  all the same; with the C library under them, the goldens reach 163 functions, 152 the same on every
+  call, none different, the 11 that wait for interrupts as before.
+- Found on the way: the bench entered interrupt code the C reaches without setting the CPU's flags
+  as the INT leaves them (only the pushed copy), so a handler that returns with `RETF 2` or reads its
+  flags saw stale ones (`Bench.oracle_int`). Unicorn takes `INT 6` for its invalid-opcode exception.
+- Still stubs: `chsize`, `exit`, `hardretn`, `heapcheck` (the goldens never call them) and the far
+  heap (next).
 
 ## M2: the per-function test (2026-11-05)
 

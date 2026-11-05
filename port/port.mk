@@ -33,18 +33,20 @@ HEADERS := $(wildcard port/include/*.h port/include/tc/*.h port/asm/*.h)
 # the assembly units written in C (M3); tc2c reads their `/*@ */` addresses. OUT and ASM_C can be
 # given on the command line, to build a unit being written apart from the others
 ASM_C := $(wildcard port/asm/*.c)
+# the library functions on the machine (M3); tc2c reads their `/*@ 0000:XXXX library */` addresses
+LIB_C := $(wildcard port/runtime/tcdos.c port/runtime/tcheap.c)
 TC2C_IN := port/units.txt tools/port/tc2c.py port/include/tc/prelude.h $(wildcard port/include/tc/sys/*.h) \
 	port/include/tclib.h port/literals.json build/re/eob.json eob/EOB.EXE $(wildcard src/*.H src/*.ASM) \
-	$(ASM_C)
+	$(ASM_C) $(LIB_C)
 
 GEN_C := $(addprefix $(GEN)/,$(UNITS:.C=.c)) $(GEN)/units.c $(GEN)/unported.c
 # the machine (M3): the vector table, DOS and the BIOS
 MACHINE_C := port/runtime/machine.c port/runtime/dos.c port/runtime/bios.c port/runtime/video.c port/runtime/ports.c port/runtime/mouse.c \
 	port/runtime/irq.c
 HYB := $(OUT)/hybrid
-HYB_C := $(GEN_C) $(GEN)/hybrid.c port/runtime/arena.c port/runtime/tclib.c port/runtime/hybrid.c $(MACHINE_C) $(ASM_C)
+HYB_C := $(GEN_C) $(GEN)/hybrid.c port/runtime/arena.c port/runtime/tclib.c $(LIB_C) port/runtime/hybrid.c $(MACHINE_C) $(ASM_C)
 HYB_O := $(patsubst %.c,$(HYB)/obj/%.o,$(HYB_C))
-CORE_C := port/runtime/arena.c port/runtime/tclib.c port/main.c $(MACHINE_C) $(ASM_C)
+CORE_C := port/runtime/arena.c port/runtime/tclib.c $(LIB_C) port/main.c $(MACHINE_C) $(ASM_C)
 CORE_O := $(patsubst $(GEN)/%.c,$(OBJ)/gen/%.o,$(GEN_C)) $(patsubst %.c,$(OBJ)/%.o,$(CORE_C))
 
 .PHONY: port port-check port-boundary port-sdl port-hybrid FORCE
@@ -65,7 +67,7 @@ FORCE:
 
 # one translation writes every generated file (a stamp: make 3.81 has no grouped targets)
 $(GEN)/.stamp: $(TC2C_IN) $(addprefix src/,$(UNITS)) $(GEN)/asm.list
-	$(PY) tools/port/tc2c.py --out $(GEN) --image eob/EOB.EXE --layout build/re/eob.json --asm $(ASM_C) -- \
+	$(PY) tools/port/tc2c.py --out $(GEN) --image eob/EOB.EXE --layout build/re/eob.json --asm $(ASM_C) --lib $(LIB_C) -- \
 		$(addprefix src/,$(UNITS))
 	@touch $@
 
