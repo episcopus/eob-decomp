@@ -11813,7 +11813,7 @@ evidence = ["ovl", "segment"]
 name = "RunIntro"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_003a"
@@ -11824,7 +11824,7 @@ evidence = ["ovl", "near", "frame"]
 name = "PlayIntroSequence"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_015d"
@@ -11835,7 +11835,7 @@ evidence = ["ovl", "near", "frame"]
 name = "PlayWtrdpScene"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_06e2"
@@ -11846,7 +11846,7 @@ evidence = ["ovl", "near", "frame"]
 name = "PlayOrbScene"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_09ad"
@@ -11857,7 +11857,7 @@ evidence = ["ovl", "near", "frame"]
 name = "BlitImage"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_0b20"
@@ -11868,7 +11868,7 @@ evidence = ["ovl", "near", "frame"]
 name = "PlayTowerMageScene"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_0faa"
@@ -11879,7 +11879,7 @@ evidence = ["ovl", "near", "frame"]
 name = "ClearBottomBar"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_0fd9"
@@ -11890,7 +11890,7 @@ evidence = ["ovl", "near", "frame"]
 name = "WaitFrameDelay"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_1025"
@@ -11901,7 +11901,7 @@ evidence = ["ovl", "near", "frame"]
 name = "DelayFrames"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_1041"
@@ -11912,7 +11912,7 @@ evidence = ["ovl", "near", "frame"]
 name = "GrowFrame"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_1248"
@@ -11923,7 +11923,7 @@ evidence = ["ovl", "near", "frame"]
 name = "SignOf"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_1265"
@@ -11934,7 +11934,7 @@ evidence = ["ovl", "near", "frame"]
 name = "PlayKingScene"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_15f9"
@@ -11945,7 +11945,7 @@ evidence = ["ovl", "near", "frame"]
 name = "PlayHandsScene"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_1df3"
@@ -11956,7 +11956,7 @@ evidence = ["ovl", "near", "frame"]
 name = "PlayTunnelScene"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_23a3"
@@ -11967,7 +11967,7 @@ evidence = ["ovl", "near", "frame"]
 name = "PlayAvalancheScene"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_2913"
@@ -11978,7 +11978,7 @@ evidence = ["ovl", "frame"]
 name = "RevealInStrips"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_29c9"
@@ -11989,7 +11989,7 @@ evidence = ["ovl", "near", "frame"]
 name = "DrawGrid"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_2a4e"
@@ -12000,7 +12000,7 @@ evidence = ["ovl", "near", "frame"]
 name = "LoadPalette"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_2a99"
@@ -12011,7 +12011,7 @@ evidence = ["ovl", "near", "frame"]
 name = "PlayLogoSequence"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_2b7f"
@@ -12022,7 +12022,7 @@ evidence = ["ovl", "near", "frame"]
 name = "LoadPackedImage"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_2c0d"
@@ -12033,7 +12033,7 @@ evidence = ["ovl", "near", "frame"]
 name = "Dissolve"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "iov0_2d4e"
@@ -12044,7 +12044,7 @@ evidence = ["ovl", "near", "frame"]
 name = "PlaySound"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "s0000_0000"
