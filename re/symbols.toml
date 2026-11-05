@@ -1439,7 +1439,7 @@ evidence = ["far", "segment"]
 name = "Main"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e07c8_0199"
@@ -1450,7 +1450,7 @@ evidence = ["far"]
 name = "StartupGame"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e07c8_058a"
@@ -1461,7 +1461,7 @@ evidence = ["far", "near"]
 name = "ShutdownGame"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e07c8_061d"
@@ -1471,8 +1471,8 @@ size = 8
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
 name = "ExitHook"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e07c8_0625"
@@ -1483,7 +1483,7 @@ evidence = ["frame"]
 name = "AllocationFailure"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e082c_000b"
