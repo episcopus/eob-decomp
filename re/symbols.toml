@@ -6133,7 +6133,7 @@ size = 15
 evidence = ["segment"]
 level = "L2"
 notes = "not a function: bytes of the unit outside its functions (a marker or padding), matched with the whole unit"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e1990_0010"
@@ -6144,7 +6144,7 @@ evidence = ["near"]
 name = "CheckMCB"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e1990_0071"
@@ -6155,7 +6155,7 @@ evidence = ["far", "frame"]
 name = "CheckMemoryChain"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e1990_0133"
@@ -6166,7 +6166,7 @@ evidence = ["far", "frame"]
 name = "ReserveMemoryBelowVideo"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e1990_027d"
@@ -6177,7 +6177,7 @@ evidence = ["far", "frame"]
 name = "TrimMemoryToVideo"
 level = "L2"
 match_flags = "tasm /mx"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e19bc_0007"
