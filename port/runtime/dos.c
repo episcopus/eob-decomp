@@ -709,6 +709,13 @@ void dos_int21(tc_regs *r)
     int h;
 
     switch (ah) {
+    case 0x06:                                  /* direct console output (DL), or input for DL = 0FFh */
+        if ((u8)r->dx != 0xFFu) {
+            out_char((u8)r->dx, r);
+            return;
+        }
+        machine_unimplemented("INT 21h AH=06h input (the machine has no DOS keyboard input yet)", r);
+        return;
     case 0x0E:                                  /* LASTDRIVE: 3 drives (A, B, C) */
         r->ax = (u16)((r->ax & 0xFF00u) | 3u);
         return;

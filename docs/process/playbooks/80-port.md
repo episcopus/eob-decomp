@@ -19,7 +19,7 @@ sound and state.
 | Decisions | the nine answered by the human 2026-11-04, the five follow-ups (A to E) 2026-11-05 (section "Decisions"). Linux and Windows deferred by the human 2026-11-05: macOS only for now. Left for the human: install the newest LLVM (section "What the human installs") |
 | M1 tc2c for every C unit | done 2026-11-05 except the LLVM pin, which waits for the human's install: `make port` translates all 41 C units of `EOB.EXE` (609 functions) with none refused, compiles them with `-Werror` and links them; what is still a stub is 63 assembly routines (M3) and 23 library functions that need the machine (section "M1") |
 | M2 the per-function test | the machinery done 2026-11-05: `make port-hybrid` (section "M2"); on the five `EOB.EXE` goldens 129 of the 594 functions with an entry are reached, 118 are the same as the original on every call tested (635 calls), none differ, 11 are reached only where they wait for an interrupt (M3). The rest of the check, every function of `src/`, needs sessions that reach them |
-| M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), and the interrupt handlers' units `E1D8F`, `E1AAD`, `E1948`, `E_TEXT` with the retrace `E1DE4` (35 routines in all), each the same as the original on every call tested; the C-unit clock in the oracle and the five `.clock.json` recordings ("The interrupts and the C clock"); the machine boots to the oracle's memory byte for byte, and its DOS, INT 10h for MCGA, BIOS time, INT 33h driver and ports (PIC, PIT, 61h, 60h, retrace, DAC, AdLib) answer every one of the 335,055 service calls and port accesses of the five goldens as the oracle does. the machine's wait delivers the recorded interrupts to spinning routines (`port/runtime/irq.c`); 19 library functions on the machine (`port/runtime/tcdos.c`: the files, `int86`, `time`, `rand`; `tcheap.c`: the far heap), each the same as the original's on every call tested. Next: the other 10 units |
+| M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), and the interrupt handlers' units `E1D8F`, `E1AAD`, `E1948`, `E_TEXT` with the retrace `E1DE4` (35 routines in all), each the same as the original on every call tested; the C-unit clock in the oracle and the five `.clock.json` recordings ("The interrupts and the C clock"); the machine boots to the oracle's memory byte for byte, and its DOS, INT 10h for MCGA, BIOS time, INT 33h driver and ports (PIC, PIT, 61h, 60h, retrace, DAC, AdLib) answer every one of the 335,055 service calls and port accesses of the five goldens as the oracle does. the machine's wait delivers the recorded interrupts to spinning routines (`port/runtime/irq.c`); 19 library functions on the machine (`port/runtime/tcdos.c`: the files, `int86`, `time`, `rand`; `tcheap.c`: the far heap), each the same as the original's on every call tested; every assembly routine the C calls is in C (63, section "The other units"). Next: M4, the MCGA driver |
 | M4 to M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
@@ -635,6 +635,57 @@ make port-hybrid && .venv/bin/python tests/port_asm/library.py
   whole library in C under them, the goldens reach 168 functions, 157 the same on every call, none
   different, the same 11 waiting for interrupts.
 - Still stubs: `chsize`, `exit`, `hardretn`, `heapcheck`; the goldens never call them.
+
+### The other units (2026-11-05)
+
+```
+make port-hybrid && .venv/bin/python tests/port_asm/e17a6.py && .venv/bin/python tests/port_asm/pointer.py \
+    && .venv/bin/python tests/port_asm/dosunits.py
+```
+
+- Every assembly routine the C units call is now in C: `port/asm/` has 63 routines, and `unported.c`
+  has no assembly stub left. The nine units of this step, each written from its TASM source label by
+  label (three written in parallel, each built apart with `OUT=` and `ASM_C=`):
+  - `E17A6.c`, the graphics support: `DirectionFromPoints`, `Distance`, `FindNeighbour`,
+    `SetPlaneTables`, `DrawTile` (its CGA, Tandy and MCGA branches), `ExpandNibbles`, the three
+    sprite blitters, `BuildMask`, `TranslateImage`. `DrawTile`'s EGA branch stops with its reason: it
+    draws through the EGA's sequencer and latches, which the MCGA-only port (decision 4) has no use
+    for and the bench cannot compare. An 8-bit `div` that overflows raises INT 0 as `E1948.c` does.
+  - `E1A72.c`, `E1BB1.c`, `E1BBE.c`, `E1BF3.c`, the mouse and the game's own pointer: `InitMouse` and
+    the INT 33h event handler it installs (1A72:017A), `RemoveMouseHandler`, `IsMouseInRect`, the
+    interrupt wrappers (empty: the machine has no IF, the recording places each interrupt where the
+    original took it), `SetFarPointer` and `GetFarPointer`, `SetMousePointerShape`, the hide and
+    show family with zones and locks, the pointer's moves. The handler takes BX, CX and DX in
+    registers; it reads them from the trampoline's event record at F000:3080, which the machine's
+    delivery writes, so the record is its register record. The INT 3Fh overlay hook is left out
+    (overlays are plain code).
+  - `E1990.c` (the DOS memory chain: `CheckMemoryChain`, `ReserveMemoryBelowVideo`,
+    `TrimMemoryToVideo`), `E19EA.c` (`PrintString`), `E1A19.c` (`FindLastDrive`,
+    `IsLastLogicalDrive`), `E1C00.c` (the graphics driver loader, `RunOverlayRequest`, 4B03h). Two
+    QUIRK exits of `E1990.ASM`, where the original returns through the wrong stack words and faults,
+    stop with the quirk's words.
+- `E1E8B.ASM`, the overlay manager, has no C: natively only its start-up allocation remains (section
+  "The overlays as plain code"), which the port's own start-up makes (M5).
+- **Proven**: `tests/port_asm/e17a6.py` (2,695 calls), `pointer.py` (1,697), `dosunits.py` (1,390),
+  original then C, all the same; each catches planted mistakes (an off-by-one, a "fixed" QUIRK, a
+  wrong mask, a missing branch). On the five goldens the new units' routines are reached 1,918 times
+  at 200 samples (17 routines: `Distance`, `DirectionFromPoints`, `DrawTile`, `SetPlaneTables`, the
+  pointer family, `InitMouse`, the mouse handler, `SetMousePointerShape`, `FindLastDrive`,
+  `RunOverlayRequest`), all the same; the goldens now reach 185 functions, 174 the same on every call,
+  none different, the 11 that wait for interrupts as before. The routines the goldens do not reach
+  (the CGA, EGA and Tandy paths, the memory chain, the drive test) are proven by the direct calls.
+- Found on the way, fixed in the shared tools:
+  - code the C has no C for answers in registers a prototype cannot state (the graphics driver's
+    entry returns BX, its link routine CF): the bench now leaves every register and the flags of
+    such a call in `tc_hybrid_far_regs` (`hybrid.h`);
+  - the bench maps only memory below A0000h, so the C saw neither the mouse event record (F000:3080)
+    nor mode 13h's memory: `Bench.take` copies the record into `tc_mem`, and the per-function test
+    gives the C the screen and folds what it wrote back into the oracle's before the screen is
+    compared; the hybrid build's delivery writes the record in the arena too;
+  - the port had no C for the mouse trampoline (F000:3000): the machine now calls the handler
+    registered at F000:3090 (`machine_call_handler`);
+  - the machine's DOS lacked INT 21h 06h (`PrintString`'s output): output goes to the console, which
+    the machine does not have yet, as for 02h and 09h.
 
 ## M2: the per-function test (2026-11-05)
 

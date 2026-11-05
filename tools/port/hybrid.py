@@ -166,6 +166,7 @@ class Bench:
         self.failed = ctypes.c_int.in_dll(lib, "tc_hybrid_oracle_failed")
         self.message = (ctypes.c_char * 512).in_dll(lib, "tc_hybrid_message")
         self.callback = ORACLE_FN(self.oracle)
+        self.far_regs = Regs.in_dll(lib, "tc_hybrid_far_regs")
         ctypes.c_void_p.in_dll(lib, "tc_hybrid_oracle").value = ctypes.cast(self.callback, ctypes.c_void_p).value
         self.int_callback = INT_FN(self.oracle_int)
         self.port_callback = PORT_FN(self.oracle_port)
@@ -209,6 +210,9 @@ class Bench:
         m = self.m
         ctypes.memmove(self.base, ctypes.addressof(src.ram), RAM)
         m.uc.ctl_remove_cache(0, RAM)
+        # the mouse driver's event record in the ROM (F000:3080): the C handler reads its registers there,
+        # in tc_mem, which the bench maps only below A0000h
+        ctypes.memmove(self.base + 0xF3080, bytes(src.uc.mem_read(0xF3080, 0x20)), 0x20)
         for r in REG:
             m.set(r, src.get(r))
         memo = dict(memo0)
@@ -220,6 +224,23 @@ class Bench:
 
     def memory(self) -> bytes:
         return ctypes.string_at(self.base, RAM)
+
+    # mode 13h's memory: the bench's original runs on the oracle's own (ega.vga), the C on tc_mem at
+    # A0000h. Before the C runs tc_mem gets the oracle's; after, what the C wrote there goes back into the
+    # oracle's, so the screen compared (outside()) is the C's. What the machine's own INT 10h writes
+    # during the C's run stays in the oracle's.
+    def c_video_in(self):
+        v = bytes(self.m.ega.vga)
+        ctypes.memmove(self.base + 0xA0000, v, 0x10000)
+        self._vga0 = v
+
+    def c_video_out(self):
+        cur = ctypes.string_at(self.base + 0xA0000, 0x10000)
+        if cur != self._vga0:
+            vga = self.m.ega.vga
+            for i in range(0x10000):
+                if cur[i] != self._vga0[i]:
+                    vga[i] = cur[i]
 
     def _memo(self) -> dict:
         memo = {id(c): c for c in self.comps}
@@ -294,6 +315,9 @@ class Bench:
                 self.message.value = self.oracle_error.encode()[:500]
                 self.failed.value = 1
                 return 0
+            for k in REG_NAMES:                  # every register, for a caller that reads more than DX:AX
+                setattr(self.far_regs, k, m.get(k))
+            self.far_regs.flags = m.get("flags") & 0xFFFF
             return (m.get("dx") << 16) | m.get("ax")
         except Exception as e:  # noqa: BLE001  (a Python error must not unwind through C)
             self.oracle_error = "the bench failed: %r" % e
@@ -538,10 +562,12 @@ class Tester:
         o_regs = (bm.get("ax"), bm.get("dx"))
         # 3. the C
         bench.take(m, self.pairs, self.memo0)
+        bench.c_video_in()
         bench.oracle_calls = 0
         bench.oracle_error = ""
         val = ctypes.c_uint32(0)
         code = self.lib.tc_hybrid_run(i, ss, sp, ds, ctypes.byref(val), LIMIT_MS)
+        bench.c_video_out()
         r["oracle_calls"] = bench.oracle_calls
         r["seconds"] = round(time.monotonic() - t0, 3)
         if code:
@@ -674,9 +700,11 @@ class Direct:
             for access, insns in tms:
                 lib.machine_time_push(ctypes.c_uint32(access), ctypes.c_uint32(insns))
         val = ctypes.c_uint32(0)
+        bench.c_video_in()
         code = lib.tc_hybrid_run(i, ss, sp, ds, ctypes.byref(val), LIMIT_MS)
         if code == 0:
             code = lib.tc_hybrid_drain()
+        bench.c_video_out()
         left = lib.machine_events_left()
         c_mem, c_out = bench.memory(), bench.outside()
         ctypes.memmove(bench.base, o_mem, RAM)          # go on from the original's state

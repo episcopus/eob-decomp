@@ -100,9 +100,10 @@ static void deliver(const machine_event *e)
         return;
     case MACHINE_MOUSE: {
         /* the driver's event: its data and the game's handler in the trampoline's data, then the
-           trampoline (input.py Mouse.deliver) */
+           trampoline (input.py Mouse.deliver); written in the arena in the hybrid build too, where the
+           bench's own ROM has it, since the handler in C reads its registers there */
         tc_regs r;
-        if (!done) {
+        {
             static const u16 off[] = {0x3080u, 0x3082u, 0x3084u, 0x3086u, 0x3088u, 0x308Au};
             u16 v[6];
             unsigned i;

@@ -33,6 +33,7 @@ typedef struct {
 #define MACHINE_STUB_OFF0 0x1000u      /* F000:1000 + 4n: the stub of service n (IRET, 3 NOPs) */
 #define MACHINE_ROM_INT8 0x2000u       /* F000:2000: the default timer handler (real code) */
 #define MACHINE_ROM_EOI 0x2040u        /* F000:2040: IRQ 1 to 7's default, EOI and IRET */
+#define MACHINE_ROM_MOUSE 0x3000u      /* F000:3000: the mouse driver's event trampoline (input.py) */
 
 /* The clock the services read (the date, the time of day). The oracle's is its instruction count
    plus what port polls charge; the port's is the clock of the C units (playbook 80, "The clock").

@@ -422,14 +422,16 @@ def test_the_c_unit_clock():
 
 @needs_clang
 @pytest.mark.slow
-@pytest.mark.parametrize("unit", ["e1aad", "e1948", "e_text", "waits", "library", "heap"])
+@pytest.mark.parametrize("unit", ["e1aad", "e1948", "e_text", "waits", "library", "heap", "e17a6", "pointer", "dosunits"])
 def test_the_interrupt_units_against_the_original(unit):
     """M3 (playbook 80): the units with interrupt handlers, written in C (port/asm/E1AAD.c, the keyboard;
     E1948.c, the speaker and Tandy driver; E_TEXT.c, the AdLib driver), each called on the bench with
     chosen states, the original then the C, compared with the device logs and the clock charges; and the
     machine's wait (port/runtime/irq.c), the routines that spin on interrupts called with the original's
-    interrupts; and the library functions on the machine (port/runtime/tcdos.c, tcheap.c) at the
-    library's addresses: tests/port_asm/<unit>.py (each script's docstring says what it covers)."""
+    interrupts; the library functions on the machine (port/runtime/tcdos.c, tcheap.c) at the library's
+    addresses; and the graphics (E17A6.c), the mouse and pointer (E1A72.c, E1BB1.c, E1BBE.c, E1BF3.c)
+    and the DOS units (E1990.c, E19EA.c, E1A19.c, E1C00.c): tests/port_asm/<unit>.py (each script's
+    docstring says what it covers)."""
     r = subprocess.run(["make", "--no-print-directory", "-f", "port/port.mk", "PY=%s" % sys.executable,
                         "port-hybrid"], cwd=ROOT, capture_output=True, text=True)
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]

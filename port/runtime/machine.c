@@ -148,6 +148,21 @@ void machine_call_handler(u16 seg, u16 off, tc_regs *r)
             machine_port_out(0x20, 1, 0x20);
             return;
         }
+#ifndef TC_HYBRID
+        if (off == MACHINE_ROM_MOUSE) {
+            /* the mouse driver's event trampoline (tools/oracle/input.py): the registers saved, the event's
+               loaded from its record at F000:3080, a far call to the game's handler at F000:3090, which
+               in C reads them from the record itself (E1A72.c), then the registers restored. The hybrid
+               build runs the oracle's (below), which also frees the driver for the next event. */
+            farptr h = tc_ld_u32(TC_MKFP(MACHINE_ROM_SEG, 0x3090u));
+            tc_fn hf = tc_code_find(h);
+            if (hf == 0) {
+                tc_fail(74, "the mouse handler at %04X:%04X has no C", TC_SEG(h), TC_OFF(h));
+            }
+            ((machine_isr)hf)();
+            return;
+        }
+#endif
     }
     fn = tc_code_find(TC_MKFP(seg, off));
     if (fn != 0) {

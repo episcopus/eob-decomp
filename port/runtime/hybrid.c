@@ -27,6 +27,7 @@ u32 (*tc_hybrid_oracle)(u32 entry, const u8 *args, u16 n);
 /* set by the oracle when the routine it ran did not return (a fault, an unimplemented service) */
 volatile int tc_hybrid_oracle_failed;
 char tc_hybrid_message[512];
+tc_regs tc_hybrid_far_regs;
 
 static sigjmp_buf jb;
 static volatile sig_atomic_t running, in_oracle, late;
