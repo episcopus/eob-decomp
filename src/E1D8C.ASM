@@ -15,7 +15,8 @@
 ; The far call to it (`9a 00 00 8c 1d`) occurs exactly twice in EOB.EXE, both in game unit
 ; e0ef3 (segment 0EF3, `re/units.toml`; not the C runtime, which is segment 0000): 0EF3:2FA2
 ; continues `mov ah,0 / and ax,3` (a 2-bit value), and 0EF3:305F continues `test al,1`. The
-; placeholder name stays: those uses support "random byte" but nothing more specific.
+; name RandomByte comes from the algorithm above and from its twin, INTRO.EXE's RandomByte
+; (0CDA:0006, src/I0CDA.ASM): the same 50-byte generator (re/renames.toml, 1D8C:0000).
 ;
 ; 212Eh is DGROUP (whitepaper 2.x), so `mov ax,212Eh` (1D8C:0006) carries a segment
 ; relocation and is fixed up at load, not a constant. The offset 8484 appears nowhere else

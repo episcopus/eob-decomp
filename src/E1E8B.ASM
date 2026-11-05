@@ -239,11 +239,11 @@ swap_out:
         retf
 _SwapAndReopenOverlayFile ENDP
 
-; 1E8B:0185: Purpose unknown. It is a teardown of the manager's own state, so the file keeps the
-; placeholder ShutdownOverlayManager rather than a name that claims a role: if the overlay file handle at
-; 20B5:00B8 is open it closes it and restores the swapped interrupt vector through 0134, then calls the
-; two near pointers at 20B5:0014 and 20B5:0012 in the manager's own data segment; the packet finds no
-; caller, so what it is for is not established. Purpose unknown: what those two pointers do; no
+; 1E8B:0185: the teardown half of InitOverlayManager: if the overlay file handle at 20B5:00B8 is
+; open (1E8B:0190) it closes it and swaps the interrupt vector back through SwapAndReopenOverlayFile
+; (0134), then calls the two near pointers at 20B5:0014 and 20B5:0012 in the manager's own data
+; segment (re/renames.toml, ShutdownOverlayManager, 2026-11-03). The packet finds no caller, so
+; when it runs is not established. Purpose unknown: what those two pointers do; no
 ; function in this unit writes 20B5:0012 or 20B5:0014 (the writer is not in this unit). Each call
 ; pushes CS first, so the callee sees CS on the stack, and each callee must consume that word (return
 ; with retf or `ret 2`): the caller's `pop ds; pop bp; retf` at the end depends on the two pushes being

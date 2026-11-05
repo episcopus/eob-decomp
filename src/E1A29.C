@@ -39,8 +39,8 @@ extern void (far *gDrawShape)(int page, void far *src, int x, int y);        /*@
 extern void (far *gDrawShapeFlipped)(int page, void far *src, int x, int y);        /*@ ds:80A6 */
 extern void (far *gDrawShapeRemapped)(int page, void far *src, int x, int y);        /*@ ds:80D6 */
 extern void (far *gDrawShapeFlippedRemapped)(int page, void far *src, int x, int y);        /*@ ds:80DA */
-extern void (far *gDrawShapeMasked)(int page, void far *src, int x, int y, int extra); /*@ ds:809A */
-extern void (far *gDrawShapeMaskedFlipped)(int page, void far *src, int x, int y, int extra); /*@ ds:8096 */
+extern void (far *gDrawShapeMasked)(int page, void far *src, int x, int y, int depth); /*@ ds:809A */
+extern void (far *gDrawShapeMaskedFlipped)(int page, void far *src, int x, int y, int depth); /*@ ds:8096 */
 /* called with (left, right, top, bottom) after a region is selected */
 extern void (far *gSetRegion)(int left, int right, int top, int bottom);    /*@ ds:80B6 */
 
@@ -65,8 +65,11 @@ void SelectRegion(int region);
     gDrawShape(page, src, x + gRegionLeftPx, y + gRegionTop);
 }
 
-/* 1A29:004D: Purpose unknown: a front end over the driver pointer ds:80A6, identical to
-   1A29:000F otherwise (null check, lazy region select, region-relative x and y). */
+/* 1A29:004D: draws a shape mirrored left to right: the front end over gDrawShapeFlipped
+   (ds:80A6, driver export 24), whose MCGA body (mcga.ovl 1639) writes each pixel then decrements
+   DI (mcga.ovl 17F7 to 17FA). Identical to 1A29:000F otherwise (null check, lazy region select,
+   region-relative x and y). Callers use it for the negative-delta side of wall faces
+   (src/EOV4.C:707-718) and for negative icon indexes (DrawMemberIcons, src/E0EF3.C:1059). */
 /*@ 1A29:004D */ void DrawShapeFlipped(int page, void far *src, int x, int y, int region)
 {
     if (!src)
@@ -89,8 +92,13 @@ void SelectRegion(int region);
     gDrawShapeRemapped(page, src, x + gRegionLeftPx, y + gRegionTop);
 }
 
-/* 1A29:00C9: Purpose unknown: a front end over the driver pointer ds:80DA, identical to
-   1A29:000F otherwise (null check, lazy region select, region-relative x and y). */
+/* 1A29:00C9: draws a shape through the colour remap and mirrored: the front end over ds:80DA
+   (driver export 37), whose MCGA body (mcga.ovl 298A) draws the 4-bit packed shape through the
+   remap buffer (mcga.ovl 030C) and swaps the nibbles of each pixel pair (the table at mcga.ovl
+   00F6). Identical to 1A29:000F otherwise (null check, lazy region select, region-relative x and
+   y). Its only caller picks it for sprite < 0 after gSetRemapTable, where the unremapped branch
+   picks DrawShapeFlipped (src/EOV4.C:636-649); the mirroring rests on that pairing and the nibble
+   swap. */
 /*@ 1A29:00C9 */ void DrawShapeFlippedRemapped(int page, void far *src, int x, int y, int region)
 {
     if (!src)
@@ -100,28 +108,32 @@ void SelectRegion(int region);
     gDrawShapeFlippedRemapped(page, src, x + gRegionLeftPx, y + gRegionTop);
 }
 
-/* 1A29:0107: Purpose unknown: a front end over the driver pointer ds:809A, like 1A29:000F but
-   with one extra word forwarded to the driver. No caller of it was found in EOB.EXE or its
-   overlays (make packet), so both its role and the meaning of `extra` are unknown. */
-/*@ 1A29:0107 */ void DrawShapeMasked(int page, void far *src, int x, int y, int region, int extra)
+/* 1A29:0107: draws a shape behind masked layers: the front end over gDrawShapeMasked (ds:809A,
+   driver export 21), like 1A29:000F plus the word `depth` it forwards, the mask level. The MCGA
+   body (mcga.ovl 12F0, src/drivers/MCGA.ASM:2133) tests up to seven mask planes in page 4 below
+   that depth (mcga.ovl 14DE to 1568) and puts the page 2 pixel where a plane covers it (mcga.ovl
+   1576 to 157F). No caller of
+   it was found in EOB.EXE or its overlays (make packet). */
+/*@ 1A29:0107 */ void DrawShapeMasked(int page, void far *src, int x, int y, int region, int depth)
 {
     if (!src)
         return;
     if (region != gCurRegion)
         SelectRegion(region);
-    gDrawShapeMasked(page, src, x + gRegionLeftPx, y + gRegionTop, extra);
+    gDrawShapeMasked(page, src, x + gRegionLeftPx, y + gRegionTop, depth);
 }
 
-/* 1A29:0148: Purpose unknown: a front end over the driver pointer ds:8096, like 1A29:000F but
-   with one extra word forwarded to the driver. No caller of it was found in EOB.EXE or its
-   overlays (make packet), so both its role and the meaning of `extra` are unknown. */
-/*@ 1A29:0148 */ void DrawShapeMaskedFlipped(int page, void far *src, int x, int y, int region, int extra)
+/* 1A29:0148: DrawShapeMasked mirrored left to right: the front end over gDrawShapeMaskedFlipped
+   (ds:8096, driver export 20), whose MCGA body (mcga.ovl 1006) is the masked draw with dec di
+   (mcga.ovl 117C). `depth` as in 1A29:0107. No caller of it was found in EOB.EXE or its
+   overlays (make packet). */
+/*@ 1A29:0148 */ void DrawShapeMaskedFlipped(int page, void far *src, int x, int y, int region, int depth)
 {
     if (!src)
         return;
     if (region != gCurRegion)
         SelectRegion(region);
-    gDrawShapeMaskedFlipped(page, src, x + gRegionLeftPx, y + gRegionTop, extra);
+    gDrawShapeMaskedFlipped(page, src, x + gRegionLeftPx, y + gRegionTop, depth);
 }
 
 /* 1A29:0189: makes `region` the current one. `region` is an index into gRegions (the record is

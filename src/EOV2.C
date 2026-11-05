@@ -4,18 +4,18 @@
    SetPointerShape, InitGameTables, LoadItems, LoadItemTypes, SetUiPalette, LoadIntroScreen and
    LoadGamePanel in turn; StartupAlloc also reaches entry 8 (2106:0048, ovl2:0577) for the ITEMRMP
    read (docs/design/WHITEPAPER.md 4). The art pages are loaded from the PAK data by
-   LoadOverlayScreen/LoadScreenImage (082C:05EC/082C:051B, through LoadPacked) and sliced at fixed
-   paragraphs of the overlay's own data (ITEML1 at 20A3, ITEMS1 at 20A5, THROWN at 20A7, ITEMICN at
-   20A9 and DECORATE at 2069, from TLINK's segment table); gCgaMapDefault (ds:113F) is the DGROUP image
-   buffer the art loads land in. LoadOverlayScreen passes mode -1, which makes LoadScreenImage
-   return before the 19EC:002A blit (src/E082C.C:313-314, :337), so only a load with another mode,
-   such as the INTRO load below (ovl2:078D, mode 2), hands the buffer to 19EC:002A as its `extra`
-   pointer (src/E082C.C:329-330, src/E19EC.C:29-35). Cells are cut by the function pointer ds:8086
-   (gGetSpriteCell):
-   LoadItemSheets slices from the sheet paragraphs, while SetPointerShape and the six gTeleporterCells of
-   LoadDecorateIcons slice from gCgaMapDefault. ITEMICN is loaded and sliced twice: SetPointerShape
-   takes the pointer cell from gCgaMapDefault and LoadItemSheets the 0x58 icon cells from its 20A9
-   paragraph. All 11 functions are decompiled to L2; several names are placeholders. */
+   LoadOverlayScreen/LoadScreenImage (082C:05EC/082C:051B, through LoadPacked) into page kind 3, and
+   LoadOverlayScreen sets the draw page to 2. Cells are cut by the function pointer ds:8086 (gGetSpriteCell,
+   graphics driver export 16) from the page after the draw page, so from the art just loaded (CellSource,
+   src/drivers/MCGA.ASM:1485-1499). Its fifth argument is a 32-byte CGA colour map of values 0..3, not a
+   source: MCGA does not use it (src/drivers/MCGA.ASM:1522-1525) and CGA reads it only for its dither tables
+   (src/drivers/CGA.ASM:1666-1671). Each art has its own map, one TLINK data segment each (DECORATE at 2069,
+   ITEML1 at 20A3, ITEMS1 at 20A5, THROWN at 20A7, ITEMICN at 20A9); gCgaMapDefault (ds:113F) is the default
+   map, the one LoadOverlayScreen passes to LoadScreenImage as its `extra` argument (src/E082C.C:301-314, :329).
+   LoadOverlayScreen passes mode -1, which makes LoadScreenImage return before the 19EC:002A blit, so only a
+   load with another mode, such as the INTRO load below (ovl2:078D, mode 2), hands the map to 19EC:002A
+   (src/E19EC.C:29-35). ITEMICN is loaded and cut twice: SetPointerShape takes the pointer cell with gCgaMapDefault
+   as its map, LoadItemSheets the 0x58 icon cells with gCgaMapItemIcn. All 11 functions are at L2. */
 
 /*@flags -ml -O -Z */
 
@@ -69,8 +69,8 @@ extern char gFileNameBuf[]; /*@ ds:FE6E */
 extern struct WordCell gWordCells[]; /*@ ds:65F0 */
 extern unsigned char gCompassRowHeights[]; /*@ ds:65C0 */ /* the three per-row cell heights of the gCompassIcons loop, indexed by the row i (0..2) (src/EOV2.C:366-368) */
 extern unsigned char gCompassRowTops[]; /*@ ds:65C3 */ /* the three per-row cell y origins of the gCompassIcons loop, indexed by the row i (0..2) (src/EOV2.C:366-368) */
-extern struct Cell4 gDecorateCellRects[]; /*@ ds:65C6 */ /* the six decoration-cell rectangles LoadDecorateIcons cuts from gCgaMapDefault */
-extern void far *gTeleporterCells[]; /*@ ds:F4BE */ /* the six decoration cells LoadDecorateIcons cuts from gCgaMapDefault (src/EOV2.C:346); src/EOV4.C:955 indexes the table */
+extern struct Cell4 gDecorateCellRects[]; /*@ ds:65C6 */ /* the six decoration-cell rectangles LoadDecorateIcons cuts from the DECORATE page (gCgaMapDefault is their colour map) */
+extern void far *gTeleporterCells[]; /*@ ds:F4BE */ /* the six cells LoadDecorateIcons cuts from the DECORATE page (src/EOV2.C:314); their only reader, DrawSlotTeleporter (ovl4:1D20, src/EOV4.C:991), draws them for the animated wall type 0x34, alternating by gAnimWallPhase. That 0x34 is the teleporter is [H] (ScummVM's EOB1 wall type 52, re/renames.toml DrawSlotTeleporter), not proven on our bytes */
 extern char far *gFlashFrames[]; /*@ ds:DD1C */ /* the flash-frame images src/E0EF3.C lays over a member, indexed by frame - 1 (src/E0EF3.C:356, :707, :773). The readers compute a frame 0 to 3 and then skip 0 (if (frame-- == 0) continue;, src/E0EF3.C:696, :771), so 0 means no frame and frames 1 to 3 index gFlashFrames[0..2]: DrawFlashFrame (0EF3:05BD) computes (gFlashPassMask[pass] & gFlashFrameMask[i]) >> gFlashFrameShift[i] from the bytes at ds:5621 (40 90 e4 b9 6e 1b 06 01), ds:5629 (c0 30 0c 03) and ds:562D (06 04 02 00), and FlashViewDamage (0EF3:06E7) does the same with gFlashPass2 (ds:564B), gFlashFrame2 (ds:5677) and gFlashShift2 (ds:56B7, shifts 0x1e to 0). So the array holds the three entries DD1C, DD20 and DD24 that LoadDecorateIcons fills; the next slot DD28 is the separate icon pointer gDisabledMemberIcon */
 extern char far *gDisabledMemberIcon; /*@ ds:DD28 */ /* the icon table src/EOV1.ASM:87 draws member icons from, filled by LoadDecorateIcons at the slot after gFlashFrames */
 extern void far *gDeadPortraitIcon; /*@ ds:F2F4 */
@@ -124,13 +124,13 @@ extern unsigned char far gCgaMapItemS1[]; /*@ 20A5:0000 */
 extern unsigned char far gCgaMapThrown[]; /*@ 20A7:0000 */
 extern unsigned char far gCgaMapItemIcn[]; /*@ 20A9:0000 */
 
-/* a far function pointer that returns the far address of the cell (x, y, w, h) on `sheet`: x and y
-   are the cell's origin on the sheet and w and h its width and height (the unit of the sheet
-   coordinates is not established, src/E07A9.C:59-61); the cells differ in size, the ITEMICN item
-   icons are 2 by 0x10 and the item and decoration sheets use widths 3 to 5 and heights 8 to 0x20
-   (src/EOV2.C:268-294, :346-357). Filled in at load time [H]. */
-extern void far * (far *gGetSpriteCell)(int x, int y, int w, int h, void far *sheet); /*@ ds:8086 */
-extern int (far *gGetPixel)(int x, int y); /*@ ds:8072 */ /* saves the pixels under (x, y) and returns a handle (src/E0EF3.C:389) */
+/* graphics driver export 16: returns a new block holding the cell (x, y, w, h) cut from the page
+   after the draw page: x and w in 8-pixel columns, y and h in lines (CellSource and CellSize,
+   src/drivers/MCGA.ASM:1485-1510); the cells differ in size, the ITEMICN item icons are 2 by 0x10
+   and the item and decoration cells use widths 3 to 5 and heights 8 to 0x20. `cgaMap` is the art's
+   32-byte CGA colour map, which only the CGA driver reads (src/drivers/CGA.ASM:1666-1671). */
+extern void far * (far *gGetSpriteCell)(int x, int y, int w, int h, void far *cgaMap); /*@ ds:8086 */
+extern int (far *gGetPixel)(int x, int y); /*@ ds:8072 */ /* graphics driver export 11: the colour of the draw page's pixel at (x, y), 0 off the screen (src/drivers/MCGA.ASM:1132-1165) */
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int colour); /*@ ds:806A */ /* the rectangle fill hook (src/E082C.C:64) */
 extern void (far *gSaveRectFromPage)(int x, int y, int w, int h, void far *buf); /*@ ds:807E */
 extern void (far *gRestoreRectToPage)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */
@@ -172,8 +172,8 @@ extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
 extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:0400 */
 extern void FileClose(int handle); /*@ 1C0E:03BB */
 
-/* ovl2:0000: loads the ITEMICN image, slices one 2 by 0x10 cell out of gCgaMapDefault through
-   gGetSpriteCell and makes the result (gItemIcons[0] and gDefaultPointerIcon) the mouse pointer shape at
+/* ovl2:0000: loads the ITEMICN image, cuts one 2 by 0x10 cell out of it through gGetSpriteCell
+   (gCgaMapDefault as the colour map) and makes the result (gItemIcons[0] and gDefaultPointerIcon) the mouse pointer shape at
    (0,0), then sets the draw page back to 0. Called first by LoadItemData. */
 /*@ ovl2:0000 */ void SetPointerShape(void)
 {
@@ -298,9 +298,9 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 }
 
 /* ovl2:0577: the overlay-8 entry (reached as 2106:0048), leads to the ITEMRMP read. First calls
-   LoadItemSheets, then loads the DECORATE image (its page lands in gCgaMapDefault, ds:113F) and
-   slices the creature/decoration icons out of it: six cells described by gDecorateCellRects, cut from
-   gCgaMapDefault into gTeleporterCells, the three flash frames gFlashFrames[0..2], three more single cells
+   LoadItemSheets, then loads the DECORATE image into page 3 and cuts the creature/decoration
+   icons out of it: six cells described by gDecorateCellRects (colour map gCgaMapDefault) into
+   gTeleporterCells, the three flash frames gFlashFrames[0..2], three more single cells
    (gDeadPortraitIcon, gUnconsciousIcon, gHandShadeIcon), the icon pointer gDisabledMemberIcon, and the 3x4 gCompassIcons whose
    cells are 3 wide with y from gCompassRowTops and height from gCompassRowHeights. Called by StartupAlloc (07A9:000A). */
 /*@ ovl2:0577 */ void LoadDecorateIcons(void)
@@ -327,10 +327,10 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 }
 
 /* ovl2:078D: draws the INTRO screen for the "load a saved game" panel: loads the INTRO page into
-   gCgaMapDefault (LoadScreenImage, mode 2), draws to page 2 (gDrawPage), saves the pixels under (0, 0)
-   with gGetPixel and fills the rectangle (0, 0x9f)-(0x13f, 0xc7) with the returned handle as
-   gFillRect's colour argument (a saved-pixel handle used as a colour; src/E0EF3.C:389-390,
-   src/E082C.C:64), draws the two panel frames, clips a 40 by 200 region at (0, 0) (0x28 and 0xc8
+   page 3 and copies it to page 2 (LoadScreenImage, mode 2, gCgaMapDefault as the colour map),
+   draws to page 2 (gDrawPage), reads the colour of the pixel at (0, 0) with gGetPixel and fills
+   the rectangle (0, 0x9f)-(0x13f, 0xc7) with that colour (gFillRect, src/E082C.C:64),
+   draws the two panel frames, clips a 40 by 200 region at (0, 0) (0x28 and 0xc8
    are the width and height, the same rectangle src/E082C.C:317 makes) and sets the draw page back to 0.
    It cuts no sprite cells. Called by LoadItemData. */
 /*@ ovl2:078D */ void LoadIntroScreen(void)
