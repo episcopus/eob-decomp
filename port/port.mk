@@ -37,10 +37,12 @@ TC2C_IN := port/units.txt tools/port/tc2c.py port/include/tc/prelude.h $(wildcar
 	$(ASM_C)
 
 GEN_C := $(addprefix $(GEN)/,$(UNITS:.C=.c)) $(GEN)/units.c $(GEN)/unported.c
+# the machine (M3): the vector table, DOS and the BIOS
+MACHINE_C := port/runtime/machine.c port/runtime/dos.c port/runtime/bios.c port/runtime/video.c
 HYB := $(OUT)/hybrid
-HYB_C := $(GEN_C) $(GEN)/hybrid.c port/runtime/arena.c port/runtime/tclib.c port/runtime/hybrid.c $(ASM_C)
+HYB_C := $(GEN_C) $(GEN)/hybrid.c port/runtime/arena.c port/runtime/tclib.c port/runtime/hybrid.c $(MACHINE_C) $(ASM_C)
 HYB_O := $(patsubst %.c,$(HYB)/obj/%.o,$(HYB_C))
-CORE_C := port/runtime/arena.c port/runtime/tclib.c port/main.c $(ASM_C)
+CORE_C := port/runtime/arena.c port/runtime/tclib.c port/main.c $(MACHINE_C) $(ASM_C)
 CORE_O := $(patsubst $(GEN)/%.c,$(OBJ)/gen/%.o,$(GEN_C)) $(patsubst %.c,$(OBJ)/%.o,$(CORE_C))
 
 .PHONY: port port-check port-boundary port-sdl port-hybrid
@@ -67,10 +69,10 @@ $(OBJ)/port/%.o: port/%.c $(GEN)/.stamp $(HEADERS)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(OUT)/eob-port-headless: $(CORE_O) $(OBJ)/port/platform/null.o
+$(OUT)/eob-port-headless: $(CORE_O) $(OBJ)/port/platform/null.o $(OBJ)/port/platform/files.o
 	$(CC) -o $@ $^
 
-$(OUT)/eob-port: $(CORE_O) $(OBJ)/port/platform/sdl_host.o
+$(OUT)/eob-port: $(CORE_O) $(OBJ)/port/platform/sdl_host.o $(OBJ)/port/platform/files.o
 	$(CC) -o $@ $^ $(SDL_LIBS)
 
 port-check: $(OUT)/eob-port-headless

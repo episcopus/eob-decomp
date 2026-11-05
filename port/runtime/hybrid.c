@@ -112,3 +112,69 @@ int tc_hybrid_run(unsigned index, u16 ss, u16 sp, u16 ds, u32 *ret, unsigned lim
     in_oracle = 0;
     return code;
 }
+
+/* ---- the machine's shadow test (tools/port/hybrid.py --shadow) ---------------------------------- */
+
+#include "machine.h"
+#include "platform.h"
+
+/* set by the oracle (ctypes): the files as the session's VFS had them when the shadow began */
+int32_t (*tc_hybrid_file_size)(const char *name);
+int (*tc_hybrid_file_read)(const char *name, uint8_t *buf, uint32_t size);
+
+int32_t platform_file_size(const char *name)
+{
+    return tc_hybrid_file_size ? tc_hybrid_file_size(name) : -1;
+}
+
+int platform_file_read(const char *name, uint8_t *buf, uint32_t size)
+{
+    return tc_hybrid_file_read ? tc_hybrid_file_read(name, buf, size) : -1;
+}
+
+void platform_set_game_dir(const char *dir) { (void)dir; }
+
+/* Boots the machine on tc_mem (cleared first) and loads the program, as the oracle's Machine does
+   before it runs: 0, or the stop's code with its message in tc_hybrid_message. */
+int tc_hybrid_boot(const char *exe_path, const char *exe_name, const u8 *cmdline, u16 cmdlen, int mouse)
+{
+    int code;
+    tc_hybrid_message[0] = 0;
+    code = sigsetjmp(jb, 1);
+    if (code == 0) {
+        memset(tc_mem, 0, TC_MEM_SIZE);
+        machine_boot(exe_name, cmdline, cmdlen, mouse);
+        if (tc_load_program(exe_path, MACHINE_LOAD_SEG, 0x212Eu) != 0) {
+            tc_fail(70, "cannot load %s", exe_path);
+        }
+    }
+    return code;
+}
+
+/* Resets the machine's state for a session (no memory written but by machine_boot's own writes,
+   which the shadow overwrites with the oracle's memory before every call). */
+int tc_hybrid_machine_reset(const char *exe_name, const u8 *cmdline, u16 cmdlen)
+{
+    int code;
+    tc_hybrid_message[0] = 0;
+    code = sigsetjmp(jb, 1);
+    if (code == 0) {
+        machine_boot(exe_name, cmdline, cmdlen, 0);
+    }
+    return code;
+}
+
+/* What the stub of service n does, on tc_mem: 0, or the stop's code (74: the machine lacks it, 76:
+   the program ended) with its message in tc_hybrid_message. */
+int tc_hybrid_service(u8 n, tc_regs *r)
+{
+    int code;
+    tc_hybrid_message[0] = 0;
+    code = sigsetjmp(jb, 1);
+    if (code == 0) {
+        if (machine_service(n, r) != 0) {
+            tc_fail(74, "the machine has no service %02Xh", n);
+        }
+    }
+    return code;
+}

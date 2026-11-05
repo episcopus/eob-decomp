@@ -463,6 +463,187 @@ class Direct:
         return r
 
 
+class Regs(ctypes.Structure):
+    _fields_ = [(n, ctypes.c_uint16) for n in ("ax", "bx", "cx", "dx", "si", "di", "bp", "ds", "es", "flags")]
+
+
+class Video(ctypes.Structure):
+    _fields_ = [("mode", ctypes.c_uint8), ("page", ctypes.c_uint8), ("dac", ctypes.c_uint8 * 768)]
+
+
+class Clock(ctypes.Structure):
+    _fields_ = [("now", ctypes.c_uint32), ("insn_per_sec", ctypes.c_uint32), ("pinned", ctypes.c_int),
+                ("clock_pin", ctypes.c_uint32), ("tod_offset_set", ctypes.c_int), ("tod_offset", ctypes.c_int32)]
+
+
+FILE_SIZE = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_char_p)
+FILE_READ = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_char_p, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32)
+SHADOWED = (0x10, 0x11, 0x12, 0x13, 0x1A, 0x20, 0x21, 0x29, 0x2F, 0x33)
+REG_NAMES = ("ax", "bx", "cx", "dx", "si", "di", "bp", "ds", "es")
+
+
+class Shadow:
+    """The machine's proof (M3, --shadow): a golden plays on the oracle, and every call of a service
+    the machine has (DOS, the BIOS's 10h, 11h, 12h, 13h, 1Ah, INT 33h with no mouse) is made to the machine
+    too, just before the oracle's own service answers it: the machine runs on a copy of the oracle's
+    memory (the library's arena) with the same registers and the flags the INT pushed, then the two
+    answers are compared: the registers, the flags returned (CF), memory but the flags word of the INT
+    frame, which the oracle's services edit in place, and the video: the mode, the DAC and mode 13h's
+    64 KB at A000:0000 (the oracle's EGA model keeps them; the machine's MCGA, video.c). The machine's own state (its files, the
+    memory arena, the clock's offset) lives on from call to call, as the oracle's does, so a
+    difference in it shows at the first call it changes. The files are what the session's VFS had
+    when the first call came (the pinned files, the saved game the session names)."""
+
+    def __init__(self, lib: Path = LIB):
+        self.lib = ctypes.CDLL(str(lib))
+        self.lib.tc_hybrid_init.argtypes = [ctypes.c_uint16, ctypes.c_uint16]
+        self.lib.tc_hybrid_init(LOAD_SEG, DGROUP)
+        self.lib.tc_hybrid_service.argtypes = [ctypes.c_uint8, ctypes.POINTER(Regs)]
+        self.lib.tc_hybrid_machine_reset.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint16]
+        self.base = ctypes.addressof(ctypes.c_uint8.in_dll(self.lib, "tc_mem"))
+        self.message = (ctypes.c_char * 512).in_dll(self.lib, "tc_hybrid_message")
+        self.clock = Clock.in_dll(self.lib, "machine_time")
+        self.video = Video.in_dll(self.lib, "video")
+        self.size_cb, self.read_cb = FILE_SIZE(self.file_size), FILE_READ(self.file_read)
+        ctypes.c_void_p.in_dll(self.lib, "tc_hybrid_file_size").value = ctypes.cast(self.size_cb, ctypes.c_void_p).value
+        ctypes.c_void_p.in_dll(self.lib, "tc_hybrid_file_read").value = ctypes.cast(self.read_cb, ctypes.c_void_p).value
+        self.calls: dict[str, dict] = {}
+        self.differences: list[dict] = []
+        self.vfs = None
+
+    # -- the files, as the session's VFS had them when the first call came
+    def lookup(self, name: bytes):
+        v = self.vfs
+        full = v.mount + "\\" + name.decode("latin-1").upper()
+        if full in v.deleted:
+            return None
+        if full in v.layer:
+            return bytes(v.layer[full])
+        if full in v.host_index:
+            return v.host_index[full].read_bytes()
+        return None
+
+    def file_size(self, name):
+        d = self.lookup(name)
+        return -1 if d is None else len(d)
+
+    def file_read(self, name, buf, size):
+        d = self.lookup(name)
+        if d is None or len(d) != size:
+            return -1
+        ctypes.memmove(buf, d, size)
+        return 0
+
+    def attach(self, m, session: str):
+        self.session = session
+        self.vfs = None
+        self.m = m
+        for n in SHADOWED:
+            fn = m.services.get(n)
+            if fn is None or (n == 0x33 and m.mouse is not None):
+                continue                     # the INT 33h driver comes later in M3
+            m.services[n] = (lambda mach, n=n, fn=fn: self.call(mach, n, fn))
+
+    def key(self, m, n) -> str:
+        ah = m.get("ax") >> 8
+        return "INT %02Xh" % n + (" AH=%02Xh" % ah if n in (0x10, 0x21, 0x1A, 0x13) else "")
+
+    def call(self, m, n, fn):
+        if self.vfs is None:
+            self.vfs = copy.deepcopy(m.vfs)
+            cmd = m.read(0x0FF0, 0x81, m.rb(0x0FF0, 0x80))
+            code = self.lib.tc_hybrid_machine_reset(m.exe.name.upper().encode(), cmd, len(cmd))
+            if code:
+                raise SystemExit("hybrid: the machine does not boot: %s" % self.message.value.decode())
+        key = self.key(m, n)
+        ss, sp = m.get("ss"), m.get("sp")
+        frame = m.linear(ss, (sp + 4) & 0xFFFF)
+        r = Regs(*[m.get(x) for x in REG_NAMES], m.rw(ss, (sp + 4) & 0xFFFF))
+        ctypes.memmove(self.base, ctypes.addressof(m.ram), RAM)
+        ctypes.memmove(self.base + 0xA0000, bytes(m.ega.vga), 0x10000)    # mode 13h's memory
+        self.clock.now = m.now() & 0xFFFFFFFF
+        self.clock.insn_per_sec = m.insn_per_sec
+        self.clock.pinned = m.clock_pin is not None
+        self.clock.clock_pin = m.clock_pin or 0
+        code = self.lib.tc_hybrid_service(n, ctypes.byref(r))
+        why = self.message.value.decode("latin-1")
+        raised = None
+        try:
+            fn(m)
+        except Exception as e:  # noqa: BLE001  (compared, then raised again)
+            raised = e
+        st = self.calls.setdefault(key, {"same": 0, "differs": 0, "machine lacks": 0})
+        o_reason = None if raised is None else (
+            "exit" if isinstance(raised, Stop) and raised.reason == "exit" else type(raised).__name__)
+        c_reason = {0: None, 76: "exit"}.get(code, "stopped")
+        out = []
+        if code == 74:
+            st["machine lacks"] += 1
+            out.append("the machine: %s" % why)
+        elif o_reason != c_reason:
+            out.append("the oracle %s, the machine %s" % (o_reason or "returned", why or "returned"))
+        elif raised is None:
+            for x in REG_NAMES:
+                if getattr(r, x) != m.get(x):
+                    out.append("%s %04X, the oracle %04X" % (x.upper(), getattr(r, x), m.get(x)))
+            of = m.rw(ss, (sp + 4) & 0xFFFF)
+            if (r.flags ^ of) & 0x0FD5:
+                out.append("flags %04X, the oracle %04X" % (r.flags, of))
+            if self.video.mode != m.ega.mode:
+                out.append("video mode %02Xh, the oracle %02Xh" % (self.video.mode, m.ega.mode))
+            if bytes(self.video.dac) != bytes(m.ega.dac):
+                out.append("the DAC differs")
+            if ctypes.string_at(self.base + 0xA0000, 0x10000) != bytes(m.ega.vga):
+                out.append("A000 differs")
+            a, b = bytes(m.ram), ctypes.string_at(self.base, RAM)
+            if a != b:
+                for x, y in diff(a, b, [(frame, frame + 2)])[:6]:
+                    out.append("%05X: the oracle %s, the machine %s" % (x, a[x:y][:12].hex(" "), b[x:y][:12].hex(" ")))
+        if code != 74:
+            st["differs" if out else "same"] += 1
+        if out and len(self.differences) < 50:
+            self.differences.append({"session": self.session, "call": key, "at": m.insns, "what": out})
+        if raised is not None:
+            raise raised
+
+
+def run_shadow(sessions, lib: Path, out: Path) -> int:
+    sh = Shadow(lib)
+    played = []
+    for name in sessions:
+        text = (golden.SESSIONS / ("%s.keys" % name)).read_text()
+        opts = Script(text).options
+        build = run.build_machine
+
+        def build_and_attach(*a, **k):
+            m = build(*a, **k)
+            sh.attach(m, name)
+            return m
+        run.build_machine = build_and_attach
+        save = golden.SESSIONS / opts["save"] if "save" in opts else None
+        t0 = time.monotonic()
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                s = run.run_session(text, out=Path(tmp), max_insns=int(opts.get("insns", 60_000_000)),
+                                    mouse="mouse" in opts, sound=opts.get("sound"), save=save,
+                                    program=opts.get("program", "EOB.EXE"))
+        finally:
+            run.build_machine = build
+        played.append({"session": name, "stop": s["stop"], "seconds": round(time.monotonic() - t0, 1)})
+        print("%s: %s, %.0f s" % (name, s["stop"], played[-1]["seconds"]))
+    out.mkdir(parents=True, exist_ok=True)
+    report = out / "shadow.json"
+    report.write_text(json.dumps({"sessions": played, "calls": sh.calls, "differences": sh.differences}, indent=1) + "\n")
+    same = sum(c["same"] for c in sh.calls.values())
+    differs = sum(c["differs"] for c in sh.calls.values())
+    lacks = {k: c["machine lacks"] for k, c in sh.calls.items() if c["machine lacks"]}
+    print("shadow: %d service calls the same as the oracle's, %d differ; the machine lacks %s (report: %s)" % (
+        same, differs, ", ".join("%s (%d)" % kv for kv in sorted(lacks.items())) or "none", report))
+    for d in sh.differences[:12]:
+        print("  %s, %s at %d: %s" % (d["session"], d["call"], d["at"], "; ".join(d["what"][:4])))
+    return 1 if differs or lacks else 0
+
+
 def diff(a: bytes, b: bytes, masks, skip=frozenset()) -> list[tuple[int, int]]:
     """The spans [start, end) where a and b differ, outside the masks and the bytes in skip."""
     spans = []
@@ -486,12 +667,15 @@ def main(argv=None) -> int:
     ap.add_argument("--samples", type=int, default=3, help="calls tested per function and session")
     ap.add_argument("--out", type=Path, default=ROOT / "build" / "port" / "hybrid")
     ap.add_argument("--lib", type=Path, default=LIB, help="the hybrid library (default: make port-hybrid's)")
+    ap.add_argument("--shadow", action="store_true", help="the machine's test: every service call against the oracle's")
     a = ap.parse_args(argv)
     if not a.lib.exists():
         print("hybrid: %s is missing (make port-hybrid)" % a.lib)
         return 1
     sessions = a.session or sorted(p.stem for p in golden.SESSIONS.glob("*.keys")
                                    if "program INTRO.EXE" not in p.read_text())
+    if a.shadow:
+        return run_shadow(sessions, a.lib, a.out)
     t = Tester(a.samples, set(a.function) if a.function else None, a.lib)
     played = []
     for s in sessions:
