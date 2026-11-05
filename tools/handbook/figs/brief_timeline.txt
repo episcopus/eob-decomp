@@ -1,0 +1,1 @@
+The project in six days. Phase spans are read from `work/status.md`; the early phases overlap because the matcher was built while the toolchain was still being pinned. The bars below count commits to `main` per day (`git log`).

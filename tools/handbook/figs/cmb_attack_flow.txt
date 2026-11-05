@@ -1,0 +1,1 @@
+A click on a hand slot runs `UseItem` at once; nothing waits for a turn. The three weapon kinds differ only in the middle box. Melee resolves the whole attack immediately; thrown and shot weapons become flying records that hit later (figure on projectiles).

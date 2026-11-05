@@ -1,0 +1,1 @@
+adlib.dat to scale. The first 120 bytes map the game's sound numbers to driver sound numbers; a table of 300 words points at 150 sound scripts and 150 patches; the scripts and the 127 instrument patches follow. Sound 133, a monster's move sound, is shown byte by byte.

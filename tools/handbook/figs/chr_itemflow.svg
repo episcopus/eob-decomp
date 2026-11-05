@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 390" width="760" height="390" class="fig"><defs><marker id="a1F6F66" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#1F6F66"/></marker><marker id="a3B4A8A" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#3B4A8A"/></marker><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker><marker id="aA8741A" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#A8741A"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">WHERE AN ITEM CAN BE, AND WHAT MOVES IT (MOUSE ENABLED)</text>
+<rect x="270.0" y="30.0" width="220.0" height="92.0" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="380.0" y="52.9" font-family="Inter, 'Inter Display', sans-serif" font-size="13" font-weight="700" fill="#80311F" text-anchor="middle">the pointer</text>
+<text x="380.0" y="67.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">gMouseItem (ds:FBCE): one item id, 0 for</text>
+<text x="380.0" y="81.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">none.</text>
+<text x="380.0" y="95.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">SetMouseItem also makes it the cursor</text>
+<text x="380.0" y="108.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">image.</text>
+<rect x="0.0" y="230.0" width="230.0" height="96.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="115.0" y="268.6" font-family="Inter, 'Inter Display', sans-serif" font-size="13" font-weight="700" fill="#14504A" text-anchor="middle">a character slot</text>
+<text x="115.0" y="283.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">gChars[who].items[slot], 27 per character.</text>
+<text x="115.0" y="297.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">Slot 16 is the head of a list (quiver).</text>
+<rect x="530.0" y="230.0" width="230.0" height="96.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="645.0" y="268.6" font-family="Inter, 'Inter Display', sans-serif" font-size="13" font-weight="700" fill="#2C386B" text-anchor="middle">a cell&#x27;s item list</text>
+<text x="645.0" y="283.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">Head word at gMaze + cell * 9 + 5,</text>
+<text x="645.0" y="297.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">then the ring of records (next figure).</text>
+<path d="M300.0,122.0 L160.0,230.0" fill="none" stroke="#1F6F66" stroke-width="1.3" marker-end="url(#a1F6F66)" marker-start="url(#a1F6F66)"/>
+<text x="110.0" y="160.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#14504A" text-anchor="middle">click a slot: UseSelectedItem</text>
+<text x="110.0" y="174.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">0BD2:0BA0 swaps them if the slot</text>
+<text x="110.0" y="187.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">takes the pointer&#x27;s item</text>
+<text x="110.0" y="200.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">(CanPlaceItemInSlot), then</text>
+<text x="110.0" y="213.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">ComputeArmourClass</text>
+<path d="M460.0,122.0 L600.0,230.0" fill="none" stroke="#3B4A8A" stroke-width="1.3" marker-end="url(#a3B4A8A)" marker-start="url(#a3B4A8A)"/>
+<text x="650.0" y="160.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2C386B" text-anchor="middle">click the floor: ClickFloorItem</text>
+<text x="650.0" y="174.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">0ACD:0644. Pointer full: insert</text>
+<text x="650.0" y="187.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">into the list, run the cell script</text>
+<text x="650.0" y="200.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">with 4 (drop). Pointer empty: remove,</text>
+<text x="650.0" y="213.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">script 8 (take)</text>
+<path d="M230.0,290.0 L530.0,290.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)" marker-start="url(#a8A8373)"/>
+<text x="380.0" y="282.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">keys (no mouse): MoveListItem, PickListItem</text>
+<text x="380.0" y="312.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">member removed: RemovePartyMember drops all items</text>
+<text x="380.0" y="325.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">on the party&#x27;s cell, a random front position</text>
+<rect x="280.0" y="140.0" width="200.0" height="54.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="380.0" y="158.4" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">thrown or shot</text>
+<text x="380.0" y="171.9" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">AddDDEffect: a projectile record flies</text>
+<text x="380.0" y="184.2" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">and the item travels in the cell&#x27;s list.</text>
+<path d="M380.0,122.0 L380.0,140.0" fill="none" stroke="#A8741A" stroke-width="1.3" marker-end="url(#aA8741A)"/>
+<text x="0.0" y="360.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">With the mouse disabled the keyboard cursor stands in for the pointer: GetCurrentItem and SetCurrentItem read and write</text>
+<text x="0.0" y="374.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">items[gCursorSlot] of the selected member instead of gMouseItem.</text>
+</svg>

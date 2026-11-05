@@ -1,0 +1,1 @@
+How a thrown item or a spell travels: half a cell per step along the quadrants, a wall test at every step, a hit test in the new position, and the script modes it raises on the way. The record at the bottom is shared by items (state 1) and spell effects (state 2).

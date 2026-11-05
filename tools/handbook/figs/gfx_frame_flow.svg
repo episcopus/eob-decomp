@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 426" width="760" height="426" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker><marker id="aA8741A" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#A8741A"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">ONE VIEW FRAME: DRAWVIEWFRAME (OVL4:1F51)</text>
+<rect x="22.0" y="26.0" width="308.0" height="48.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="176.0" y="46.9" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">BuildViewBlockMap(gPartyCell, gPartyDir)</text>
+<text x="176.0" y="61.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">18 cells, the two-layer 22 x 15 block map at ds:ADB0</text>
+<circle cx="10.0" cy="50.0" r="9.0" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="10.0" y="53.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+<rect x="22.0" y="82.0" width="308.0" height="48.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="176.0" y="96.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">DrawTile(gWallBlocks)</text>
+<text x="176.0" y="110.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">each block word to 8 x 8 pixels, written to page 2 at (0, 0):</text>
+<text x="176.0" y="124.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">176 x 120</text>
+<circle cx="10.0" cy="106.0" r="9.0" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="10.0" y="109.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+<path d="M176.0,74.0 L176.0,82.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="22.0" y="138.0" width="308.0" height="48.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="176.0" y="152.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">DrawViewSlots(0)</text>
+<text x="176.0" y="166.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">18 slots, far to near; sprites go onto page 2 on top of the</text>
+<text x="176.0" y="180.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">walls</text>
+<circle cx="10.0" cy="162.0" r="9.0" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="10.0" y="165.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+<path d="M176.0,130.0 L176.0,138.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="22.0" y="194.0" width="308.0" height="48.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="176.0" y="208.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">palette, if one is pending</text>
+<text x="176.0" y="222.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">VGA only: gSetPalette(gPaletteBuf); with full set, the view</text>
+<text x="176.0" y="236.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">is blanked first</text>
+<circle cx="10.0" cy="218.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="10.0" y="221.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">4</text>
+<path d="M176.0,186.0 L176.0,194.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="22.0" y="250.0" width="308.0" height="48.0" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="176.0" y="270.9" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#3C3A36" text-anchor="middle">wait for gFrameWaitTicks == 0</text>
+<text x="176.0" y="285.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">a countdown the INT 1Ch tick handler runs down</text>
+<circle cx="10.0" cy="274.0" r="9.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="10.0" y="277.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">5</text>
+<path d="M176.0,242.0 L176.0,250.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="22.0" y="306.0" width="308.0" height="48.0" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="176.0" y="320.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">CopyRegion(0, 0, 0, 0, 22, 120, 2, 0)</text>
+<text x="176.0" y="334.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">page 2 to page 0 (the screen), between HidePointerZone</text>
+<text x="176.0" y="348.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">and ShowPointerZone</text>
+<circle cx="10.0" cy="330.0" r="9.0" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="10.0" y="333.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">6</text>
+<path d="M176.0,298.0 L176.0,306.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="22.0" y="362.0" width="308.0" height="48.0" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="176.0" y="376.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#3C3A36" text-anchor="middle">sound 0, DrawCompass, gViewDirty = 0</text>
+<text x="176.0" y="390.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">the compass shapes are redrawn only when the facing</text>
+<text x="176.0" y="404.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">changed</text>
+<circle cx="10.0" cy="386.0" r="9.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="10.0" y="389.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">7</text>
+<path d="M176.0,354.0 L176.0,362.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="372.0" y="114.0" width="388.0" height="262.0" rx="8" fill="#F4F0E6" stroke="none" stroke-width="1"/>
+<text x="382.0" y="130.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#7A5412" text-anchor="start">step 3, for each slot s in gViewDrawOrder</text>
+<path d="M330.0,162.0 L372.0,162.0" fill="none" stroke="#A8741A" stroke-width="1.3" marker-end="url(#aA8741A)"/>
+<rect x="382.0" y="138.0" width="368.0" height="28.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="390.0" y="150.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start">ComputeViewSpan(s)</text>
+<text x="390.0" y="162.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">clip region 5 to the columns not hidden by nearer walls; stop if empty</text>
+<rect x="382.0" y="169.0" width="368.0" height="28.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="390.0" y="181.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start">DrawSlotDecorations(s)</text>
+<text x="390.0" y="193.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">wall decorations of the slot&#x27;s two faces</text>
+<rect x="382.0" y="200.0" width="368.0" height="28.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="390.0" y="212.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="start">DrawSlotItems(s)</text>
+<text x="390.0" y="224.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">objects lying in the cell (item list at record +5)</text>
+<rect x="382.0" y="231.0" width="368.0" height="28.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="390.0" y="243.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="start">DrawSlotDoor(s)</text>
+<text x="390.0" y="255.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">slots 0 to 14, when the wall type has flag 8 (a door)</text>
+<rect x="382.0" y="262.0" width="368.0" height="28.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="390.0" y="274.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#5C2D50" text-anchor="start">DrawSlotMonsters(s)</text>
+<text x="390.0" y="286.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">slots 0 to 14, when record +4 has bits 0 to 2 set</text>
+<rect x="382.0" y="293.0" width="368.0" height="28.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="390.0" y="305.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#5C2D50" text-anchor="start">DrawSlotProjectiles(s)</text>
+<text x="390.0" y="317.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">thrown items and spell missiles in the cell</text>
+<rect x="382.0" y="324.0" width="368.0" height="28.0" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="390.0" y="336.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#3C3A36" text-anchor="start">DrawSlotTeleporter(s)</text>
+<text x="390.0" y="348.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">only when the wall type is 34h</text>
+<text x="382.0" y="367.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">every sprite goes through DrawShapeClipped(2, shape, x, y, 5): page 2,</text>
+<text x="382.0" y="381.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">clipped to region 5, the rectangle ComputeViewSpan just set</text>
+</svg>

@@ -1,0 +1,1 @@
+Every wall event, whatever raises it, goes through one dispatcher. The wall kind picks a handler; the cell's trigger mask decides whether the cell hears the event at all.

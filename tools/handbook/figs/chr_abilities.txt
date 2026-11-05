@@ -1,0 +1,1 @@
+How one ability score is made (left) and the values that depend on the finished scores (right). Races and classes only enter as table rows indexed by `race / 2` and `class`; the player can then edit every score anywhere between the same floor and ceiling.

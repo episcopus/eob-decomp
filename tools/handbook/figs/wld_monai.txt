@@ -1,0 +1,1 @@
+The monster update. Four timed effects each update the monsters of one update group; each live monster runs the same five steps, whose middle is a switch on its mode. A hunting monster tries a ranged attack, then a melee swing, then a move.

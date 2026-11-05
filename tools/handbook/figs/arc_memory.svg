@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 350" width="760" height="350" class="fig">
+<text x="0.0" y="20.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">A. THE LOAD IMAGE, 201,552 BYTES (LOADED AT PARAGRAPH 1000H)</text>
+<rect x="0.0" y="28.0" width="480.5" height="34.0" rx="4" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1"/>
+<text x="240.3" y="43.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2C386B" text-anchor="middle">resident code</text>
+<text x="240.3" y="56.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">127,440</text>
+<rect x="480.5" y="28.0" width="31.9" height="34.0" rx="4" fill="#E3C98F" stroke="#A8741A" stroke-width="1"/>
+<rect x="512.5" y="28.0" width="247.0" height="34.0" rx="4" fill="#A9D0C8" stroke="#1F6F66" stroke-width="1"/>
+<text x="636.0" y="43.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#14504A" text-anchor="middle">DGROUP 212E</text>
+<text x="636.0" y="56.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">65,508</text>
+<rect x="759.5" y="28.0" width="0.5" height="34.0" rx="4" fill="#D9D2C3" stroke="#8A8373" stroke-width="1"/>
+<line x1="491.5" y1="62.0" x2="491.5" y2="70.0" stroke="#8A8373" stroke-width="1"/>
+<text x="491.5" y="81.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">other data segments and the 7 overlay stubs, 8,464</text>
+<text x="758.0" y="81.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="end">stack 128 (312D:0080)</text>
+<text x="0.0" y="112.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">B. THE FAR HEAP AFTER START-UP, VGA, FIXED BLOCKS ONLY: 202,272 BYTES</text>
+<rect x="0.0" y="120.0" width="43.0" height="34.0" rx="4" fill="#D5B8CC" stroke="#7A3E6B" stroke-width="1"/>
+<rect x="43.0" y="120.0" width="42.5" height="34.0" rx="4" fill="#E3C98F" stroke="#A8741A" stroke-width="1"/>
+<rect x="85.6" y="120.0" width="244.2" height="34.0" rx="4" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1"/>
+<text x="207.7" y="135.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2C386B" text-anchor="middle">page 2/3</text>
+<text x="207.7" y="148.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">65,000</text>
+<rect x="329.8" y="120.0" width="120.2" height="34.0" rx="4" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1"/>
+<text x="389.9" y="135.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2C386B" text-anchor="middle">page 4/5</text>
+<text x="389.9" y="148.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">32,000</text>
+<rect x="450.0" y="120.0" width="195.4" height="34.0" rx="4" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1"/>
+<text x="547.7" y="135.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2C386B" text-anchor="middle">page 6/7</text>
+<text x="547.7" y="148.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">52,000</text>
+<rect x="645.4" y="120.0" width="72.6" height="34.0" rx="4" fill="#A9D0C8" stroke="#1F6F66" stroke-width="1"/>
+<text x="681.7" y="135.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#14504A" text-anchor="middle">level buffers</text>
+<text x="681.7" y="148.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">19,316</text>
+<rect x="718.0" y="120.0" width="11.6" height="34.0" rx="4" fill="#D9D2C3" stroke="#8A8373" stroke-width="1"/>
+<rect x="729.6" y="120.0" width="30.4" height="34.0" rx="4" fill="#E3B2A5" stroke="#A8452F" stroke-width="1"/>
+<line x1="21.5" y1="154.0" x2="21.5" y2="164.0" stroke="#8A8373" stroke-width="0.9"/>
+<text x="26.5" y="174.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">overlay pool 11,456</text>
+<line x1="64.3" y1="154.0" x2="64.3" y2="178.0" stroke="#8A8373" stroke-width="0.9"/>
+<text x="69.3" y="188.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">MCGA.OVL 11,320 (64,000 reserved, then shrunk)</text>
+<line x1="723.8" y1="154.0" x2="723.8" y2="164.0" stroke="#8A8373" stroke-width="0.9"/>
+<text x="718.8" y="174.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="end">fonts 2,312, palette 768</text>
+<line x1="744.8" y1="154.0" x2="744.8" y2="178.0" stroke="#8A8373" stroke-width="0.9"/>
+<text x="739.8" y="188.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="end">6 portrait buffers 7,800, icon 300</text>
+<text x="0.0" y="210.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">Not counted: the sprite cells cut from the art sheets (icons, item sheets, compass, per-level monster and wall shapes) and</text>
+<text x="0.0" y="224.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">the block headers. The heap runs from the end of the image to the top of conventional memory.</text>
+<text x="0.0" y="256.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">C. MEMALLOC BLOCK HEADERS (19BC:0007)</text>
+<text x="0.0" y="286.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2B2A28" text-anchor="start">flags 0</text>
+<rect x="70.0" y="270.0" width="36.0" height="24.0" rx="4" fill="#E3C98F" stroke="#A8741A" stroke-width="1"/>
+<text x="88.0" y="286.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">flags</text>
+<rect x="106.0" y="270.0" width="230.0" height="24.0" rx="4" fill="#FFFDF8" stroke="#1F6F66" stroke-width="1"/>
+<text x="221.0" y="286.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">the block: size bytes</text>
+<text x="356.0" y="280.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">farmalloc(size + 1); the byte before the block holds the flags</text>
+<text x="0.0" y="330.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2B2A28" text-anchor="start">flags 20h</text>
+<rect x="70.0" y="314.0" width="36.0" height="24.0" rx="4" fill="#F4F0E6" stroke="#8A8373" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="88.0" y="330.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">pad</text>
+<rect x="106.0" y="314.0" width="20.0" height="24.0" rx="4" fill="#E3C98F" stroke="#A8741A" stroke-width="1"/>
+<text x="116.0" y="330.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="middle">h</text>
+<rect x="126.0" y="314.0" width="210.0" height="24.0" rx="4" fill="#FFFDF8" stroke="#1F6F66" stroke-width="1"/>
+<text x="231.0" y="330.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">block at offset 0: size bytes</text>
+<text x="356.0" y="324.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">farmalloc(size + 16); the header h, (pad - 1) or flags, sits at offset 15 of the</text>
+<text x="356.0" y="337.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">paragraph before the block</text>
+</svg>

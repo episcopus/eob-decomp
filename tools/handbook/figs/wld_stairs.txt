@@ -1,0 +1,1 @@
+The script of the level 1 stairs, decoded from its 199 bytes: a mode test, a facing test, a one-time panel, the descent, and the push-back when the party comes in the wrong way. Offsets are from the start of the unpacked file.

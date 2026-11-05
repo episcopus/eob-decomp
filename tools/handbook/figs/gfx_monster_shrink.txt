@@ -1,0 +1,1 @@
+How a monster is turned into pixels in the view. Top: the tables that map the party's facing, the monster's facing and the walk phase to one of six shapes (negative: drawn mirrored). Bottom: shapes are cut at their largest size and shrunk by two thirds once per row of distance, so a 56 by 96 shape becomes 40 by 64 and then 32 by 43.

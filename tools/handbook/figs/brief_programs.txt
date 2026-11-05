@@ -1,0 +1,1 @@
+The three programs. `START1.EXE` asks for the hardware and starts `INTRO.EXE`, which plays the introduction and then loads `EOB.EXE` itself (sections 2.4 and 2.6); the game loads one graphics driver and reads its data from the PAK archives, the two fonts and its own tables.

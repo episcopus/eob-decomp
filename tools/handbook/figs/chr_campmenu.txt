@@ -1,0 +1,1 @@
+The camp menu is a callback of the main screen's camp button. It owns three small button lists and sends each button to one function; resting and spell choice are the two parts with their own rules.

@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 590" width="760" height="590" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">ONE MONSTER TICK: FOUR TIMED EFFECTS, EACH UPDATING ONE QUARTER OF THE MONSTERS</text>
+<rect x="0.0" y="24.0" width="118.0" height="62.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<text x="8.0" y="41.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2C386B" text-anchor="start">effect 2: group 0</text>
+<text x="8.0" y="55.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">class 0, even slots</text>
+<text x="8.0" y="69.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">period = INF pair 0</text>
+<text x="8.0" y="81.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">first expiry +1 period</text>
+<path d="M59.0,87.0 L59.0,104.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="126.0" y="24.0" width="118.0" height="62.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<text x="134.0" y="41.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2C386B" text-anchor="start">effect 3: group 1</text>
+<text x="134.0" y="55.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">class 0, odd slots</text>
+<text x="134.0" y="69.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">period = INF pair 0</text>
+<text x="134.0" y="81.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">first expiry +1/2 if odd</text>
+<path d="M185.0,87.0 L185.0,104.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="252.0" y="24.0" width="118.0" height="62.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.1"/>
+<text x="260.0" y="41.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start">effect 4: group 2</text>
+<text x="260.0" y="55.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">class 1, even slots</text>
+<text x="260.0" y="69.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">period = INF pair 1</text>
+<text x="260.0" y="81.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">first expiry +1 period</text>
+<path d="M311.0,87.0 L311.0,104.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="378.0" y="24.0" width="118.0" height="62.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.1"/>
+<text x="386.0" y="41.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start">effect 5: group 3</text>
+<text x="386.0" y="55.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">class 1, odd slots</text>
+<text x="386.0" y="69.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">period = INF pair 1</text>
+<text x="386.0" y="81.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">first expiry +1/2 if odd</text>
+<path d="M437.0,87.0 L437.0,104.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="0.0" y="105.0" width="496.0" height="30.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="10.0" y="124.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#5C2D50" text-anchor="start">UpdateMonsters(kind): for each of the 30 monsters with updateGroup == kind and hp &gt; 0</text>
+<rect x="0.0" y="150.0" width="372.0" height="70.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<circle cx="14.0" cy="165.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="14.0" y="168.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+<text x="32.0" y="169.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="start">AlertMonsterToParty</text>
+<text x="10.0" y="183.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">skips modes 7 to 10. Distance (octagonal) under 4, and the party is not</text>
+<text x="10.0" y="195.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">in the monster&#x27;s rear arc unless under 2: mode = 0, target = party cell.</text>
+<text x="10.0" y="207.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">No wall test.</text>
+<rect x="0.0" y="227.0" width="372.0" height="58.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<circle cx="14.0" cy="242.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="14.0" y="245.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="32.0" y="246.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="start">ChasePartyIfAttacked</text>
+<text x="10.0" y="260.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">when mode &gt; 0 and the &#x27;attacked&#x27; flag is set (and mode is not 10): mode</text>
+<text x="10.0" y="272.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">0 and target = party; a sleeping group (mode 8) wakes together.</text>
+<rect x="0.0" y="292.0" width="372.0" height="58.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<circle cx="14.0" cy="307.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="14.0" y="310.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+<text x="32.0" y="311.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="start">switch (mode)</text>
+<text x="10.0" y="325.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">0 hunt; 1 to 3 wander; 5, 6 follow a wall; 7, 10 count the timer down; 4,</text>
+<text x="10.0" y="337.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">8, 9 do nothing.</text>
+<rect x="0.0" y="357.0" width="372.0" height="46.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<circle cx="14.0" cy="372.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="14.0" y="375.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">4</text>
+<text x="32.0" y="376.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="start">animPhase ^= 1</text>
+<text x="10.0" y="390.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">the walk frame flips, except in modes 4 and 7.</text>
+<rect x="0.0" y="410.0" width="372.0" height="46.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<circle cx="14.0" cy="425.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="14.0" y="428.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">5</text>
+<text x="32.0" y="429.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="start">UpdateDDEffects()</text>
+<text x="10.0" y="443.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">after the loop: flying objects are tested once more for hits.</text>
+<rect x="396.0" y="150.0" width="364.0" height="286.0" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="406.0" y="168.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="start">mode 0, hunting (UpdateHuntingMonster)</text>
+<circle cx="412.0" cy="186.0" r="8.0" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="412.0" y="189.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">a</text>
+<text x="426.0" y="190.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="700" fill="#80311F" text-anchor="start">TryMonsterRangedAttack</text>
+<text x="426.0" y="203.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">type bit 0x40, actions left, delay 0; Distance &lt;= 3, the party</text>
+<text x="426.0" y="215.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">exactly ahead (code = 2 x facing), every cell between open (flags &amp;</text>
+<text x="426.0" y="227.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">3) and empty: cast, throw or blast</text>
+<circle cx="412.0" cy="250.0" r="8.0" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="412.0" y="253.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">b</text>
+<text x="426.0" y="254.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="700" fill="#80311F" text-anchor="start">TryMonsterMelee</text>
+<text x="426.0" y="267.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">only when the cell ahead is the party&#x27;s. In the front half of its cell,</text>
+<text x="426.0" y="279.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">else it takes a new quadrant. Swings every other update:</text>
+<text x="426.0" y="291.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">ResolveMonsterMelee</text>
+<circle cx="412.0" cy="314.0" r="8.0" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="412.0" y="317.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">c</text>
+<text x="426.0" y="318.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="700" fill="#80311F" text-anchor="start">StepMonsterToward(targetCell)</text>
+<text x="426.0" y="331.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">turn toward the party one quarter turn at a time when next to it;</text>
+<text x="426.0" y="343.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">else step along the direction, trying the eight headings in a fixed</text>
+<text x="426.0" y="355.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">order; fleeing (flag 8) reverses it</text>
+<circle cx="412.0" cy="378.0" r="8.0" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="412.0" y="381.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">d</text>
+<text x="426.0" y="382.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="700" fill="#80311F" text-anchor="start">TryMonsterMelee(-1)</text>
+<text x="426.0" y="395.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">after moving, only for types with flag 8</text>
+<text x="406.0" y="428.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="600" fill="#80311F" text-anchor="start">a, b: the first that acts ends the update</text>
+<line x1="0.0" y1="450.0" x2="760.0" y2="450.0" stroke="#D9D2C3" stroke-width="1"/>
+<text x="0.0" y="464.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">THE MODES OF A MONSTER (MONSTER +8; THE LEVEL FILES USE 1, 3, 4, 5, 6, 7 AND 8)</text>
+<circle cx="10.0" cy="479.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="10.0" y="482.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">0</text>
+<text x="26.0" y="482.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">hunt: head for targetCell</text>
+<circle cx="10.0" cy="496.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="10.0" y="499.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+<text x="26.0" y="499.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">wander: step ahead, else turn around (+2)</text>
+<circle cx="10.0" cy="513.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="10.0" y="516.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="26.0" y="516.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">wander: step ahead, else turn left (-1)</text>
+<circle cx="10.0" cy="530.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="10.0" y="533.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+<text x="26.0" y="533.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">wander: step ahead, else turn right (+1)</text>
+<circle cx="10.0" cy="547.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="10.0" y="550.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">4</text>
+<text x="26.0" y="550.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">stand still</text>
+<circle cx="10.0" cy="564.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="10.0" y="567.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">5</text>
+<text x="26.0" y="567.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">follow the wall on the left</text>
+<circle cx="390.0" cy="479.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="390.0" y="482.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">6</text>
+<text x="406.0" y="482.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">follow the wall on the right</text>
+<circle cx="390.0" cy="496.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="390.0" y="499.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">7</text>
+<text x="406.0" y="499.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">wait; timer counts down, then mode 0</text>
+<circle cx="390.0" cy="513.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="390.0" y="516.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">8</text>
+<text x="406.0" y="516.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">asleep with its group: wakes when one is hit or dies</text>
+<circle cx="390.0" cy="530.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="390.0" y="533.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">9</text>
+<text x="406.0" y="533.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">ignores the party&#x27;s approach, fights when hit</text>
+<circle cx="390.0" cy="547.0" r="10.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="390.0" y="550.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">10</text>
+<text x="406.0" y="550.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">held by a hold spell for 15 updates, then mode 0</text>
+</svg>

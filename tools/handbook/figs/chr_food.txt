@@ -1,0 +1,1 @@
+Hunger is a single decrementing byte with two bar-colour thresholds and one real consequence at zero, which only shows during a rest. The Ring of Sustenance test in the decrement is a comparison that can never succeed, so every living member eats.

@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 434" width="760" height="434" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">A. ONE RECORD OF THE FILE TABLE (DS:01FF), 19 BYTES</text>
+<rect x="0.0" y="22.0" width="153.8" height="34.0" rx="3" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1.1"/>
+<text x="76.9" y="38.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">name</text>
+<text x="76.9" y="51.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">+00 far ptr</text>
+<rect x="155.8" y="22.0" width="153.8" height="34.0" rx="3" fill="#A9D0C8" stroke="#1F6F66" stroke-width="1.1"/>
+<text x="232.7" y="38.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">size</text>
+<text x="232.7" y="51.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">+04 long</text>
+<rect x="311.6" y="22.0" width="153.8" height="34.0" rx="3" fill="#E3C98F" stroke="#A8741A" stroke-width="1.1"/>
+<text x="388.5" y="38.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">data</text>
+<text x="388.5" y="51.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">+08 far ptr</text>
+<rect x="467.4" y="22.0" width="75.9" height="34.0" rx="3" fill="#D5B8CC" stroke="#7A3E6B" stroke-width="1.1"/>
+<text x="505.3" y="38.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="middle">link</text>
+<text x="505.3" y="51.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">+0C int</text>
+<rect x="545.3" y="22.0" width="153.8" height="34.0" rx="3" fill="#D9D2C3" stroke="#8A8373" stroke-width="1.1"/>
+<text x="622.2" y="38.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#3C3A36" text-anchor="middle">pos</text>
+<text x="622.2" y="51.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">+0E long</text>
+<rect x="701.1" y="22.0" width="36.9" height="34.0" rx="3" fill="#E3B2A5" stroke="#A8452F" stroke-width="1.1"/>
+<text x="719.5" y="38.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">fl</text>
+<text x="719.5" y="51.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">+12</text>
+<text x="0.0" y="72.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="400" fill="#3C3A36" text-anchor="start">link &lt; 0: the record is a member of another record&#x27;s PAK (low 15 bits = that record); link &gt;= 0: a plain file, on disk number link + 1.</text>
+<text x="0.0" y="87.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="400" fill="#3C3A36" text-anchor="start">data is set only while a copy of the file is held in memory; flags would mark files to preload or load on demand. Every flags byte is 0 here.</text>
+<text x="0.0" y="118.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">B. FILEOPEN(&quot;BRICK.VCN&quot;, 1): FROM A NAME TO A STRETCH OF A PAK</text>
+<rect x="0.0" y="130.0" width="140.0" height="122.0" rx="6" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="70.0" y="161.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">FindFile</text>
+<text x="70.0" y="175.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">strcmp down the table:</text>
+<text x="70.0" y="188.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">record 32, link = alias of</text>
+<text x="70.0" y="202.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">record 24</text>
+<text x="70.0" y="215.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">(eobdata3.pak), size</text>
+<text x="70.0" y="229.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">34,847</text>
+<circle cx="12.0" cy="142.0" r="8.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="12.0" y="145.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+<path d="M141.0,191.0 L149.0,191.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="150.0" y="130.0" width="140.0" height="122.0" rx="6" fill="#FFFDF8" stroke="#A8452F" stroke-width="1.2"/>
+<text x="220.0" y="161.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">CheckFile</text>
+<text x="220.0" y="175.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">LocateOverlayFile opens</text>
+<text x="220.0" y="188.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">eobdata3.pak on the</text>
+<text x="220.0" y="202.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">current drive; if absent:</text>
+<text x="220.0" y="215.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">the dialog &quot;Insert disk 3</text>
+<text x="220.0" y="229.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">into any drive&quot;</text>
+<circle cx="162.0" cy="142.0" r="8.0" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="162.0" y="145.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+<path d="M291.0,191.0 L299.0,191.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="300.0" y="130.0" width="140.0" height="122.0" rx="6" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="370.0" y="161.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">open + LookupFileEntry</text>
+<text x="370.0" y="175.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">DOS open of the PAK;</text>
+<text x="370.0" y="188.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">walk its directory (u32</text>
+<text x="370.0" y="202.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">offset, name) to</text>
+<text x="370.0" y="215.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">BRICK.VCN: offset and</text>
+<text x="370.0" y="229.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">length, seek there</text>
+<circle cx="312.0" cy="142.0" r="8.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="312.0" y="145.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+<path d="M441.0,191.0 L449.0,191.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="450.0" y="130.0" width="140.0" height="122.0" rx="6" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="520.0" y="168.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">a handle slot</text>
+<text x="520.0" y="182.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">first free of 10 slots in</text>
+<text x="520.0" y="195.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">gFileHandles: DOS handle</text>
+<text x="520.0" y="209.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">| 4000h; slot offset and</text>
+<text x="520.0" y="222.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">length are kept</text>
+<circle cx="462.0" cy="142.0" r="8.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="462.0" y="145.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">4</text>
+<path d="M591.0,191.0 L599.0,191.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="600.0" y="130.0" width="140.0" height="122.0" rx="6" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="670.0" y="168.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">FileRead</text>
+<text x="670.0" y="182.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">reads at most what is</text>
+<text x="670.0" y="195.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">left of the member (the</text>
+<text x="670.0" y="209.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">length clamp), in chunks</text>
+<text x="670.0" y="222.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">of 0FA00h bytes</text>
+<circle cx="612.0" cy="142.0" r="8.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="612.0" y="145.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">5</text>
+<text x="0.0" y="280.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">C. WHAT THE 203 RECORDS ARE</text>
+<rect x="0.0" y="292.0" width="760.0" height="34.0" rx="5" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="10.0" y="313.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#14504A" text-anchor="start">10 plain files</text>
+<text x="150.0" y="307.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="400" fill="#3C3A36" text-anchor="start">INTRO.EXE and eobdata1.pak (disk 1), EOB.EXE, LEVELS.TMP, eobdata2.pak (disk 2), eobdata3.pak, 4, 5 (disks 3 to 5),</text>
+<text x="150.0" y="319.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="400" fill="#3C3A36" text-anchor="start">EOBDATA.SAV and eobdata6.pak (disk 6)</text>
+<rect x="0.0" y="332.0" width="760.0" height="34.0" rx="5" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1"/>
+<text x="10.0" y="353.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2C386B" text-anchor="start">193 aliases</text>
+<text x="150.0" y="347.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="400" fill="#3C3A36" text-anchor="start">one per PAK member: 17 in eobdata1, 2 in eobdata2, 174 in eobdata3 to 6; sizes are the members&#x27; unpacked file sizes</text>
+<rect x="0.0" y="372.0" width="760.0" height="34.0" rx="5" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="10.0" y="393.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="start">0 preloaded</text>
+<text x="150.0" y="387.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="400" fill="#3C3A36" text-anchor="start">no flags byte has FLAG_KEEP or FLAG_LOAD, so BuildFileCache loads nothing and no record ever has a copy in memory</text>
+<text x="0.0" y="422.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">The disk numbers look like the floppy release&#x27;s: a file found on no drive makes the game ask for its disk by number.</text>
+</svg>

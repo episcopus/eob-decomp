@@ -1,0 +1,1 @@
+How the four graphics choices differ where the game's own code can see it. The game draws with the same calls in all four; the drivers hold the pixel format, and a few game routines (the wall tile draw, the wall texture loader, the sprite shrinkers) have a path of their own for each mode. Section 2.5 lists the driver slots; this table says what is stored where.

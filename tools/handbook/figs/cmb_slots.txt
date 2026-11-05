@@ -1,0 +1,1 @@
+Every duration in the game, from a spell to the pause after an attack, is one of ten slots in the member's record: a type byte and an absolute tick time. One of six table entries watches the earliest time and calls the type's handler.

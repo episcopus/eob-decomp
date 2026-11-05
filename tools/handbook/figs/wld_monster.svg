@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 430" width="760" height="430" class="fig">
+<text x="0.0" y="35.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#3C3A36" text-anchor="start">A MONSTER RECORD IN THE LEVEL FILE: 14 BYTES, 30 OF THEM (a record with cell 0 is an empty slot)</text>
+<rect x="16.0" y="52.0" width="52.0" height="26.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="42.0" y="69.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="middle">slot</text>
+<rect x="68.0" y="52.0" width="52.0" height="26.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1"/>
+<text x="94.0" y="69.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2C386B" text-anchor="middle">spd</text>
+<rect x="120.0" y="52.0" width="104.0" height="26.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="172.0" y="69.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#14504A" text-anchor="middle">cell</text>
+<rect x="224.0" y="52.0" width="52.0" height="26.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="250.0" y="69.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#14504A" text-anchor="middle">pos</text>
+<rect x="276.0" y="52.0" width="52.0" height="26.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="302.0" y="69.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#14504A" text-anchor="middle">dir</text>
+<rect x="328.0" y="52.0" width="52.0" height="26.0" rx="0" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="354.0" y="69.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#80311F" text-anchor="middle">type</text>
+<rect x="380.0" y="52.0" width="52.0" height="26.0" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1"/>
+<text x="406.0" y="69.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#5C2D50" text-anchor="middle">alt</text>
+<rect x="432.0" y="52.0" width="52.0" height="26.0" rx="0" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="458.0" y="69.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#7A5412" text-anchor="middle">mode</text>
+<rect x="484.0" y="52.0" width="52.0" height="26.0" rx="0" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="510.0" y="69.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#7A5412" text-anchor="middle">tmr</text>
+<rect x="536.0" y="52.0" width="104.0" height="26.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="588.0" y="69.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="middle">drop 1 (50%)</text>
+<rect x="640.0" y="52.0" width="104.0" height="26.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="692.0" y="69.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="middle">drop 2</text>
+<text x="42.0" y="51.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">0</text>
+<text x="94.0" y="51.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">1</text>
+<text x="146.0" y="51.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">2</text>
+<text x="198.0" y="51.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">3</text>
+<text x="250.0" y="51.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">4</text>
+<text x="302.0" y="51.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">5</text>
+<text x="354.0" y="51.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">6</text>
+<text x="406.0" y="51.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">7</text>
+<text x="458.0" y="51.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">8</text>
+<text x="510.0" y="51.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">9</text>
+<text x="562.0" y="51.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">10</text>
+<text x="614.0" y="51.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">11</text>
+<text x="666.0" y="51.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">12</text>
+<text x="718.0" y="51.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">13</text>
+<text x="16.0" y="106.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">spd: speed class 0 or 1 (which pair of update effects); pos 0..3 quadrant, 4 centre; type: row of the type table; alt: second sprite sheet</text>
+<text x="0.0" y="133.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#3C3A36" text-anchor="start">A LIVE MONSTER, struct Monster, 28 BYTES (gMonsters, ds:8A82, 30 RECORDS = 840 BYTES)</text>
+<rect x="16.0" y="150.0" width="26.0" height="26.0" rx="0" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="29.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#80311F" text-anchor="middle">type</text>
+<rect x="42.0" y="150.0" width="26.0" height="26.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1"/>
+<text x="55.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2C386B" text-anchor="middle">grp</text>
+<rect x="68.0" y="150.0" width="52.0" height="26.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="94.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#14504A" text-anchor="middle">cell</text>
+<rect x="120.0" y="150.0" width="26.0" height="26.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="133.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#14504A" text-anchor="middle">pos</text>
+<rect x="146.0" y="150.0" width="26.0" height="26.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="159.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#14504A" text-anchor="middle">dir</text>
+<rect x="172.0" y="150.0" width="26.0" height="26.0" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1"/>
+<text x="185.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#5C2D50" text-anchor="middle">an</text>
+<rect x="198.0" y="150.0" width="26.0" height="26.0" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1"/>
+<text x="211.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#5C2D50" text-anchor="middle">alt</text>
+<rect x="224.0" y="150.0" width="26.0" height="26.0" rx="0" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="237.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#7A5412" text-anchor="middle">md</text>
+<rect x="250.0" y="150.0" width="26.0" height="26.0" rx="0" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="263.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#7A5412" text-anchor="middle">st</text>
+<rect x="276.0" y="150.0" width="26.0" height="26.0" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1"/>
+<text x="289.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#5C2D50" text-anchor="middle">af</text>
+<rect x="302.0" y="150.0" width="26.0" height="26.0" rx="0" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="315.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#7A5412" text-anchor="middle">tm</text>
+<rect x="328.0" y="150.0" width="52.0" height="26.0" rx="0" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="354.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#80311F" text-anchor="middle">maxHp</text>
+<rect x="380.0" y="150.0" width="52.0" height="26.0" rx="0" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="406.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#80311F" text-anchor="middle">hp</text>
+<rect x="432.0" y="150.0" width="52.0" height="26.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="458.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#14504A" text-anchor="middle">target</text>
+<rect x="484.0" y="150.0" width="52.0" height="26.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="510.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="middle">drop1</text>
+<rect x="536.0" y="150.0" width="52.0" height="26.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="562.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="middle">drop2</text>
+<rect x="588.0" y="150.0" width="26.0" height="26.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1"/>
+<text x="601.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2C386B" text-anchor="middle">fl</text>
+<rect x="614.0" y="150.0" width="26.0" height="26.0" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1"/>
+<text x="627.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#5C2D50" text-anchor="middle">dr</text>
+<rect x="640.0" y="150.0" width="26.0" height="26.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1"/>
+<text x="653.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2C386B" text-anchor="middle">dl</text>
+<rect x="666.0" y="150.0" width="26.0" height="26.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1"/>
+<text x="679.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2C386B" text-anchor="middle">ac</text>
+<rect x="692.0" y="150.0" width="52.0" height="26.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="718.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="middle">unused</text>
+<text x="29.0" y="149.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">0</text>
+<text x="81.0" y="149.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">2</text>
+<text x="133.0" y="149.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">4</text>
+<text x="185.0" y="149.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">6</text>
+<text x="237.0" y="149.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">8</text>
+<text x="289.0" y="149.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">A</text>
+<text x="341.0" y="149.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">C</text>
+<text x="393.0" y="149.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">E</text>
+<text x="445.0" y="149.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">10</text>
+<text x="497.0" y="149.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">12</text>
+<text x="549.0" y="149.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">14</text>
+<text x="601.0" y="149.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">16</text>
+<text x="653.0" y="149.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">18</text>
+<text x="705.0" y="149.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">1A</text>
+<text x="0.0" y="202.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">+0 typeIndex: row of the type table; +1 updateGroup 0..3; +2 cell; +4 cellPos (quadrant 0..3, centre 4); +5 orient 0..3</text>
+<text x="0.0" y="216.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">+6 animPhase (walk frame, flips each update); +7 altShapes; +8 mode (0..10); +9 state (wall-follow memory); +A attackFrame (0xFE, 0xFF while swinging); +B</text>
+<text x="0.0" y="228.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">timer</text>
+<text x="0.0" y="242.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">+C maxHp [H], +E hp (dead at 0 or less); +10 targetCell (where it heads); +12, +14 drops; +16 flags: 1 attacked, 2 hit flash, 4 swing, 8 fleeing, 0x10 turn tried</text>
+<text x="0.0" y="256.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">+17 drawOffset (x high nibble, y low; re-rolled by effect 15); +18 actionDelay and +19 actionsLeft (ranged attacks); +1A, +1B read by no code</text>
+<text x="0.0" y="293.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#3C3A36" text-anchor="start">A MONSTER TYPE, struct MonsterType, 27 BYTES (gMonsterTypes, ds:1A3B, 22 ROWS = 594 BYTES)</text>
+<rect x="16.0" y="310.0" width="26.0" height="26.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="29.0" y="327.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#14504A" text-anchor="middle">AC</text>
+<rect x="42.0" y="310.0" width="26.0" height="26.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="55.0" y="327.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#14504A" text-anchor="middle">T0</text>
+<rect x="68.0" y="310.0" width="26.0" height="26.0" rx="0" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="81.0" y="327.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#80311F" text-anchor="middle">HD</text>
+<rect x="94.0" y="310.0" width="26.0" height="26.0" rx="0" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="107.0" y="327.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#7A5412" text-anchor="middle">n</text>
+<rect x="120.0" y="310.0" width="78.0" height="26.0" rx="0" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="159.0" y="327.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#7A5412" text-anchor="middle">attack 1</text>
+<rect x="198.0" y="310.0" width="78.0" height="26.0" rx="0" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="237.0" y="327.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#7A5412" text-anchor="middle">attack 2</text>
+<rect x="276.0" y="310.0" width="78.0" height="26.0" rx="0" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="315.0" y="327.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#7A5412" text-anchor="middle">attack 3</text>
+<rect x="354.0" y="310.0" width="26.0" height="26.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="367.0" y="327.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="middle">-</text>
+<rect x="380.0" y="310.0" width="26.0" height="26.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1"/>
+<text x="393.0" y="327.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2C386B" text-anchor="middle">fl</text>
+<rect x="406.0" y="310.0" width="104.0" height="26.0" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1"/>
+<text x="458.0" y="327.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#5C2D50" text-anchor="middle">hold, undead</text>
+<rect x="510.0" y="310.0" width="52.0" height="26.0" rx="0" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="536.0" y="327.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#80311F" text-anchor="middle">xp</text>
+<rect x="562.0" y="310.0" width="26.0" height="26.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="575.0" y="327.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#14504A" text-anchor="middle">sz</text>
+<rect x="588.0" y="310.0" width="26.0" height="26.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="601.0" y="327.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="middle">hit</text>
+<rect x="614.0" y="310.0" width="26.0" height="26.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="627.0" y="327.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="middle">mv</text>
+<rect x="640.0" y="310.0" width="26.0" height="26.0" rx="0" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="653.0" y="327.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#7A5412" text-anchor="middle">ra</text>
+<rect x="666.0" y="310.0" width="26.0" height="26.0" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1"/>
+<text x="679.0" y="327.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#5C2D50" text-anchor="middle">tu</text>
+<rect x="692.0" y="310.0" width="26.0" height="26.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1"/>
+<text x="705.0" y="327.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2C386B" text-anchor="middle">mr</text>
+<text x="29.0" y="309.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">0</text>
+<text x="81.0" y="309.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">2</text>
+<text x="133.0" y="309.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">4</text>
+<text x="185.0" y="309.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">6</text>
+<text x="237.0" y="309.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">8</text>
+<text x="289.0" y="309.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">A</text>
+<text x="341.0" y="309.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">C</text>
+<text x="393.0" y="309.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">E</text>
+<text x="445.0" y="309.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">10</text>
+<text x="497.0" y="309.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">12</text>
+<text x="549.0" y="309.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">14</text>
+<text x="601.0" y="309.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">16</text>
+<text x="653.0" y="309.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">18</text>
+<text x="705.0" y="309.0" font-family="'DejaVu Sans Mono', monospace" font-size="8.5" font-weight="400" fill="#6E695F" text-anchor="middle">1A</text>
+<text x="0.0" y="348.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">+0 armour class (the party&#x27;s to-hit needs d20 &gt;= 20 - level steps - AC - bonus); +1 the monster&#x27;s to-hit number (needs d20 &gt;= T0 - the target&#x27;s armour</text>
+<text x="0.0" y="360.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">class); +2 hit dice (hit points = HD d8, or 1d4 when 255)</text>
+<text x="0.0" y="374.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">+3 number of attacks, then three (count, sides, bonus) dice; +E flags: 1 large-weapon damage, 2 stepping frames, 4 half damage from plain weapons, 8</text>
+<text x="0.0" y="386.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">attacks after moving, 0x10 poison, 0x20 paralysis, 0x40 ranged, 0x80 steals an item</text>
+<text x="0.0" y="400.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">+F bit 0 held by Hold Person, bit 1 by Hold Monster, bit 2 undead; +13 experience; +15 size (nonzero: alone in a cell); +16 hit sound; +17 move sound; +18 ranged</text>
+<text x="0.0" y="412.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">uses (255 = unlimited); +19 turn-undead row (-1 none); +1A magic resistance percent</text>
+</svg>

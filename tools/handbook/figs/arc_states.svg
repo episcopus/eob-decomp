@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 515" width="760" height="515" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker><marker id="aA8452F" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#A8452F"/></marker></defs>
+<rect x="215.0" y="0.0" width="330.0" height="54.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="380.0" y="24.1" font-family="Inter, 'Inter Display', sans-serif" font-size="14" font-weight="700" fill="#14504A" text-anchor="middle">Title menu</text>
+<text x="380.0" y="40.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="middle">LoadGamePanel, ovl2:0846</text>
+<rect x="600.0" y="0.0" width="160.0" height="54.0" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="680.0" y="24.4" font-family="Inter, 'Inter Display', sans-serif" font-size="14" font-weight="700" fill="#80311F" text-anchor="middle">Exit to DOS</text>
+<text x="680.0" y="40.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">ShutdownGame, exit(0)</text>
+<path d="M547.0,27.0 L598.0,27.0" fill="none" stroke="#A8452F" stroke-width="1.3" marker-end="url(#aA8452F)"/>
+<text x="572.0" y="20.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">entry 2</text>
+<rect x="0.0" y="108.0" width="290.0" height="56.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="145.0" y="126.2" font-family="Inter, 'Inter Display', sans-serif" font-size="14" font-weight="700" fill="#5C2D50" text-anchor="middle">New party</text>
+<text x="145.0" y="141.9" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">RunCharacterPanel, ovl0:28F9</text>
+<text x="145.0" y="156.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">race, class, alignment, stats, name x4</text>
+<rect x="470.0" y="108.0" width="290.0" height="56.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="615.0" y="126.2" font-family="Inter, 'Inter Display', sans-serif" font-size="14" font-weight="700" fill="#5C2D50" text-anchor="middle">Load a game</text>
+<text x="615.0" y="141.9" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">LoadGame, ovl3:15B9</text>
+<text x="615.0" y="156.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">EOBDATA.SAV in, LEVELS.TMP out</text>
+<path d="M300.0,55.0 L150.0,106.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="191.0" y="72.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">entry 1</text>
+<path d="M460.0,55.0 L615.0,106.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="571.5" y="72.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">entry 0</text>
+<path d="M615.0,166.0 L615.0,226.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="629.0" y="199.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">ok</text>
+<path d="M150.0,166.0 L150.0,226.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="0.0" y="226.0" width="760.0" height="140.0" rx="8" fill="#F1F3FA" stroke="#3B4A8A" stroke-width="1.4"/>
+<text x="10.0" y="245.0" font-family="Inter, 'Inter Display', sans-serif" font-size="13" font-weight="700" fill="#2C386B" text-anchor="start">Map screen: RunMapLoop, 0ACD:0E8A, never returns</text>
+<rect x="10.0" y="262.0" width="115.0" height="46.0" rx="6" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="67.5" y="282.1" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2C386B" text-anchor="middle">Map view</text>
+<text x="67.5" y="296.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">list 1, mode 0</text>
+<rect x="135.0" y="262.0" width="115.0" height="46.0" rx="6" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="192.5" y="282.1" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2C386B" text-anchor="middle">Inventory</text>
+<text x="192.5" y="296.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">list 2, mode 1</text>
+<rect x="260.0" y="262.0" width="115.0" height="46.0" rx="6" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="317.5" y="282.1" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2C386B" text-anchor="middle">Character sheet</text>
+<text x="317.5" y="296.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">list 3, mode 2</text>
+<rect x="385.0" y="262.0" width="115.0" height="46.0" rx="6" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="442.5" y="282.1" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2C386B" text-anchor="middle">Spell panel</text>
+<text x="442.5" y="296.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">tables a, gFlag 1</text>
+<rect x="510.0" y="262.0" width="115.0" height="46.0" rx="6" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="567.5" y="282.1" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2C386B" text-anchor="middle">Swap members</text>
+<text x="567.5" y="296.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">list 4</text>
+<rect x="635.0" y="262.0" width="115.0" height="46.0" rx="6" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="692.5" y="282.1" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2C386B" text-anchor="middle">Cast target</text>
+<text x="692.5" y="296.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">list 5</text>
+<text x="10.0" y="332.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">The key and mouse regions are the node list that gPanelMode and gFlag select (section 5.10);</text>
+<text x="10.0" y="348.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">every pass also runs the timed effects, the redraw and the sound hooks (section 3.1).</text>
+<rect x="0.0" y="420.0" width="240.0" height="60.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="120.0" y="440.2" font-family="Inter, 'Inter Display', sans-serif" font-size="14" font-weight="700" fill="#7A5412" text-anchor="middle">Camp menu</text>
+<text x="120.0" y="455.9" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">RunCampMenu, ovl1:1ACD</text>
+<text x="120.0" y="470.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">rest, spells, options, load, save, quit</text>
+<rect x="260.0" y="420.0" width="240.0" height="60.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="380.0" y="440.2" font-family="Inter, 'Inter Display', sans-serif" font-size="14" font-weight="700" fill="#7A5412" text-anchor="middle">Event panels</text>
+<text x="380.0" y="455.9" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">CharOverlay, ovl5:1A82</text>
+<text x="380.0" y="470.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">temple, NPCs, ending, riddle</text>
+<rect x="520.0" y="420.0" width="240.0" height="60.0" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="640.0" y="440.2" font-family="Inter, 'Inter Display', sans-serif" font-size="14" font-weight="700" fill="#3C3A36" text-anchor="middle">Level change</text>
+<text x="640.0" y="455.9" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">LoadLevelOp: SaveLevelState,</text>
+<text x="640.0" y="470.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">then LoadLevel, ovl3:0A7C</text>
+<path d="M110.0,368.0 L110.0,418.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)" marker-start="url(#a8A8373)"/>
+<text x="120.0" y="396.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">C key or the camp icon</text>
+<path d="M380.0,368.0 L380.0,418.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)" marker-start="url(#a8A8373)"/>
+<text x="390.0" y="396.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">a cell script asks for it</text>
+<path d="M640.0,368.0 L640.0,418.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)" marker-start="url(#a8A8373)"/>
+<text x="650.0" y="396.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">stairs and scripts</text>
+<text x="0.0" y="505.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#6E695F" text-anchor="start">Ways out to DOS (red): the title menu&#x27;s third entry, Quit Game in the camp menu, a party with nobody left, the ending, any fatal error.</text>
+</svg>

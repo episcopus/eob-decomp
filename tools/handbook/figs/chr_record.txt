@@ -1,0 +1,1 @@
+The 243-byte `CharRec` drawn to scale, 64 bytes to a strip (offsets in hex). Abilities are stored as (current, base) byte pairs, the 60 spell bytes are one run of ten rows of six, and every list (items, timers, effect types) is a fixed array; `items` holds ids into the 500 item records, not item data.

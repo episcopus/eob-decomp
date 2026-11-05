@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 432" width="760" height="432" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<rect x="0.0" y="0.0" width="250.0" height="218.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="10.0" y="19.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#7A5412" text-anchor="start">Camp (menu 0)</text>
+<text x="10.0" y="33.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.6" font-weight="400" fill="#3C3A36" text-anchor="start">C or the camp icon: RunCampMenu, ovl1:1ACD</text>
+<rect x="8.0" y="42.0" width="234.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#A8741A" stroke-width="0.8"/>
+<text x="14.0" y="56.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Rest Party</text>
+<text x="236.0" y="56.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#7A5412" text-anchor="end">R</text>
+<rect x="8.0" y="66.0" width="234.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#A8741A" stroke-width="0.8"/>
+<text x="14.0" y="80.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Memorize Spells</text>
+<text x="236.0" y="80.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#7A5412" text-anchor="end">M</text>
+<rect x="8.0" y="90.0" width="234.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#A8741A" stroke-width="0.8"/>
+<text x="14.0" y="104.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Pray for Spells</text>
+<text x="236.0" y="104.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#7A5412" text-anchor="end">P</text>
+<rect x="8.0" y="114.0" width="234.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#A8741A" stroke-width="0.8"/>
+<text x="14.0" y="128.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Scribe Scrolls</text>
+<text x="236.0" y="128.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#7A5412" text-anchor="end">S</text>
+<rect x="8.0" y="138.0" width="234.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#A8741A" stroke-width="0.8"/>
+<text x="14.0" y="152.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Preferences</text>
+<text x="236.0" y="152.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#7A5412" text-anchor="end">-</text>
+<rect x="8.0" y="162.0" width="234.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#A8741A" stroke-width="0.8"/>
+<text x="14.0" y="176.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Game Options</text>
+<text x="236.0" y="176.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#7A5412" text-anchor="end">G</text>
+<rect x="8.0" y="186.0" width="234.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#A8741A" stroke-width="0.8"/>
+<text x="14.0" y="200.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Exit</text>
+<text x="236.0" y="200.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#7A5412" text-anchor="end">E</text>
+<rect x="300.0" y="0.0" width="210.0" height="158.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="310.0" y="19.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#14504A" text-anchor="start">Preferences (menu 2)</text>
+<rect x="308.0" y="30.0" width="194.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#1F6F66" stroke-width="0.8"/>
+<text x="314.0" y="44.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Tunes are ON</text>
+<text x="496.0" y="44.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#14504A" text-anchor="end">T</text>
+<rect x="308.0" y="54.0" width="194.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#1F6F66" stroke-width="0.8"/>
+<text x="314.0" y="68.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Sounds are ON</text>
+<text x="496.0" y="68.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#14504A" text-anchor="end">S</text>
+<rect x="308.0" y="78.0" width="194.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#1F6F66" stroke-width="0.8"/>
+<text x="314.0" y="92.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Bar Graphs are ON</text>
+<text x="496.0" y="92.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#14504A" text-anchor="end">B</text>
+<rect x="308.0" y="102.0" width="194.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#1F6F66" stroke-width="0.8"/>
+<text x="314.0" y="116.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Mouse is ON</text>
+<text x="496.0" y="116.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#14504A" text-anchor="end">M</text>
+<rect x="308.0" y="126.0" width="194.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#1F6F66" stroke-width="0.8"/>
+<text x="314.0" y="140.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Exit</text>
+<text x="496.0" y="140.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#14504A" text-anchor="end">E</text>
+<rect x="300.0" y="172.0" width="210.0" height="158.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="310.0" y="191.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#2C386B" text-anchor="start">Game Options (menu 1)</text>
+<rect x="308.0" y="202.0" width="194.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="0.8"/>
+<text x="314.0" y="216.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Load Game</text>
+<text x="496.0" y="216.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#2C386B" text-anchor="end">L</text>
+<rect x="308.0" y="226.0" width="194.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="0.8"/>
+<text x="314.0" y="240.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Save Game</text>
+<text x="496.0" y="240.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#2C386B" text-anchor="end">S</text>
+<rect x="308.0" y="250.0" width="194.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="0.8"/>
+<text x="314.0" y="264.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Drop Character</text>
+<text x="496.0" y="264.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#2C386B" text-anchor="end">D</text>
+<rect x="308.0" y="274.0" width="194.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="0.8"/>
+<text x="314.0" y="288.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Quit Game</text>
+<text x="496.0" y="288.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#2C386B" text-anchor="end">Q</text>
+<rect x="308.0" y="298.0" width="194.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="0.8"/>
+<text x="314.0" y="312.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Exit</text>
+<text x="496.0" y="312.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#2C386B" text-anchor="end">E</text>
+<path d="M251.0,148.5 L270.0,148.5 L270.0,20.5 L298.0,20.5" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M251.0,172.5 L284.0,172.5 L284.0,194.5 L298.0,194.5" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="560.0" y="0.0" width="200.0" height="134.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="570.0" y="19.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#5C2D50" text-anchor="start">Boxes it opens</text>
+<rect x="568.0" y="30.0" width="184.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="0.8"/>
+<text x="574.0" y="44.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Member picker, F1 to F6</text>
+<text x="746.0" y="44.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#5C2D50" text-anchor="end"></text>
+<rect x="568.0" y="54.0" width="184.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="0.8"/>
+<text x="574.0" y="68.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Spell slot screen</text>
+<text x="746.0" y="68.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#5C2D50" text-anchor="end"></text>
+<rect x="568.0" y="78.0" width="184.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="0.8"/>
+<text x="574.0" y="92.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Yes / No: Y N</text>
+<text x="746.0" y="92.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#5C2D50" text-anchor="end"></text>
+<rect x="568.0" y="102.0" width="184.0" height="21.0" rx="3" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="0.8"/>
+<text x="574.0" y="116.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.6" font-weight="600" fill="#2B2A28" text-anchor="start">Message box</text>
+<text x="746.0" y="116.5" font-family="'DejaVu Sans Mono', monospace" font-size="10.6" font-weight="700" fill="#5C2D50" text-anchor="end"></text>
+<text x="560.0" y="152.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">Memorize, Pray, Scribe and Drop go</text>
+<text x="560.0" y="165.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">through the member picker; Load, Save</text>
+<text x="560.0" y="178.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">and Quit through Yes / No; results,</text>
+<text x="560.0" y="191.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">failures and hints through the message</text>
+<text x="560.0" y="204.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">box (a key or about 120 frames).</text>
+<text x="0.0" y="352.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">THE MENU MACHINERY</text>
+<text x="0.0" y="372.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.4" font-weight="400" fill="#3C3A36" text-anchor="start">Each menu is a node list built by BuildMenuButtons (ovl1:1153) from 5-byte menu records (ds:628C) and 9-byte button definitions (208E:0000).</text>
+<text x="0.0" y="386.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.4" font-weight="400" fill="#3C3A36" text-anchor="start">RunCampMenu loops on DispatchKeyWait over that list: the letter on a button is its key06 word, Home and End (keypad 7, 1) light the first and last</text>
+<text x="0.0" y="400.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.4" font-weight="400" fill="#3C3A36" text-anchor="start">button, Up and Down move the lit one, Enter, Space or keypad 5 press it, a click presses the button under the pointer. Esc is remapped to Exit.</text>
+<text x="0.0" y="414.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.4" font-weight="400" fill="#3C3A36" text-anchor="start">Game time is stopped while it runs (gTimerEnableFlags bit 1 cleared); on the way out the view frame and the INVENT sheet are redrawn.</text>
+</svg>

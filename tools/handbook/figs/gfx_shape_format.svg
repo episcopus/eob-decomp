@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 374" width="760" height="374" class="fig">
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">THE SHAPE: THE SPRITE FORMAT DRAWSHAPE READS</text>
+<text x="0.0" y="42.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2B2A28" text-anchor="start">Format 0: one byte a pixel, runs of colour 0 coded (GetSpriteCellRle: the character portraits)</text>
+<rect x="0.0" y="58.0" width="52.0" height="34.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="26.0" y="73.0" font-family="'DejaVu Sans Mono', monospace" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="middle">00</text>
+<text x="26.0" y="86.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">format</text>
+<rect x="52.0" y="58.0" width="52.0" height="34.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="78.0" y="73.0" font-family="'DejaVu Sans Mono', monospace" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="middle">rows</text>
+<text x="78.0" y="86.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">height</text>
+<rect x="104.0" y="58.0" width="52.0" height="34.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="130.0" y="73.0" font-family="'DejaVu Sans Mono', monospace" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="middle">cols</text>
+<text x="130.0" y="86.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">width / 8</text>
+<rect x="156.0" y="58.0" width="52.0" height="34.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="182.0" y="73.0" font-family="'DejaVu Sans Mono', monospace" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="middle">rows</text>
+<text x="182.0" y="86.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">copy</text>
+<text x="26.0" y="54.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="middle">+0</text>
+<text x="78.0" y="54.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="middle">+1</text>
+<text x="130.0" y="54.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="middle">+2</text>
+<text x="182.0" y="54.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="middle">+3</text>
+<rect x="208.0" y="58.0" width="548.0" height="34.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="482.0" y="73.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">rows of pixels: a byte 0 is followed by a count n: n transparent pixels</text>
+<text x="482.0" y="87.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">(runs over 255 are split with FFh); any other byte is a palette index</text>
+<text x="0.0" y="108.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">Fragment of a row: 05 07 07 00 04 12 12 = pixels 5, 7, 7, four transparent, then 18, 18</text>
+<text x="0.0" y="148.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2B2A28" text-anchor="start">Format 1: four bits a pixel with its own colour table (GetSpriteCell: items, doors, decorations, monsters, UI)</text>
+<rect x="0.0" y="164.0" width="52.0" height="34.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="26.0" y="179.0" font-family="'DejaVu Sans Mono', monospace" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="middle">01</text>
+<text x="26.0" y="192.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">format</text>
+<rect x="52.0" y="164.0" width="52.0" height="34.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="78.0" y="179.0" font-family="'DejaVu Sans Mono', monospace" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="middle">rows</text>
+<text x="78.0" y="192.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">height</text>
+<rect x="104.0" y="164.0" width="52.0" height="34.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="130.0" y="179.0" font-family="'DejaVu Sans Mono', monospace" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="middle">cols</text>
+<text x="130.0" y="192.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">width / 8</text>
+<rect x="156.0" y="164.0" width="52.0" height="34.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="182.0" y="179.0" font-family="'DejaVu Sans Mono', monospace" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="middle">rows</text>
+<text x="182.0" y="192.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">copy</text>
+<text x="26.0" y="160.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="middle">+0</text>
+<text x="78.0" y="160.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="middle">+1</text>
+<text x="130.0" y="160.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="middle">+2</text>
+<text x="182.0" y="160.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="middle">+3</text>
+<rect x="208.0" y="164.0" width="110.0" height="34.0" rx="0" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="263.0" y="179.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">16 bytes</text>
+<text x="263.0" y="193.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">colour table</text>
+<rect x="318.0" y="164.0" width="438.0" height="34.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="537.0" y="179.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">rows x (cols * 4) bytes, two pixels a byte</text>
+<text x="537.0" y="193.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">high nibble is the left pixel; code 0 is transparent</text>
+<text x="0.0" y="214.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">Size: 4 + 16 + rows * cols * 4 bytes. A 2-column, 16-row item icon is 148 bytes (16 x 16 pixels).</text>
+<text x="0.0" y="246.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">WHO READS WHICH BYTE</text>
+<text x="0.0" y="264.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="start">DrawShape, driver</text>
+<text x="250.0" y="264.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">+0 picks the format; +1 rows, +2 columns (x 8 pixels); +3 is skipped</text>
+<text x="0.0" y="280.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="start">the game, placing a shape</text>
+<text x="250.0" y="280.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">the position is the bottom centre: x less (+2 * 8) / 2, y less +1 (DrawSlotMonsters,</text>
+<text x="250.0" y="293.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">DrawSlotItems)</text>
+<text x="0.0" y="309.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="start">pointer (SetMousePointerShape)</text>
+<text x="250.0" y="309.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">height is +3, width is +2 plus one column (the shape may start between columns)</text>
+<text x="0.0" y="325.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="start">clipping</text>
+<text x="250.0" y="325.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">to the region SetRegion set (columns, lines); x is made even first (DrawShapeClipped)</text>
+<text x="0.0" y="341.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="start">flipped and remapped forms</text>
+<text x="250.0" y="341.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">DrawShapeFlipped writes right to left; the remapped ones send each nibble through a</text>
+<text x="250.0" y="354.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">16-colour row</text>
+</svg>

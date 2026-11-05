@@ -1,0 +1,1 @@
+The eight segment words `StartupGame` writes for each graphics choice (`src/E07C8.C`, 07C8:0199). Slot 0 is always the screen. Slots 2 and 3 are the off-screen page the game composes on (page 2) and its memory twin, the art page; slot 5 is the staging buffer; slot 7 holds the wall blocks and doubles as the unpack buffer.

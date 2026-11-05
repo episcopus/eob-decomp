@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 470" width="760" height="470" class="fig"><defs><marker id="a3B4A8A" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#3B4A8A"/></marker><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">THE GAME SYSTEMS OF SECTION 5 AND HOW THEY CALL EACH OTHER</text>
+<rect x="280.0" y="28.0" width="200.0" height="62.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="380.0" y="49.7" font-family="'DejaVu Sans Mono', monospace" font-size="13.5" font-weight="700" fill="#14504A" text-anchor="middle">RunMapLoop</text>
+<text x="380.0" y="64.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">one pass: input, timed effects,</text>
+<text x="380.0" y="78.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">redraw, sound, Turn Undead</text>
+<rect x="0.0" y="28.0" width="200.0" height="62.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="100.0" y="49.4" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#2C386B" text-anchor="middle">5.10 Input and interface</text>
+<text x="100.0" y="64.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">keys, mouse regions, menus,</text>
+<text x="100.0" y="77.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">nodes, text windows</text>
+<path d="M202.0,59.0 L278.0,59.0" fill="none" stroke="#3B4A8A" stroke-width="1.3" marker-end="url(#a3B4A8A)"/>
+<text x="240.0" y="53.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">command</text>
+<rect x="560.0" y="28.0" width="200.0" height="62.0" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="660.0" y="49.4" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#3C3A36" text-anchor="middle">5.16 Random numbers, time</text>
+<text x="660.0" y="64.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">ticks at 18.2 Hz, two</text>
+<text x="660.0" y="77.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">generators, RollDice</text>
+<path d="M558.0,59.0 L482.0,59.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="520.0" y="53.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">ticks</text>
+<text x="0.0" y="118.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#5C2D50" text-anchor="start" letter-spacing="1.6">RULES AND STATE</text>
+<rect x="0.0" y="126.0" width="176.0" height="72.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="88.0" y="152.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="middle">5.1 Party and characters</text>
+<text x="88.0" y="166.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">243-byte record, six slots,</text>
+<text x="88.0" y="179.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">classes, levels, AC, saves</text>
+<rect x="194.0" y="126.0" width="176.0" height="72.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="282.0" y="152.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="middle">5.2 Items</text>
+<text x="282.0" y="166.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">14 + 16 byte records,</text>
+<text x="282.0" y="179.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">27 slots, the pointer item</text>
+<rect x="388.0" y="126.0" width="176.0" height="72.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="476.0" y="152.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="middle">5.7 Combat</text>
+<text x="476.0" y="166.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">real time, hand cooldowns,</text>
+<text x="476.0" y="179.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">to-hit, damage, saves</text>
+<rect x="582.0" y="126.0" width="178.0" height="72.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="671.0" y="152.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="middle">5.8 Spells and effects</text>
+<text x="671.0" y="166.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">49 spells, timed slots,</text>
+<text x="671.0" y="179.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">missiles, status</text>
+<rect x="0.0" y="214.0" width="176.0" height="60.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="88.0" y="234.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="middle">5.9 Camp, rest, food</text>
+<text x="88.0" y="248.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">ten-minute ticks,</text>
+<text x="88.0" y="261.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">memorising, hunger</text>
+<text x="0.0" y="296.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#7A5412" text-anchor="start" letter-spacing="1.6">THE WORLD</text>
+<rect x="0.0" y="304.0" width="176.0" height="72.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="88.0" y="330.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">5.3 Mazes and level state</text>
+<text x="88.0" y="344.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">4-byte cells, level files,</text>
+<text x="88.0" y="357.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">2,040-byte states</text>
+<rect x="194.0" y="304.0" width="176.0" height="72.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="282.0" y="330.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">5.4 Moving through the world</text>
+<text x="282.0" y="344.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">steps, doors, clicks,</text>
+<text x="282.0" y="357.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">things in flight</text>
+<rect x="388.0" y="304.0" width="176.0" height="72.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="476.0" y="330.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">5.5 Cell scripts</text>
+<text x="476.0" y="344.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">26 opcodes and an</text>
+<text x="476.0" y="357.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">expression language</text>
+<rect x="582.0" y="304.0" width="178.0" height="72.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="671.0" y="330.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">5.6 Monsters</text>
+<text x="671.0" y="344.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">22 types, four update</text>
+<text x="671.0" y="357.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">groups, noticing, melee</text>
+<text x="0.0" y="398.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">OUTPUT AND PERSISTENCE</text>
+<rect x="0.0" y="406.0" width="176.0" height="56.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="88.0" y="431.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">5.12 The 3D view</text>
+<text x="88.0" y="445.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">18 slots, pre-drawn art</text>
+<rect x="194.0" y="406.0" width="176.0" height="56.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="282.0" y="431.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">5.13 Graphics output</text>
+<text x="282.0" y="445.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">pages, text, pointer</text>
+<rect x="388.0" y="406.0" width="176.0" height="56.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="476.0" y="431.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">5.14 Sound</text>
+<text x="476.0" y="445.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">AdLib scripts, speaker</text>
+<rect x="582.0" y="406.0" width="178.0" height="56.0" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="671.0" y="431.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#3C3A36" text-anchor="middle">5.11 Saving and loading</text>
+<text x="671.0" y="445.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">EOBDATA.SAV, LEVELS.TMP</text>
+<path d="M380.0,92.0 L380.0,108.0 L88.0,108.0 L88.0,124.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M380.0,108.0 L671.0,108.0 L671.0,124.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M380.0,108.0 L282.0,108.0 L282.0,124.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M380.0,108.0 L476.0,108.0 L476.0,124.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M466.0,200.0 L466.0,290.0 L282.0,290.0 L282.0,302.0" fill="none" stroke="#8A8373" stroke-width="1.3" stroke-dasharray="3 2" marker-end="url(#a8A8373)"/>
+<path d="M88.0,276.0 L88.0,302.0" fill="none" stroke="#8A8373" stroke-width="1.3" stroke-dasharray="3 2" marker-end="url(#a8A8373)"/>
+<path d="M580.0,340.0 L566.0,340.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)" marker-start="url(#a8A8373)"/>
+<path d="M372.0,340.0 L386.0,340.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)" marker-start="url(#a8A8373)"/>
+<path d="M178.0,340.0 L192.0,340.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)" marker-start="url(#a8A8373)"/>
+<text x="752.0" y="296.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="end">dashed: calls into the world</text>
+</svg>

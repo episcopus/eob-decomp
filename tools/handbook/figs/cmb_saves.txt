@@ -1,0 +1,1 @@
+A saving throw is a table lookup by class, level and kind, then a d20. The four tables are AD&D's; the party-side code around them has three slips that change the outcome.

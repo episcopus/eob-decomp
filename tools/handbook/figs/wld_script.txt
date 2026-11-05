@@ -1,0 +1,1 @@
+Real bytes from the level 1 stairs script and the loop that runs them. An opcode byte indexes a table of 26 handlers; the handler reads its own operands and says how far the script pointer moves.

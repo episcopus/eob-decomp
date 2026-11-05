@@ -1,0 +1,1 @@
+A kill's experience is split by the members still standing, then by the member's number of classes. A level is gained when a slot's total passes a table threshold, once per award.

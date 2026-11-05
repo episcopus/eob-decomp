@@ -1,0 +1,1 @@
+The game's two generators. The runtime's linear congruential `rand` serves the dice and almost everything else; `RandomByte` is a separate three-byte generator used only for particle effects and never seeded.

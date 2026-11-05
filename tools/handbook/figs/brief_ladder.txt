@@ -1,0 +1,1 @@
+The verification ladder. A function climbs from drafted (L0) to matched (L2) by `make match`, a unit to rebuilt (L3) by `make rebuild`, and the rebuilt programs are then played against the same recorded sessions as the originals. Only tools record a level.

@@ -1,0 +1,1 @@
+The command table at 0000:4F94 drawn as a hex map: 74 entries for script bytes 80h to C9h, of which 54 have a handler and 20 end the script. The counts are how often each byte begins a command in adlib.dat and sound.dat; 27 handlers and the end byte are used.

@@ -1,0 +1,1 @@
+The opcode byte is `0xFF` minus the handler's index in the table `RunCellScript` builds. Counts are over all instructions of the twelve level files (every script byte decodes with these formats, with none left over).

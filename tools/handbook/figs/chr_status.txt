@@ -1,0 +1,1 @@
+A member has no separate "alive" flag: dead, unconscious and well are three ranges of the signed `hp` byte (-10, -9 to 0, above 0), and every part of the game asks `MemberIs` with the combination of tests it needs. The ratio bar adds 10 to both numbers so that members at or below 0 still show a bar.

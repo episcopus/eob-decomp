@@ -1,0 +1,1 @@
+The per-kind tables that give a wall byte its meaning, the eight flag bits with the functions that test them, and the flags of the 25 built-in kinds (doors are five kinds in a row).

@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 475" width="760" height="475" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">CASTING: FROM THE ITEM IN THE HAND TO THE SPELL&#x27;S HANDLER</text>
+<rect x="0.0" y="24.0" width="214.0" height="130.6" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="9.0" y="45.4" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2C386B" text-anchor="start">Spell book or holy symbol</text>
+<text x="9.0" y="60.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">use kind 5 or 6: UseItemSlot opens</text>
+<text x="9.0" y="73.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">OpenSpellPanel(who, cleric)</text>
+<text x="9.0" y="87.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">0EF3:21E0; five level tabs, six</text>
+<text x="9.0" y="100.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">slots, ABORT</text>
+<text x="9.0" y="114.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">click a slot: HandleSpellList</text>
+<text x="9.0" y="128.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">0EF3:2929 calls CastSpell(slot</text>
+<text x="9.0" y="141.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">value, +25 for clerics)</text>
+<rect x="0.0" y="166.6" width="214.0" height="89.6" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="9.0" y="188.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2C386B" text-anchor="start">Scroll</text>
+<text x="9.0" y="202.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">use kind 9 (mage) or 10 (cleric):</text>
+<text x="9.0" y="216.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">StartItemCast(who, value, hand)</text>
+<text x="9.0" y="229.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">0EF3:28ED; the caster level counts</text>
+<text x="9.0" y="243.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">as 9</text>
+<rect x="0.0" y="268.1" width="214.0" height="103.2" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="9.0" y="289.5" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2C386B" text-anchor="start">Wand</text>
+<text x="9.0" y="304.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">use kind 18: UseWandItem</text>
+<text x="9.0" y="317.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">0BD2:0EE8; value 1 to 6 maps to a</text>
+<text x="9.0" y="331.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">spell through gWandSpells, then</text>
+<text x="9.0" y="345.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">StartItemCast; the Silvias wand (5)</text>
+<text x="9.0" y="358.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">moves monsters instead</text>
+<rect x="244.0" y="24.0" width="232.0" height="157.9" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="253.0" y="45.4" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#14504A" text-anchor="start">CastSpell  0EF3:2676</text>
+<text x="253.0" y="60.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">attack spells end invisibility</text>
+<text x="253.0" y="73.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">flag 2 (item spells): a hand must be free,</text>
+<text x="253.0" y="87.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">and no spell item already held</text>
+<text x="253.0" y="100.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">panel cast: the slot is removed and its</text>
+<text x="253.0" y="114.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">negated value goes to the end of the</text>
+<text x="253.0" y="128.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">level&#x27;s row (spent)</text>
+<text x="253.0" y="141.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">item cast: the scroll is used up, or a</text>
+<text x="253.0" y="155.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">wand charge</text>
+<text x="253.0" y="169.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">&quot;%s casts %s.&quot;</text>
+<rect x="244.0" y="193.9" width="232.0" height="103.2" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="253.0" y="215.3" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#7A5412" text-anchor="start">Flag 1: needs a target</text>
+<text x="253.0" y="229.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">PromptSpellTarget 0EF3:059D asks</text>
+<text x="253.0" y="243.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">&quot;Cast spell on which character?&quot; and</text>
+<text x="253.0" y="257.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">the party panel waits; a click on a</text>
+<text x="253.0" y="270.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">portrait runs CastSpellOnTarget</text>
+<text x="253.0" y="284.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">0EF3:08CF for that member</text>
+<rect x="244.0" y="309.1" width="232.0" height="116.9" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="253.0" y="330.5" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#14504A" text-anchor="start">Common tail</text>
+<text x="253.0" y="345.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">spell sound; flash the caster (flag 6) or</text>
+<text x="253.0" y="358.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">the party (flag 8); &quot;ok&quot;</text>
+<text x="253.0" y="372.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">gCurrentSpellApply(): the handler</text>
+<text x="253.0" y="386.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">item casts: EndItemCast arms the</text>
+<text x="253.0" y="399.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">hand&#x27;s cooldown; panel casts:</text>
+<text x="253.0" y="413.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">RedrawPartyPanel</text>
+<rect x="506.0" y="24.0" width="254.0" height="89.6" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="515.0" y="45.4" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#80311F" text-anchor="start">Instant handlers</text>
+<text x="515.0" y="60.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Cure and Cause Wounds, Fear, Burning Hands,</text>
+<text x="515.0" y="73.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Cone of Cold, Create Food, Raise Dead, Dispel</text>
+<text x="515.0" y="87.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Magic, Remove Paralysis...</text>
+<text x="515.0" y="100.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">change hp, flags or monsters at once</text>
+<rect x="506.0" y="125.6" width="254.0" height="103.2" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="515.0" y="147.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#5C2D50" text-anchor="start">Timed handlers</text>
+<text x="515.0" y="161.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">set a flag, then ApplyTimedCharEffect: slot</text>
+<text x="515.0" y="175.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">type = minus the spell number; when it runs</text>
+<text x="515.0" y="188.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">out ExpireSpellEffect calls</text>
+<text x="515.0" y="202.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">gSpells[n].remove: Bless, Shield, Haste, Aid,</text>
+<text x="515.0" y="216.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Prayer, Vestment, Slow Poison...</text>
+<rect x="506.0" y="240.8" width="254.0" height="116.9" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="515.0" y="262.2" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#7A5412" text-anchor="start">Missile handlers</text>
+<text x="515.0" y="276.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">StartCellEffect(member, mode, party cell,</text>
+<text x="515.0" y="290.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">quarter, facing): a projectile record in state</text>
+<text x="515.0" y="304.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">2; MoveDDEffects moves it, the Hit callback</text>
+<text x="515.0" y="317.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">calls DamageTargetCell: Magic Missile, Acid</text>
+<text x="515.0" y="331.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Arrow, Fireball, Flame Arrow, Lightning, Ice</text>
+<text x="515.0" y="345.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Storm, Hold, Flame Strike</text>
+<rect x="506.0" y="369.8" width="254.0" height="89.6" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="515.0" y="391.1" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="start">Item handlers</text>
+<text x="515.0" y="405.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">CreateItemType and CreateItemRecord</text>
+<text x="515.0" y="419.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">make a temporary weapon in the free hand:</text>
+<text x="515.0" y="433.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Shocking Grasp, Vampiric Touch, Flame</text>
+<text x="515.0" y="446.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Blade; the timed effect discards it</text>
+<line x1="230.0" y1="60.0" x2="230.0" y2="331.4" stroke="#8A8373" stroke-width="1.3"/>
+<path d="M230.0,60.0 L244.0,60.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<line x1="214.0" y1="114.6" x2="230.0" y2="114.6" stroke="#8A8373" stroke-width="1.3"/>
+<line x1="214.0" y1="226.1" x2="230.0" y2="226.1" stroke="#8A8373" stroke-width="1.3"/>
+<line x1="214.0" y1="331.4" x2="230.0" y2="331.4" stroke="#8A8373" stroke-width="1.3"/>
+<path d="M360.0,181.9 L360.0,193.9" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="384.0" y="190.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">flag 1</text>
+<path d="M360.0,297.1 L360.0,309.1" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<line x1="476.0" y1="359.1" x2="490.0" y2="359.1" stroke="#8A8373" stroke-width="1.3"/>
+<line x1="490.0" y1="77.6" x2="490.0" y2="431.4" stroke="#8A8373" stroke-width="1.3"/>
+<path d="M490.0,77.6 L506.0,77.6" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M490.0,192.8 L506.0,192.8" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M490.0,307.8 L506.0,307.8" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M490.0,431.4 L506.0,431.4" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+</svg>

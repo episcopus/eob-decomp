@@ -1,0 +1,1 @@
+A note byte is an octave and a semitone. SetVoicePitch adds transpose, detune and fine tune, looks up the F-number and writes A0h and B0h. The 12 F-numbers step by one semitone; the duration of a note counts driver ticks scaled by the voice's speed.

@@ -1,0 +1,1 @@
+The build chain that produced the original programs, as established by matching. The game's C modules and Westwood's assembly are compiled and assembled separately, then linked with Borland's start-up code and libraries by TLINK 3.0, which also writes the overlay stubs, relocations and the FBOV overlay records.

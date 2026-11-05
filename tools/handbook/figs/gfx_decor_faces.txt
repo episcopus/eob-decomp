@@ -1,0 +1,1 @@
+How wall decorations are placed. Each of the 18 slots has up to two faces (the cell's front wall, or its left or right wall); the entry number says which of the ten positions of a decoration record is used, from the position of the face. The shapes themselves are pre-drawn at each depth, not scaled.

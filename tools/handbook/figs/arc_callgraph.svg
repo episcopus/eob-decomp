@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 468" width="760" height="468" class="fig"><defs><marker id="a7A3E6B" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#7A3E6B"/></marker><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker><marker id="aA8741A" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#A8741A"/></marker></defs>
+<rect x="200.0" y="0.0" width="360.0" height="54.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="380.0" y="17.5" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2C386B" text-anchor="middle">Main loop and action handlers</text>
+<text x="380.0" y="31.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">RunMapLoop, MoveForward, ClickFloorItem, ...</text>
+<text x="380.0" y="45.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">(units e0acd, e07a9, e07c8)</text>
+<rect x="0.0" y="98.0" width="232.0" height="62.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="116.0" y="113.5" font-family="Inter, 'Inter Display', sans-serif" font-size="14" font-weight="700" fill="#14504A" text-anchor="middle">UI toolkit</text>
+<text x="116.0" y="128.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">node lists, dispatcher, option lists,</text>
+<text x="116.0" y="141.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">field editor (e16a5 e1658 e0cf7 e14ef</text>
+<text x="116.0" y="155.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">e082c)</text>
+<rect x="264.0" y="98.0" width="232.0" height="62.0" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="380.0" y="113.5" font-family="Inter, 'Inter Display', sans-serif" font-size="14" font-weight="700" fill="#80311F" text-anchor="middle">World</text>
+<text x="380.0" y="128.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">scripts and movement, monsters,</text>
+<text x="380.0" y="141.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">timed effects, spells (e122e e08e6 e1414</text>
+<text x="380.0" y="155.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">e0ef3)</text>
+<rect x="528.0" y="98.0" width="232.0" height="62.0" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="644.0" y="120.2" font-family="Inter, 'Inter Display', sans-serif" font-size="14" font-weight="700" fill="#80311F" text-anchor="middle">Party and items</text>
+<text x="644.0" y="135.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">characters, inventory, combat rolls</text>
+<text x="644.0" y="148.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">(e0a72 e0bd2 e0d1c e0de8 e1547)</text>
+<path d="M280.0,55.0 L150.0,96.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="171.0" y="73.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">DispatchKeyWait</text>
+<path d="M380.0,55.0 L380.0,96.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="414.0" y="77.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">RunEffects</text>
+<path d="M480.0,55.0 L610.0,96.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="597.0" y="71.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">TurnUndead, UseItem</text>
+<path d="M498.0,130.0 L526.0,130.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="0.0" y="222.0" width="760.0" height="74.0" rx="8" fill="#F6EEF4" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="10.0" y="239.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="start">Overlays: seven code blocks, one pool, entered through stubs</text>
+<rect x="10.0" y="250.0" width="98.0" height="36.0" rx="6" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="59.0" y="265.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="middle">ovl0</text>
+<text x="59.0" y="279.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">party creation</text>
+<rect x="116.5" y="250.0" width="98.0" height="36.0" rx="6" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="165.5" y="265.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="middle">ovl2</text>
+<text x="165.5" y="279.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">data, title menu</text>
+<rect x="223.0" y="250.0" width="98.0" height="36.0" rx="6" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="272.0" y="265.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="middle">ovl1</text>
+<text x="272.0" y="279.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">camp, spells</text>
+<rect x="329.5" y="250.0" width="98.0" height="36.0" rx="6" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="378.5" y="265.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="middle">ovl6</text>
+<text x="378.5" y="279.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">resting</text>
+<rect x="436.0" y="250.0" width="98.0" height="36.0" rx="6" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="485.0" y="265.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="middle">ovl3</text>
+<text x="485.0" y="279.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">levels, save, load</text>
+<rect x="542.5" y="250.0" width="98.0" height="36.0" rx="6" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="591.5" y="265.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="middle">ovl4</text>
+<text x="591.5" y="279.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">first-person view</text>
+<rect x="649.0" y="250.0" width="98.0" height="36.0" rx="6" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="698.0" y="265.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="middle">ovl5</text>
+<text x="698.0" y="279.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">NPCs, events</text>
+<path d="M130.0,162.0 L130.0,220.0" fill="none" stroke="#7A3E6B" stroke-width="2" marker-end="url(#a7A3E6B)"/>
+<text x="140.0" y="196.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">title, panels, camp node</text>
+<path d="M380.0,162.0 L380.0,220.0" fill="none" stroke="#7A3E6B" stroke-width="2" marker-end="url(#a7A3E6B)"/>
+<text x="390.0" y="196.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">LoadLevel, CallOverlayOp</text>
+<path d="M640.0,162.0 L640.0,220.0" fill="none" stroke="#7A3E6B" stroke-width="2" marker-end="url(#a7A3E6B)"/>
+<text x="650.0" y="196.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">DrawViewFrame</text>
+<rect x="0.0" y="346.0" width="175.0" height="46.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="87.5" y="366.2" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#7A5412" text-anchor="middle">Files, memory</text>
+<text x="87.5" y="380.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">e1c0e e1b82 e19bc</text>
+<rect x="195.0" y="346.0" width="175.0" height="46.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="282.5" y="366.2" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#7A5412" text-anchor="middle">Graphics, text</text>
+<text x="282.5" y="380.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">e17a6 e1de7, driver *.OVL</text>
+<rect x="390.0" y="346.0" width="175.0" height="46.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="477.5" y="366.2" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#7A5412" text-anchor="middle">Sound</text>
+<text x="477.5" y="380.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">e177d e_text e1948</text>
+<rect x="585.0" y="346.0" width="175.0" height="46.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="672.5" y="366.2" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#7A5412" text-anchor="middle">Input, clocks</text>
+<text x="672.5" y="380.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">e1aad e1a72 e1d8f</text>
+<path d="M380.0,297.0 L380.0,344.0" fill="none" stroke="#A8741A" stroke-width="2" marker-end="url(#aA8741A)"/>
+<text x="390.0" y="326.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">every group above calls these</text>
+<path d="M380.0,393.0 L380.0,418.0" fill="none" stroke="#8A8373" stroke-width="2" marker-end="url(#a8A8373)"/>
+<rect x="0.0" y="420.0" width="760.0" height="44.0" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="380.0" y="439.2" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="middle">DOS, BIOS and the hardware</text>
+<text x="380.0" y="453.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="middle">INT 9, 1Ch, 33h, 10h, 21h; video RAM and DAC; OPL2, speaker, SN76489; the PIT</text>
+</svg>

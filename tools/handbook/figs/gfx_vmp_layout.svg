@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 394" width="760" height="394" class="fig">
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">A .VMP FILE: 2,916 WORDS = ONE BACKGROUND + SIX WALL SETS</text>
+<rect x="2.0" y="30.0" width="85.6" height="30.0" rx="0" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="44.8" y="43.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">background</text>
+<text x="44.8" y="55.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">22 x 15 words</text>
+<rect x="87.6" y="30.0" width="111.7" height="30.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="143.4" y="43.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">set 1</text>
+<text x="143.4" y="55.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">431 words</text>
+<rect x="199.3" y="30.0" width="111.7" height="30.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="255.2" y="43.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">set 2</text>
+<text x="255.2" y="55.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">431 words</text>
+<rect x="311.0" y="30.0" width="111.7" height="30.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="366.9" y="43.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">set 3</text>
+<text x="366.9" y="55.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">431 words</text>
+<rect x="422.8" y="30.0" width="111.7" height="30.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="478.6" y="43.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">set 4</text>
+<text x="478.6" y="55.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">431 words</text>
+<rect x="534.5" y="30.0" width="111.7" height="30.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="590.4" y="43.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">set 5</text>
+<text x="590.4" y="55.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">431 words</text>
+<rect x="646.3" y="30.0" width="111.7" height="30.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="702.1" y="43.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">set 6</text>
+<text x="702.1" y="55.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">431 words</text>
+<text x="2.0" y="26.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">0</text>
+<text x="87.6" y="26.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">330</text>
+<text x="199.3" y="26.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">761</text>
+<text x="758.0" y="26.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#6E695F" text-anchor="end">2916</text>
+<text x="91.6" y="76.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">gWallVmpSet[type] picks set 1 to 6 (0: the wall type has no wall graphics); the background is always the one at the start</text>
+<text x="0.0" y="110.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">ONE SET (431 WORDS) SPLITS INTO NINE RECTANGLES OF BLOCK WORDS</text>
+<text x="0.0" y="128.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">word offset inside the set, to scale</text>
+<rect x="2.0" y="150.0" width="78.9" height="34.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<text x="41.5" y="171.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2C386B" text-anchor="middle">3 x 15</text>
+<text x="3.0" y="196.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">0</text>
+<rect x="80.9" y="150.0" width="63.1" height="34.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<text x="112.5" y="171.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2C386B" text-anchor="middle">3 x 12</text>
+<text x="81.9" y="196.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">45</text>
+<rect x="144.1" y="150.0" width="28.1" height="34.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<text x="145.1" y="196.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">81</text>
+<rect x="172.1" y="150.0" width="8.8" height="34.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<rect x="180.9" y="150.0" width="26.3" height="34.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<text x="181.9" y="196.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">102</text>
+<rect x="207.2" y="150.0" width="21.0" height="34.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<rect x="228.3" y="150.0" width="52.6" height="34.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.1"/>
+<text x="254.6" y="171.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">6 x 5</text>
+<text x="229.3" y="196.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">129</text>
+<rect x="280.9" y="150.0" width="140.3" height="34.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.1"/>
+<text x="351.1" y="171.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">10 x 8</text>
+<text x="281.9" y="196.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">159</text>
+<rect x="421.2" y="150.0" width="336.8" height="34.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.1"/>
+<text x="589.6" y="171.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">16 x 12</text>
+<text x="422.2" y="196.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">239</text>
+<text x="758.0" y="196.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="end">431</text>
+<text x="0.0" y="216.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2B2A28" text-anchor="start">rectangle</text>
+<text x="200.0" y="216.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2B2A28" text-anchor="start">x2</text>
+<text x="250.0" y="216.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2B2A28" text-anchor="start">words</text>
+<text x="300.0" y="216.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2B2A28" text-anchor="start">pixels</text>
+<text x="380.0" y="216.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2B2A28" text-anchor="start">copied at (x, y), in blocks</text>
+<text x="620.0" y="216.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2B2A28" text-anchor="start">mirrored copy at</text>
+<line x1="0.0" y1="221.0" x2="758.0" y2="221.0" stroke="#D9D2C3" stroke-width="1"/>
+<text x="0.0" y="235.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">side, party row (slots 15, 17)</text>
+<text x="200.0" y="235.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">0x00</text>
+<text x="250.0" y="235.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">45</text>
+<text x="300.0" y="235.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">24 x 120</text>
+<text x="380.0" y="235.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(0, 0)</text>
+<text x="620.0" y="235.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(19, 0)</text>
+<text x="0.0" y="252.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">side, 1 ahead (12, 14)</text>
+<text x="200.0" y="252.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">0x2D</text>
+<text x="250.0" y="252.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">36</text>
+<text x="300.0" y="252.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">24 x 96</text>
+<text x="380.0" y="252.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(3, 1)</text>
+<text x="620.0" y="252.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(16, 1)</text>
+<text x="0.0" y="269.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">side, 2 ahead inner (8, 10)</text>
+<text x="200.0" y="269.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">0x51</text>
+<text x="250.0" y="269.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">16</text>
+<text x="300.0" y="269.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">16 x 64</text>
+<text x="380.0" y="269.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(6, 2)</text>
+<text x="620.0" y="269.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(14, 2)</text>
+<text x="0.0" y="286.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">side, 3 ahead inner (2, 4)</text>
+<text x="200.0" y="286.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">0x61</text>
+<text x="250.0" y="286.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">5</text>
+<text x="300.0" y="286.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">8 x 40</text>
+<text x="380.0" y="286.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(8, 3)</text>
+<text x="620.0" y="286.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(13, 3)</text>
+<text x="0.0" y="303.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">side, 3 ahead outer (0, 1, 5, 6)</text>
+<text x="200.0" y="303.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">0x66</text>
+<text x="250.0" y="303.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">15</text>
+<text x="300.0" y="303.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">24 x 40</text>
+<text x="380.0" y="303.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(-2, 3), (2, 3)</text>
+<text x="620.0" y="303.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(21, 3), (17, 3)</text>
+<text x="0.0" y="320.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">side, 2 ahead outer (7, 11)</text>
+<text x="200.0" y="320.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">0x75</text>
+<text x="250.0" y="320.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">12</text>
+<text x="300.0" y="320.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">16 x 48</text>
+<text x="380.0" y="320.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(0, 3)</text>
+<text x="620.0" y="320.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(20, 3)</text>
+<text x="0.0" y="337.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">front, 3 ahead (1 to 5)</text>
+<text x="200.0" y="337.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">0x81</text>
+<text x="250.0" y="337.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">30</text>
+<text x="300.0" y="337.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">48 x 40</text>
+<text x="380.0" y="337.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(-4, 3) (2, 3) (8, 3) (14, 3) (20, 3)</text>
+<text x="620.0" y="337.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">none</text>
+<text x="0.0" y="354.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">front, 2 ahead (8, 9, 10)</text>
+<text x="200.0" y="354.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">0x9F</text>
+<text x="250.0" y="354.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">80</text>
+<text x="300.0" y="354.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">80 x 64</text>
+<text x="380.0" y="354.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(-4, 2) (6, 2) (16, 2)</text>
+<text x="620.0" y="354.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">none</text>
+<text x="0.0" y="371.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">front, 1 ahead (12, 13, 14)</text>
+<text x="200.0" y="371.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">0xEF</text>
+<text x="250.0" y="371.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">192</text>
+<text x="300.0" y="371.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">128 x 96</text>
+<text x="380.0" y="371.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(-13, 1) (3, 1) (19, 1)</text>
+<text x="620.0" y="371.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">none</text>
+</svg>

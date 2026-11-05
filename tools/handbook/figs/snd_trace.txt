@@ -1,0 +1,1 @@
+A complete short sound in driver terms: its script bytes, what the interpreter does with each, and the register writes the oracle saw on the OPL2 ports (voice 3, load-walk session). Everything except the last row happens inside one driver tick.

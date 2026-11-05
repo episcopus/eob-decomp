@@ -1,0 +1,1 @@
+The chain from the C start-up code to the game loop. Stage 3 builds the machine (driver, pages, fonts, file table); stage 5 allocates the level and sound buffers; the title menu runs inside stage 6, before the item sheets are cut in stage 7.

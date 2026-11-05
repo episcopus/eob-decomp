@@ -1,0 +1,196 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 417" width="760" height="417" class="fig">
+<text x="8.0" y="18.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start">Initialised data, ds:0000 to 7FFF</text>
+<rect x="8.0" y="58.0" width="744.0" height="26.0" rx="0" fill="#FFFDF8" stroke="#8A8373" stroke-width="1"/>
+<rect x="8.0" y="58.0" width="3.6" height="26.0" rx="0" fill="#D9D2C3" stroke="#8A8373" stroke-width="1"/>
+<line x1="9.8" y1="58.0" x2="9.8" y2="55.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="9.8" cy="48.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="9.8" y="51.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+<rect x="11.6" y="58.0" width="8.0" height="26.0" rx="0" fill="#E3C98F" stroke="#A8741A" stroke-width="1"/>
+<line x1="15.6" y1="58.0" x2="15.6" y2="41.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="15.6" cy="34.0" r="7.0" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="15.6" y="37.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+<rect x="19.6" y="58.0" width="87.6" height="26.0" rx="0" fill="#A9D0C8" stroke="#1F6F66" stroke-width="1"/>
+<line x1="63.4" y1="58.0" x2="63.4" y2="55.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="63.4" cy="48.0" r="7.0" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="63.4" y="51.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+<rect x="107.2" y="58.0" width="240.2" height="26.0" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1"/>
+<line x1="227.3" y1="58.0" x2="227.3" y2="55.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="227.3" cy="48.0" r="7.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="227.3" y="51.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">4</text>
+<rect x="347.4" y="58.0" width="128.1" height="26.0" rx="0" fill="#D5B8CC" stroke="#7A3E6B" stroke-width="1"/>
+<line x1="411.4" y1="58.0" x2="411.4" y2="55.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="411.4" cy="48.0" r="7.0" fill="#7A3E6B" stroke="none" stroke-width="1"/>
+<text x="411.4" y="51.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">5</text>
+<rect x="475.4" y="58.0" width="23.7" height="26.0" rx="0" fill="#E3B2A5" stroke="#A8452F" stroke-width="1"/>
+<line x1="487.3" y1="58.0" x2="487.3" y2="55.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="487.3" cy="48.0" r="7.0" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="487.3" y="51.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">6</text>
+<rect x="499.1" y="58.0" width="252.9" height="26.0" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1"/>
+<line x1="625.6" y1="58.0" x2="625.6" y2="55.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="625.6" cy="48.0" r="7.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="625.6" y="51.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">7</text>
+<line x1="8.0" y1="84.0" x2="8.0" y2="88.0" stroke="#8A8373" stroke-width="1"/>
+<text x="8.0" y="99.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#6E695F" text-anchor="start">0000</text>
+<line x1="194.0" y1="84.0" x2="194.0" y2="88.0" stroke="#8A8373" stroke-width="1"/>
+<text x="194.0" y="99.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#6E695F" text-anchor="middle">2000</text>
+<line x1="380.0" y1="84.0" x2="380.0" y2="88.0" stroke="#8A8373" stroke-width="1"/>
+<text x="380.0" y="99.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#6E695F" text-anchor="middle">4000</text>
+<line x1="566.0" y1="84.0" x2="566.0" y2="88.0" stroke="#8A8373" stroke-width="1"/>
+<text x="566.0" y="99.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#6E695F" text-anchor="middle">6000</text>
+<line x1="752.0" y1="84.0" x2="752.0" y2="88.0" stroke="#8A8373" stroke-width="1"/>
+<text x="752.0" y="99.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#6E695F" text-anchor="end">8000</text>
+<text x="8.0" y="116.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start">Initialised up to 8A56, then uninitialised: ds:8000 to FFE4</text>
+<rect x="8.0" y="156.0" width="744.0" height="26.0" rx="0" fill="#FFFDF8" stroke="#8A8373" stroke-width="1"/>
+<rect x="8.9" y="156.0" width="10.3" height="26.0" rx="0" fill="#E3C98F" stroke="#A8741A" stroke-width="1"/>
+<line x1="14.0" y1="156.0" x2="14.0" y2="153.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="14.0" cy="146.0" r="7.0" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="14.0" y="149.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">8</text>
+<rect x="34.2" y="156.0" width="1.5" height="26.0" rx="0" fill="#E3B2A5" stroke="#A8452F" stroke-width="1"/>
+<line x1="34.8" y1="156.0" x2="34.8" y2="153.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="34.8" cy="146.0" r="7.0" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="34.8" y="149.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">9</text>
+<rect x="51.7" y="156.0" width="1.5" height="26.0" rx="0" fill="#E3B2A5" stroke="#A8452F" stroke-width="1"/>
+<line x1="51.7" y1="156.0" x2="51.7" y2="139.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="51.7" cy="132.0" r="7.0" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="51.7" y="135.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">10</text>
+<rect x="58.1" y="156.0" width="10.3" height="26.0" rx="0" fill="#E3C98F" stroke="#A8741A" stroke-width="1"/>
+<line x1="63.3" y1="156.0" x2="63.3" y2="153.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="63.3" cy="146.0" r="7.0" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="63.3" y="149.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">11</text>
+<rect x="69.1" y="156.0" width="19.1" height="26.0" rx="0" fill="#E3B2A5" stroke="#A8452F" stroke-width="1"/>
+<line x1="78.6" y1="156.0" x2="78.6" y2="139.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="78.6" cy="132.0" r="7.0" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="78.6" y="135.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">12</text>
+<rect x="88.3" y="156.0" width="158.9" height="26.0" rx="0" fill="#A9D0C8" stroke="#1F6F66" stroke-width="1"/>
+<line x1="167.8" y1="156.0" x2="167.8" y2="153.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="167.8" cy="146.0" r="7.0" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="167.8" y="149.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">13</text>
+<rect x="251.8" y="156.0" width="20.7" height="26.0" rx="0" fill="#A9D0C8" stroke="#1F6F66" stroke-width="1"/>
+<line x1="262.1" y1="156.0" x2="262.1" y2="153.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="262.1" cy="146.0" r="7.0" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="262.1" y="149.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">14</text>
+<rect x="336.9" y="156.0" width="151.1" height="26.0" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1"/>
+<line x1="412.4" y1="156.0" x2="412.4" y2="153.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="412.4" cy="146.0" r="7.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="412.4" y="149.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">15</text>
+<rect x="549.6" y="156.0" width="4.1" height="26.0" rx="0" fill="#D5B8CC" stroke="#7A3E6B" stroke-width="1"/>
+<line x1="551.6" y1="156.0" x2="551.6" y2="153.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="551.6" cy="146.0" r="7.0" fill="#7A3E6B" stroke="none" stroke-width="1"/>
+<text x="551.6" y="149.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">16</text>
+<rect x="658.0" y="156.0" width="18.2" height="26.0" rx="0" fill="#D5B8CC" stroke="#7A3E6B" stroke-width="1"/>
+<line x1="667.1" y1="156.0" x2="667.1" y2="153.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="667.1" cy="146.0" r="7.0" fill="#7A3E6B" stroke="none" stroke-width="1"/>
+<text x="667.1" y="149.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">17</text>
+<rect x="691.0" y="156.0" width="33.1" height="26.0" rx="0" fill="#A9D0C8" stroke="#1F6F66" stroke-width="1"/>
+<line x1="707.5" y1="156.0" x2="707.5" y2="153.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="707.5" cy="146.0" r="7.0" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="707.5" y="149.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">18</text>
+<rect x="727.5" y="156.0" width="1.5" height="26.0" rx="0" fill="#E3B2A5" stroke="#A8452F" stroke-width="1"/>
+<line x1="728.2" y1="156.0" x2="728.2" y2="153.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="728.2" cy="146.0" r="7.0" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="728.2" y="149.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">19</text>
+<rect x="729.0" y="156.0" width="1.5" height="26.0" rx="0" fill="#E3C98F" stroke="#A8741A" stroke-width="1"/>
+<line x1="729.2" y1="156.0" x2="729.2" y2="139.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="729.2" cy="132.0" r="7.0" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="729.2" y="135.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">20</text>
+<rect x="745.7" y="156.0" width="1.5" height="26.0" rx="0" fill="#A9D0C8" stroke="#1F6F66" stroke-width="1"/>
+<line x1="745.9" y1="156.0" x2="745.9" y2="153.0" stroke="#8A8373" stroke-width="0.8"/>
+<circle cx="745.9" cy="146.0" r="7.0" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="745.9" y="149.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">21</text>
+<line x1="8.0" y1="182.0" x2="8.0" y2="186.0" stroke="#8A8373" stroke-width="1"/>
+<text x="8.0" y="197.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#6E695F" text-anchor="start">8000</text>
+<line x1="194.0" y1="182.0" x2="194.0" y2="186.0" stroke="#8A8373" stroke-width="1"/>
+<text x="194.0" y="197.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#6E695F" text-anchor="middle">A000</text>
+<line x1="380.0" y1="182.0" x2="380.0" y2="186.0" stroke="#8A8373" stroke-width="1"/>
+<text x="380.0" y="197.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#6E695F" text-anchor="middle">C000</text>
+<line x1="566.0" y1="182.0" x2="566.0" y2="186.0" stroke="#8A8373" stroke-width="1"/>
+<text x="566.0" y="197.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#6E695F" text-anchor="middle">E000</text>
+<line x1="752.0" y1="182.0" x2="752.0" y2="186.0" stroke="#8A8373" stroke-width="1"/>
+<text x="752.0" y="197.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#6E695F" text-anchor="end"></text>
+<line x1="68.1" y1="150.0" x2="68.1" y2="182.0" stroke="#A8452F" stroke-width="1.4" stroke-dasharray="3 2"/>
+<text x="74.1" y="212.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#80311F" text-anchor="start">8A57: from here the file holds zeros</text>
+<circle cx="8.0" cy="223.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="8.0" y="226.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+<text x="20.0" y="226.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">0000</text>
+<text x="56.0" y="226.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">C0 start-up data: the copyright string and the two runtime</text>
+<circle cx="8.0" cy="240.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="8.0" y="243.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="20.0" y="243.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">009F</text>
+<text x="56.0" y="243.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">14 text-window regions (16 bytes), 8 option panels (16 bytes)</text>
+<circle cx="8.0" cy="257.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="8.0" y="260.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+<text x="20.0" y="260.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">01FF</text>
+<text x="56.0" y="260.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">file table: 203 records of 19 bytes (section 3.5)</text>
+<circle cx="8.0" cy="274.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="8.0" y="277.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">4</text>
+<text x="20.0" y="277.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">1110</text>
+<text x="56.0" y="277.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">tables and strings: names, spells, monsters, walls</text>
+<circle cx="8.0" cy="291.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="8.0" y="294.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">5</text>
+<text x="20.0" y="294.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">3A62</text>
+<text x="56.0" y="294.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">screen node records on a 60-byte grid (section 5.10)</text>
+<circle cx="8.0" cy="308.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="8.0" y="311.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">6</text>
+<text x="20.0" y="311.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">506A</text>
+<text x="56.0" y="311.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">the eight node pointer tables</text>
+<circle cx="8.0" cy="325.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="8.0" y="328.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">7</text>
+<text x="20.0" y="328.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">547E</text>
+<text x="56.0" y="328.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">view geometry, camp and dialog data, strings, file names</text>
+<circle cx="8.0" cy="342.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="8.0" y="345.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">8</text>
+<text x="20.0" y="345.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">8026</text>
+<text x="56.0" y="345.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">graphics driver entry points (802A), flags, mouse and video state</text>
+<circle cx="8.0" cy="359.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="8.0" y="362.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">9</text>
+<text x="20.0" y="362.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">8484</text>
+<text x="56.0" y="362.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">clocks and the 24-bit RNG state (8484, 8488 to 849E)</text>
+<circle cx="8.0" cy="376.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="8.0" y="379.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">10</text>
+<text x="20.0" y="379.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">8784</text>
+<text x="56.0" y="379.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">rand() seed, the C runtime&#x27;s</text>
+<circle cx="8.0" cy="393.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="8.0" y="396.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">11</text>
+<text x="20.0" y="396.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">88A0</text>
+<text x="56.0" y="396.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">PC speaker and Tandy driver data</text>
+<circle cx="388.0" cy="223.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="388.0" y="226.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">12</text>
+<text x="400.0" y="226.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">8A82</text>
+<text x="436.0" y="226.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">gMonsters: 30 records of 28 bytes (zero in the file)</text>
+<circle cx="388.0" cy="240.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="388.0" y="243.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">13</text>
+<text x="400.0" y="243.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">8DD0</text>
+<text x="436.0" y="243.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">gItems: 500 records of 14 bytes</text>
+<circle cx="388.0" cy="257.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="388.0" y="260.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">14</text>
+<text x="400.0" y="260.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">A9F0</text>
+<text x="436.0" y="260.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">gItemTypes: 57 records of 16 bytes</text>
+<circle cx="388.0" cy="274.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="388.0" y="277.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">15</text>
+<text x="400.0" y="277.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">B894</text>
+<text x="436.0" y="277.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">gMaze: 1,024 cells of 9 bytes</text>
+<circle cx="388.0" cy="291.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="388.0" y="294.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">16</text>
+<text x="400.0" y="294.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">DD2C</text>
+<text x="436.0" y="294.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">gProjectiles: 10 records of 18 bytes</text>
+<circle cx="388.0" cy="308.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="388.0" y="311.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">17</text>
+<text x="400.0" y="311.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">EFD4</text>
+<text x="436.0" y="311.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">gDecorShapes: 200 far pointers</text>
+<circle cx="388.0" cy="325.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="388.0" y="328.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">18</text>
+<text x="400.0" y="328.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">F580</text>
+<text x="436.0" y="328.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">gChars: 6 records of 243 bytes</text>
+<circle cx="388.0" cy="342.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="388.0" y="345.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">19</text>
+<text x="400.0" y="345.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">FBC8</text>
+<text x="436.0" y="345.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">the 64-byte block of the saved game (section 5.11)</text>
+<circle cx="388.0" cy="359.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="388.0" y="362.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">20</text>
+<text x="400.0" y="362.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">FC0C</text>
+<text x="436.0" y="362.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">page segment table: 8 words</text>
+<circle cx="388.0" cy="376.0" r="7.0" fill="#8A8373" stroke="none" stroke-width="1"/>
+<text x="388.0" y="379.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#FFFFFF" text-anchor="middle">21</text>
+<text x="400.0" y="379.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">FEEA</text>
+<text x="436.0" y="379.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.2" font-weight="400" fill="#3C3A36" text-anchor="start">file handle slots: 10 words</text>
+</svg>

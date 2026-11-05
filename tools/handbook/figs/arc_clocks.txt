@@ -1,0 +1,1 @@
+Interrupts and clocks. Top: the path from the timer chip to the counters the game reads, and what each counter is for. Bottom: how keys and mouse buttons reach the single event ring that every reader of input drains.

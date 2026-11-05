@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 376" width="760" height="376" class="fig">
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">FROM A NOTE BYTE TO REGISTERS A0H AND B0H, AND FROM A DURATION TO TICKS</text>
+<text x="0.0" y="36.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#3C3A36" text-anchor="start">note byte (the first byte of a note, below 80h)</text>
+<rect x="0.0" y="44.0" width="96.0" height="30.0" rx="3" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="48.0" y="64.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">octave</text>
+<rect x="96.0" y="44.0" width="96.0" height="30.0" rx="3" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="144.0" y="64.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#5C2D50" text-anchor="middle">semitone</text>
+<text x="0.0" y="92.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">bit 7 is clear; high nibble 0 to 7, low nibble 0 to 11</text>
+<text x="0.0" y="114.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">SetVoicePitch (4A3A): octave nibble + transpose (+07, 10h per</text>
+<text x="0.0" y="127.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">octave), semitone + detune (+12, wraps at 12), F-number from the</text>
+<text x="0.0" y="141.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">table + fine tune (+24), then the bend (+42) is added or subtracted</text>
+<text x="0.0" y="155.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">through a 32-byte curve of gLevelCurvePtrs.</text>
+<text x="390.0" y="36.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#3C3A36" text-anchor="start">the registers it writes</text>
+<text x="390.0" y="56.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">A0h + voice</text>
+<rect x="480.0" y="42.0" width="272.0" height="24.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="616.0" y="62.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">F-number low 8 bits</text>
+<text x="390.0" y="92.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">B0h + voice</text>
+<rect x="480.0" y="78.0" width="68.0" height="24.0" rx="3" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="514.0" y="94.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="middle">-</text>
+<rect x="548.0" y="78.0" width="34.0" height="24.0" rx="3" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="565.0" y="94.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#80311F" text-anchor="middle">key</text>
+<rect x="582.0" y="78.0" width="102.0" height="24.0" rx="3" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="633.0" y="94.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#14504A" text-anchor="middle">block</text>
+<rect x="684.0" y="78.0" width="68.0" height="24.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="718.0" y="94.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#7A5412" text-anchor="middle">F hi</text>
+<text x="480.0" y="118.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">bits 7 6  5  4 3 2  1 0</text>
+<text x="390.0" y="138.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Bit 5 is the key-on bit: VoiceKeyOn sets it, VoiceKeyOff clears it. The</text>
+<text x="390.0" y="151.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">block is the octave; the F-number has 10 bits. On the OPL2 [H] f = F x</text>
+<text x="390.0" y="165.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">49,716 / 2^(20 - block) Hz.</text>
+<text x="0.0" y="186.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#3C3A36" text-anchor="start">gFNumbers (3E31): 12 words, one octave</text>
+<rect x="2.0" y="225.0" width="54.0" height="37.0" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="29.0" y="221.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="700" fill="#2B2A28" text-anchor="middle">134</text>
+<text x="29.0" y="278.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">233.7</text>
+<text x="29.0" y="292.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">semitone 0</text>
+<rect x="64.0" y="222.7" width="54.0" height="39.3" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="91.0" y="218.7" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="700" fill="#2B2A28" text-anchor="middle">147</text>
+<text x="91.0" y="278.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">248.1</text>
+<rect x="126.0" y="220.4" width="54.0" height="41.6" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="153.0" y="216.4" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="700" fill="#2B2A28" text-anchor="middle">15A</text>
+<text x="153.0" y="278.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">262.5</text>
+<rect x="188.0" y="217.9" width="54.0" height="44.1" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="215.0" y="213.9" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="700" fill="#2B2A28" text-anchor="middle">16F</text>
+<text x="215.0" y="278.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">278.4</text>
+<rect x="250.0" y="215.3" width="54.0" height="46.7" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="277.0" y="211.3" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="700" fill="#2B2A28" text-anchor="middle">184</text>
+<text x="277.0" y="278.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">294.3</text>
+<rect x="312.0" y="212.4" width="54.0" height="49.6" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="339.0" y="208.4" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="700" fill="#2B2A28" text-anchor="middle">19C</text>
+<text x="339.0" y="278.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">312.5</text>
+<rect x="374.0" y="209.6" width="54.0" height="52.4" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="401.0" y="205.6" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="700" fill="#2B2A28" text-anchor="middle">1B4</text>
+<text x="401.0" y="278.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">330.8</text>
+<rect x="436.0" y="206.4" width="54.0" height="55.6" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="463.0" y="202.4" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="700" fill="#2B2A28" text-anchor="middle">1CE</text>
+<text x="463.0" y="278.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">350.5</text>
+<rect x="498.0" y="203.2" width="54.0" height="58.8" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="525.0" y="199.2" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="700" fill="#2B2A28" text-anchor="middle">1E9</text>
+<text x="525.0" y="278.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">371.0</text>
+<rect x="560.0" y="199.6" width="54.0" height="62.4" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="587.0" y="195.6" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="700" fill="#2B2A28" text-anchor="middle">207</text>
+<text x="587.0" y="278.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">393.7</text>
+<rect x="622.0" y="196.0" width="54.0" height="66.0" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="649.0" y="192.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="700" fill="#2B2A28" text-anchor="middle">225</text>
+<text x="649.0" y="278.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">416.5</text>
+<rect x="684.0" y="192.0" width="54.0" height="70.0" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="711.0" y="188.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="700" fill="#2B2A28" text-anchor="middle">246</text>
+<text x="711.0" y="278.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">441.5</text>
+<text x="711.0" y="292.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">semitone 11</text>
+<text x="0.0" y="312.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">Under each bar: Hz at block 4 [H]. The steps are about 5.95 percent, a semitone; semitone 0 is near a B flat, not a C.</text>
+<text x="0.0" y="336.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">A duration d counts down only when the voice&#x27;s speed accumulator carries: units per driver tick = speed / 256, a tick is 13.7 ms (72.8 Hz), so</text>
+<text x="0.0" y="349.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">d units last d x 256 / speed ticks. A speed of FFh is one unit per tick; the intro&#x27;s three pieces set 168, 234 and 180.</text>
+</svg>

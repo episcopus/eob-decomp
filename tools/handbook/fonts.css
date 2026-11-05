@@ -1,0 +1,5 @@
+/* Fonts are looked up in build/handbook/fonts (not committed; see README.md). Missing ones fall back. */
+@font-face { font-family: Inter; src: url("FONTDIR/Inter.ttf"); font-weight: 100 900; }
+@font-face { font-family: 'Inter Display'; src: url("FONTDIR/Inter.ttf"); font-weight: 100 900; }
+@font-face { font-family: 'DejaVu Sans Mono'; src: url("FONTDIR/DejaVuSansMono.ttf"); font-weight: 400; }
+@font-face { font-family: 'DejaVu Sans Mono'; src: url("FONTDIR/DejaVuSansMono-Bold.ttf"); font-weight: 700; }

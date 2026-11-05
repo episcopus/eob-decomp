@@ -1,0 +1,1 @@
+How `EOB.EXE` is laid out in the file. The load module (teal to navy) is what DOS places at `1000:0000`; the overlay code follows it in the same file. Segment 0 holds three unrelated things: Borland's start-up code, Westwood's hand-written AdLib driver, and the runtime library.

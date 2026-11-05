@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 360" width="760" height="360" class="fig"><defs><marker id="a1F6F66" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#1F6F66"/></marker><marker id="a7A3E6B" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#7A3E6B"/></marker><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<text x="0.0" y="14.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start">Keyboard: the Up arrow</text>
+<rect x="0.0" y="22.0" width="170.0" height="84.0" rx="6" fill="#FFFDF8" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="85.0" y="48.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11.2" font-weight="700" fill="#14504A" text-anchor="middle">key down</text>
+<text x="85.0" y="62.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">scancodes E0h 48h on port 60h;</text>
+<text x="85.0" y="75.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">the E0 prefix goes to the BIOS</text>
+<text x="85.0" y="88.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">handler</text>
+<path d="M171.0,64.0 L189.0,64.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="190.0" y="22.0" width="170.0" height="84.0" rx="6" fill="#FFFDF8" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="275.0" y="48.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11.2" font-weight="700" fill="#14504A" text-anchor="middle">INT 9, 1AAD:07C0</text>
+<text x="275.0" y="62.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">extended table, then folded to</text>
+<text x="275.0" y="75.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">the keypad: key code 60h (keypad</text>
+<text x="275.0" y="88.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">8)</text>
+<path d="M361.0,64.0 L379.0,64.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="380.0" y="22.0" width="170.0" height="84.0" rx="6" fill="#FFFDF8" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="465.0" y="54.6" font-family="Inter, 'Inter Display', sans-serif" font-size="11.2" font-weight="700" fill="#14504A" text-anchor="middle">ring word</text>
+<text x="465.0" y="68.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">AL = 60h, AH = modifier bits: 1</text>
+<text x="465.0" y="81.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">shift, 2 ctrl, 4 alt, 8 release</text>
+<path d="M551.0,64.0 L569.0,64.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="570.0" y="22.0" width="170.0" height="84.0" rx="6" fill="#FFFDF8" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="655.0" y="54.6" font-family="Inter, 'Inter Display', sans-serif" font-size="11.2" font-weight="700" fill="#14504A" text-anchor="middle">DispatchKeyWait</text>
+<text x="655.0" y="68.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">IsKeyPending, WaitKeyEvent; a</text>
+<text x="655.0" y="81.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">letter&#x27;s shift bit is dropped</text>
+<text x="0.0" y="134.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#5C2D50" text-anchor="start">Mouse: a click on the forward arrow at (30, 135)</text>
+<rect x="0.0" y="142.0" width="170.0" height="84.0" rx="6" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="85.0" y="174.6" font-family="Inter, 'Inter Display', sans-serif" font-size="11.2" font-weight="700" fill="#5C2D50" text-anchor="middle">INT 33h callback</text>
+<text x="85.0" y="188.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">1A72:017A: clamps x, publishes</text>
+<text x="85.0" y="201.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">gCursorX, gCursorY</text>
+<path d="M171.0,184.0 L189.0,184.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="190.0" y="142.0" width="170.0" height="84.0" rx="6" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="275.0" y="168.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11.2" font-weight="700" fill="#5C2D50" text-anchor="middle">1AAD:0B0E</text>
+<text x="275.0" y="182.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">button change becomes key 41h</text>
+<text x="275.0" y="195.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">(left) or 42h (right); queues</text>
+<text x="275.0" y="208.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">code, x, y</text>
+<path d="M361.0,184.0 L379.0,184.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="380.0" y="142.0" width="170.0" height="84.0" rx="6" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="465.0" y="174.6" font-family="Inter, 'Inter Display', sans-serif" font-size="11.2" font-weight="700" fill="#5C2D50" text-anchor="middle">WaitKeyEvent</text>
+<text x="465.0" y="188.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">1AAD:048D copies x, y to</text>
+<text x="465.0" y="201.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">gClickX, gClickY</text>
+<path d="M551.0,184.0 L569.0,184.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="570.0" y="142.0" width="170.0" height="84.0" rx="6" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="655.0" y="168.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11.2" font-weight="700" fill="#5C2D50" text-anchor="middle">DispatchNodeEvent</text>
+<text x="655.0" y="182.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">press = left mode 1; the hit</text>
+<text x="655.0" y="195.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">point is the click, not the</text>
+<text x="655.0" y="208.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">pointer</text>
+<rect x="0.0" y="250.0" width="760.0" height="100.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="10.0" y="270.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#2C386B" text-anchor="start">DispatchNodeEvent walks the node list (table 1b on the map screen), node by node</text>
+<text x="10.0" y="290.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">key: a node matches when the event word equals its key06 (left) or key08 (right) word: Up arrow = keypad 8 = 0060h, node 30</text>
+<text x="10.0" y="306.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">mouse: a node matches when the hit point is inside its box and its flags allow the button mode (press, held, release, idle)</text>
+<text x="10.0" y="322.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">a match toggles the node&#x27;s on bit, redraws it and calls its callback: MoveForward (0ACD:04F8) here, which ends in MoveParty</text>
+<text x="10.0" y="338.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">a callback that returns nonzero ends the walk; one that returns 0 lets nodes further down the list see the same event</text>
+<path d="M741.0,64.0 L753.0,64.0 L753.0,248.0" fill="none" stroke="#1F6F66" stroke-width="1.4" marker-end="url(#a1F6F66)"/>
+<path d="M655.0,227.0 L655.0,248.0" fill="none" stroke="#7A3E6B" stroke-width="1.6" marker-end="url(#a7A3E6B)"/>
+</svg>

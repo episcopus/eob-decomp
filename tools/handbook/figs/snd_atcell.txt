@@ -1,0 +1,1 @@
+PlaySoundAtCell records a sound and plays it at the next call, so a one-sound buffer sits between the game and the driver. The map loop flushes it with PlaySoundDefault(0). Distance rewrites two bytes of the recorded sound's script before it is queued: a higher level offset and a priority of 20h minus the distance.

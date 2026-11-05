@@ -1,0 +1,1 @@
+The nine bytes of a cell in `gMaze`. The file supplies the first four; the monster count, the trigger mask, the item list head and the script offset are filled in at run time (`LoadLevel`, `InsertListItem`, `MoveMonsterToCell`).

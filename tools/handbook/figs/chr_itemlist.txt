@@ -1,0 +1,1 @@
+All 500 item records live in one array; an item that lies on a map is one link in a circular, doubly linked list whose head id sits in the cell's nine-byte record. `InsertListItem` splices the new record in just before the old head and makes it the head, so a walk along `nextLink` meets the newest item first.

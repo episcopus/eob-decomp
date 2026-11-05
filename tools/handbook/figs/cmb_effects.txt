@@ -1,0 +1,1 @@
+The game has one clock, the 32-bit tick counter `gGameTicks`, and one table of sixteen timers driven by it. Entries 2 to 5 move the monsters, 6 to 11 run the timed effects of the six party members, the rest animate the world.

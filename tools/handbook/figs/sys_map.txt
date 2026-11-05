@@ -1,0 +1,1 @@
+The systems of section 5. One loop, `RunMapLoop`, takes a command from the interface, runs the timed effects that drive monsters, hands and spells, redraws the view when it is dirty and plays sound. The rules layer works on the party and its items; the world layer holds the maze, its scripts and its monsters; the output layer draws and plays what changed.
