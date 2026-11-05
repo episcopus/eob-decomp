@@ -17,7 +17,8 @@ sound and state.
 |---|---|
 | M0 skeleton | done 2026-11-04: `make port` translates `src/E0CF7.C` and `src/E1658.C`, links them with the arena runtime twice, headless (`build/port/eob-port-headless`, no SDL) and with the SDL3 host (`build/port/eob-port`), and the self-test runs them headless on `EOB.EXE`'s own DGROUP (`tests/unit/test_port.py`, fast set) |
 | Decisions | the nine answered by the human 2026-11-04, the five follow-ups (A to E) 2026-11-05 (section "Decisions"). Linux and Windows deferred by the human 2026-11-05: macOS only for now. Left for the human: install the newest LLVM (section "What the human installs") |
-| M1 to M7 | not started (section "Order of work") |
+| M1 tc2c for every C unit | done 2026-11-05 except the LLVM pin, which waits for the human's install: `make port` translates all 41 C units of `EOB.EXE` (609 functions) with none refused, compiles them with `-Werror` and links them; what is still a stub is 63 assembly routines (M3) and 23 library functions that need the machine (section "M1") |
+| M2 to M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
 
@@ -59,7 +60,8 @@ by hand: the arena **is** the real-mode address space.
   its C function (`tc_code_lookup`).
 - Locals and parameters whose address is never taken are ordinary C variables of the exact width.
   Address-taken locals, local arrays and local structs (an `&x` passed to a callee, `union REGS` on the
-  stack) get a frame on an arena stack at the original's `SS`, as Turbo C would give them one (M1).
+  stack) get a frame on an arena stack in the original's stack segment (the header's `SS`), as Turbo C
+  would give them one (`tc_frame_enter`; M1).
 
 Why this model: every byte the game keeps is where and as the original keeps it, so
 
@@ -98,9 +100,8 @@ byte for byte, so the goldens would test less.
   wraparound is the 8086's and no host overflow is undefined.
 - It reuses the matcher's annotation parser (`cmatch.parse_annotations`, imported, never changed) for
   the addresses of globals and functions.
-- What it does not handle stops it with the construct and the line (`tc2c: unsupported: address of a
-  local (needs the arena stack)`); a unit joins `port/units.txt` only when every construct it uses is
-  handled. A function called but defined by no translated unit is linked as a stub that names itself and
+- What it does not handle stops it with the construct and the line (`tc2c: unsupported: X.C:4: a struct
+  passed by value (s)`); a unit joins `port/units.txt` only when every construct it uses is handled. A function called but defined by no translated unit is linked as a stub that names itself and
   stops (`build/port/gen/unported.c`), so the worklist is always printed.
 
 The generated C uses GNU statement expressions (compound assignment, `++` and `--` evaluate the address
@@ -126,14 +127,20 @@ Other ways considered:
 | `p == q`, `if (p)` | all 32 bits (null is `0000:0000`) | skeleton |
 | `p < q` | the offsets only [H]: settle by compiling a probe with Turbo C++ 1.00 (rule 1) | skeleton, [H] |
 | far function pointer call | `tc_code_lookup(address)` then the C function | skeleton |
-| `MK_FP`, `FP_SEG`, `FP_OFF` | the identity on `farptr` (`TC_MKFP`, `TC_SEG`, `TC_OFF`) | M1 |
-| string literals | at the original's address: the matcher already finds each literal by content in its module's data; else a literal pool outside DGROUP | M1 |
-| global definitions with initialisers | the image already holds them; tc2c checks the initialiser against the image's bytes | M1 |
-| address-taken locals, local arrays and structs, struct copies | an arena stack frame; struct copy as a byte copy | M1 |
-| `switch`, `goto`, `?:`, `,` | the same in C | M1 |
-| `int86`, `getvect`, `setvect`, `_open`, `_read`, `memset`, `strupr`, `atol`, `sprintf`, `MemAlloc`'s DOS calls | the Borland library is library (AGENTS.md): the port's runtime gives each the Turbo C semantics, on the arena and through the machine layer (INT 10h, 21h, the vector table at `0000:0000`) | M1, M3 |
-| `void interrupt (far *)()` vector types | far code pointers; the vector table is the arena's `0000:0000` | M3 |
-| `/*@flags ... */` | `-K` would make `char` unsigned for that unit; `-G`, `-v` change only code | M1 |
+| `p - q` | the offsets' difference over the element size [H] | M1, [H] |
+| `MK_FP`, `FP_SEG`, `FP_OFF` | the identity on `farptr` (`TC_MKFP`, `TC_SEG`, `TC_OFF`); in an overlay unit a constant segment is TLINK's segment-table index times 8 (`EOV3.C`'s `MK_FP(0x1d8, 0)`, entry 59), resolved through `build/re/eob.json` | M1 |
+| string literals | at the DGROUP offset the original's code uses: `port/literals.json`, recorded by the matcher (`make port-literals`), checked against `src/` on every build and against the original's bytes by the fast tests; a unit the table does not list falls back to a search by content | M1 |
+| global definitions with initialisers | the loaded image holds them (until step D); tc2c translates no global definition | M1; step D |
+| address-taken locals and parameters, local arrays and structs, struct copies and initialiser lists | a frame on the arena stack, freed on return by the cleanup attribute; struct copy as a byte copy (`tc_copy`); an uninitialised C local starts at 0 (the original's is the stack's leftover) [H] | M1 |
+| `switch`, `goto`, `?:`, `,`, `sizeof` | the same in C; `sizeof` and every constant computed by tc2c with Turbo C's sizes | M1 |
+| enum constants, typedefs of untagged structs and unions (`E1B82.C`'s `WorkBuffer`) | from the AST | M1 |
+| a call whose caller and callee declare the arguments differently (`E14EF.C`'s `UpdateOptionList`: two `int`s where callers push one `long`) | laid out as the caller pushes them, read back as the callee's parameters (`call_args`); a different number of argument bytes stops tc2c | M1 |
+| a call to a name no unit defines, whose address is a function another unit defines under another name (`DrawViewRows` and `NoOpAfterMapLoad` at overlay 4's stub entries) | the call goes to the function at that address (`resolve_aliases`) | M1 |
+| a value read from a call to a function defined `void` | 0 [H] (the original reads whatever AX held) | M1 |
+| the Borland library (`strlen`, `sprintf`, `open`, `int86`, ...) | called as `tcl_<name>`: the runtime (`port/include/tclib.h`, `port/runtime/tclib.c`) has the string, memory, conversion and `sprintf` functions and `getvect`/`setvect` with Turbo C's behaviour; the 23 that need the machine (files, the far heap, `int86`, `exit`, `harderr`) or keep library state in DGROUP (`rand`'s seed) are stubs until M3. A variadic call's arguments are laid out as Turbo C pushes them | M1, M3 |
+| `void interrupt (far *)()` vector types | far code pointers; `getvect` and `setvect` on the arena's vector table at `0000:0000` | M1 |
+| `/*@flags ... */` | no unit uses `-K`; `-G` and `-v` change only code; `-P` (`E1B82.C`, C++) uses C++ only for `extern "C" { }`, which tc2c blanks before reading the unit as C | M1 |
+| the library headers (`dos.h`, `stdio.h`, `alloc.h`, `fcntl.h`, `mem.h`) | the port's own, `port/include/tc/sys/`, with Turbo C++ 1.00's constants and layouts (checked against its headers, not copied) | M1 |
 
 ## The overlays as plain code
 
@@ -323,6 +330,32 @@ The new recording artefacts (per golden: the clock positions of each interrupt a
 beside the goldens, `tests/sessions/golden/<name>.clock.json`; the human approved this change to the
 golden format (decision 5). The goldens themselves do not change.
 
+## M1: every C unit (done 2026-11-05)
+
+```
+make port              # translates all of port/units.txt; needs build/re/eob.json (make overlays)
+make port-literals     # when src/ changes a literal: port/literals.json from the matcher (Turbo C++)
+```
+
+- `port/units.txt` lists the 41 C units of `EOB.EXE`; tc2c translates them together (609 functions)
+  and refuses none. `ported.h` has one prototype per function (its definition's; for a function no
+  unit defines, a variadic declaration first, then one that returns a value); `unported.c` has the
+  rest, each a stub that names its address and its kind: 63 assembly routines (`port/asm/`, M3) and 23
+  library functions (M3).
+- The string literals: `port/literals.json` places all 149 of the 19 units that have any where the
+  matcher saw the original's code refer to them. The search by content agrees on 147; the two it got
+  wrong (an empty string in `E07A9.C`, `"\r"` in `E122E.C`) are why the table exists.
+- The tests (`tests/unit/test_port.py`, fast set): the build and the self-test (every unit
+  translated), a probe unit with the M1 constructs translated, compiled and run with Turbo C's results
+  (frames, struct copy, a `switch` that falls through, `goto`, 16-bit wraparound before a compare, signed
+  `char`) and the runtime library on arena strings, the literal table against `src/` and the original,
+  and a struct passed by value refused by name. A mutation that drops the 16-bit wrap fails the probe.
+- Not done: the pinned LLVM in `make doctor` (the human installs it; Apple clang 17.0.0 meanwhile).
+- Found on the way, for the P6 vocabulary (not changed here, `src/` is under review): two overlay 4
+  functions have two names, the callers' and the definition's: `DrawViewRows` (`E0EF3.C`, `EOV3.C`, at the
+  stub entry 2116:0034) is `EOV4.C`'s `DrawCompass` (ovl4:1EDE), and `NoOpAfterMapLoad` (`E0ACD.C`,
+  `E122E.C`, 2116:0043) is `EOV4.C`'s `PreloadViewOverlay` (ovl4:2039).
+
 ## The skeleton (M0)
 
 ```
@@ -348,7 +381,7 @@ make port
   frame through `platform_present`; Escape or 10 s closes it. The headless program refuses `--window`.
 - `tests/unit/test_port.py` (fast set, skipped without clang or SDL3): the build and the self-test on the
   headless program, no SDL use outside `port/platform/`, and a unit taking a local's address refused by
-  name.
+  name (at M0; M1 handles it, and the refusal test now uses a struct passed by value).
 
 ## Order of work
 

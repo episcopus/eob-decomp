@@ -6,8 +6,7 @@
    gives every pointer four bytes itself. cdecl, pascal and interrupt are dropped the same way.
    No C unit defines an interrupt function (the handlers are assembly); the units that name the
    keyword use it in vector types (`void interrupt (far *)()`, E07C8.C, I0892.C), which are far code
-   pointers like any other. tc2c still refuses those units until the machine layer has the
-   interrupt vector table (playbook 80, "Open questions"). */
+   pointers like any other. */
 #pragma pack(1)
 #define far
 #define near

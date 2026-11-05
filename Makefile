@@ -6,7 +6,7 @@ PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
 .PHONY: help setup doctor inputs overlays pak data emu2 test p0-check tc-install tc-check rtl-compare map match oracle-run golden test-slow \
 	match-gate check queue next claim locks unlock packet skeleton handoff handoffs handoff-done integrate review-pass worker progress \
-	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port
+	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port port-literals
 
 help:
 	@echo "Phase 0:  setup doctor inputs overlays pak emu2 test p0-check"
@@ -18,6 +18,7 @@ help:
 	@echo "          claim locks unlock handoff handoffs integrate handoff-done review-pass worker (playbooks 70, 90)"
 	@echo "          smoke-agent start-run watch-agents run-status run-add stop-run (work/roster.toml)"
 	@echo "Phase 7:  port (playbook 80: translate port/units.txt, build build/port/eob-port-headless and, with SDL3, build/port/eob-port; self-test)"
+	@echo "          port-literals (when src/ changes a literal: port/literals.json from the matcher; needs Turbo C++)"
 	@echo "See AGENTS.md and docs/spec/SPEC.md."
 
 setup:            ## create .venv with the Python tools (uv)
@@ -73,8 +74,11 @@ twin:             ## prove INTRO.EXE units by their EOB.EXE twin, the same modul
 oracle-run:       ## run the original EOB.EXE in the oracle (build/oracle/run: summary.json, shots/)
 	$(PY) tools/oracle/run.py --max-insns $(or $(INSNS),30000000) $(if $(ARGS),--args "$(ARGS)") $(if $(SCRIPT),--script $(SCRIPT))
 
-port:             ## Phase 7 skeleton (playbook 80): translate the units of port/units.txt from src/, build build/port/eob-port-headless and eob-port (SDL3), run the self-test headless
+port: overlays    ## Phase 7 (playbook 80): translate the units of port/units.txt from src/, build build/port/eob-port-headless and eob-port (SDL3), run the self-test headless
 	$(MAKE) --no-print-directory -f port/port.mk PY=$(PY)
+
+port-literals: overlays  ## where the original keeps each string literal of port/units.txt (port/literals.json, from the matcher; needs Turbo C++)
+	$(PY) tools/port/literals.py
 
 golden:           ## record the golden sessions (NAME=x for one; CHECK=1 verifies instead; CHECK=1 REBUILT=1 on the programs make rebuild linked)
 	$(PY) tools/oracle/golden.py $(if $(CHECK),--check) $(if $(REBUILT),--rebuilt) $(NAME)

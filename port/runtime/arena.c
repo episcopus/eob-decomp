@@ -8,6 +8,39 @@
 u8 tc_mem[TC_MEM_SIZE] = {0};
 u16 tc_load_seg;
 u16 tc_ds;
+u16 tc_ss;
+u16 tc_sp;
+
+farptr tc_copy(farptr dst, farptr src, u16 n)
+{
+    u16 i;
+    for (i = 0; i < n; i++) {
+        tc_st_u8(tc_fp_add(dst, i), tc_ld_u8(tc_fp_add(src, i)));
+    }
+    return dst;
+}
+
+void tc_zero(farptr dst, u16 n)
+{
+    u16 i;
+    for (i = 0; i < n; i++) {
+        tc_st_u8(tc_fp_add(dst, i), 0);
+    }
+}
+
+tc_frame tc_frame_enter(u16 size)
+{
+    tc_frame f;
+    u16 need = (u16)((size + 1u) & ~1u);
+    if (tc_ss == 0 || tc_sp < need) {
+        fprintf(stderr, "tcport: the arena stack (%04X:%04X) has no room for a frame of %u bytes\n", tc_ss, tc_sp, size);
+        exit(70);
+    }
+    f.sp = tc_sp;
+    tc_sp = (u16)(tc_sp - need);
+    f.base = TC_MKFP(tc_ss, tc_sp);
+    return f;
+}
 
 #define CODE_MAX 4096u
 
@@ -106,8 +139,12 @@ int tc_load_program(const char *path, u16 load_seg, u16 ds_para)
         farptr at = TC_MKFP((u16)(word_at(r + 2) + load_seg), word_at(r));
         tc_st_u16(at, (u16)(tc_ld_u16(at) + load_seg));
     }
-    free(file);
     tc_load_seg = load_seg;
     tc_ds = (u16)(load_seg + ds_para);
+    /* the stack the header names (EOB.EXE: 312D:0080 in the load module); its top is where Turbo
+       C's start-up puts SP, _stklen bytes in [H: 1000h, the default; M3 reads the oracle's] */
+    tc_ss = (u16)(word_at(file + 0x0E) + load_seg);
+    tc_sp = 0x1000u;
+    free(file);
     return 0;
 }

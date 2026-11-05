@@ -82,6 +82,34 @@ static inline u32 tc_st_u32(farptr p, u32 v)
 }
 static inline s32 tc_st_s32(farptr p, s32 v) { tc_st_u32(p, (u32)v); return v; }
 
+/* Bytes with the arena's wrap: a copy or a fill moves both offsets, each wrapping at 64 KB, one byte
+   at a time from the first (an overlapping copy behaves as Turbo C's forward byte loops do).
+   tc_copy returns dst: a struct assignment's value is its destination. */
+farptr tc_copy(farptr dst, farptr src, u16 n);
+void tc_zero(farptr dst, u16 n);
+
+/* The arena stack. A function of src/ whose locals need memory (an array, a struct, a local whose
+   address is taken) gets a frame of that many bytes below tc_ss:tc_sp, as Turbo C gives it one on
+   SS; the frame goes when the function returns (tc2c declares it with the cleanup attribute). The
+   frames' contents and places are not the original's (its stack also holds return addresses and
+   saved registers), so comparisons with the oracle mask the stack (playbook 80). */
+extern u16 tc_ss;
+extern u16 tc_sp;
+typedef struct {
+    farptr base;
+    u16 sp;
+} tc_frame;
+tc_frame tc_frame_enter(u16 size);
+static inline void tc_frame_leave(tc_frame *f) { tc_sp = f->sp; }
+
+/* Argument blocks, little-endian as the 8086 stack holds them: a variadic library call's arguments
+   after the fixed ones (tc2c lays them out, the runtime reads them), and a call whose caller and
+   callee declare the arguments differently (tc2c, call_args). */
+static inline void tc_va16(u8 *b, u16 v) { b[0] = (u8)v; b[1] = (u8)(v >> 8); }
+static inline void tc_va32(u8 *b, u32 v) { tc_va16(b, (u16)v); tc_va16(b + 2, (u16)(v >> 16)); }
+static inline u16 tc_vr16(const u8 *b) { return (u16)(b[0] | (b[1] << 8)); }
+static inline u32 tc_vr32(const u8 *b) { return (u32)tc_vr16(b) | ((u32)tc_vr16(b + 2) << 16); }
+
 /* Code addresses. Every function of src/ is registered under its original far address (the
    `@ SSSS:OOOO` annotation, its segment moved by tc_load_seg), so a far function pointer read
    from the arena (a callback field, a driver slot, an interrupt vector) finds its C function. */
