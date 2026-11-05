@@ -1,5 +1,18 @@
 # Review: eov4
 
+# Round P6 re-review (2026-11-04), commit 24711ec
+
+Reviewer: p6-rev-r2
+Commit reviewed: 24711ec (P6 re-review; the P6 round read ce0608f)
+
+Judged: the 18 open P6 must-fix items and the diff since ce0608f for src/EOV4.C. `make match FILE=src/EOV4.C`: 18 of 18 (8259 bytes), exit 0. `make readability UNIT=eov4`: 0 findings.
+
+- [x] must-fix The global declarations are fixed right. `gWallTypeFlags` is per-wall-type, `gWallVmpSet` is the per-wall-type 1-based block set in the level's .VMP/.EMP, `gViewSlotRow` is a per-view-slot row index, `gDoorShapeSet` and `gDoorStepBase` are per wall type, the six `gDoorYLevels` tables and `gDoorClipLeftX`/`gDoorClipRightX` are per level (1..12, with the right x bound), and `gWallDecorHead`, `gDecorShapes`, `gViewRelativePos`, `gCompassDir`, `gCompassIcons` and `gProjectileDrawOrder` use wall type, facing or view slot as the registry and the code require. The `gDoorClipRightX` comment is now per slot x, level 4..6, matching `right = gDoorClipRightX[slot * 2] >> 3`.
+- [x] must-fix The four headers are fixed right. `BuildViewBlockMap` now describes the 22 by 15 word block map at ds:ADB0, the per-facing gViewCells offsets, the cell and facing parity, and the .VMP blocks copied into the map. `DrawViewFrame` says the block map, `DrawCompass` says the current facing, and `DrawSlotProjectiles` uses facing and the cell at +4. These match re/renames.toml, ovl4:044B and the code.
+- [ ] note No new false claim was introduced in the changed lines. The three P6 shoulds on `PreloadViewOverlay`, `gViewBlockMap` and `gMonsterDrawOrder` remain non-blocking.
+
+# Round P6 (2026-11-04), commit ce0608f
+
 Reviewer: p6-rev-10
 Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27
 
