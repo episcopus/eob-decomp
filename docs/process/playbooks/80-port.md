@@ -16,7 +16,7 @@ sound and state.
 | Step | State |
 |---|---|
 | M0 skeleton | done 2026-11-04: `make port` translates `src/E0CF7.C` and `src/E1658.C`, links them with the arena runtime twice, headless (`build/port/eob-port-headless`, no SDL) and with the SDL3 host (`build/port/eob-port`), and the self-test runs them headless on `EOB.EXE`'s own DGROUP (`tests/unit/test_port.py`, fast set) |
-| Decisions | the nine answered by the human 2026-11-04, the five follow-ups (A to E) 2026-11-05 (section "Decisions"). Left for the human: install the newest LLVM and a Linux container (section "What the human installs") |
+| Decisions | the nine answered by the human 2026-11-04, the five follow-ups (A to E) 2026-11-05 (section "Decisions"). Linux and Windows deferred by the human 2026-11-05: macOS only for now. Left for the human: install the newest LLVM (section "What the human installs") |
 | M1 to M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
@@ -88,8 +88,8 @@ byte for byte, so the goldens would test less.
   (`port/include/tc/prelude.h`), clang applies C's conversion rules with Turbo C's widths, and every
   promotion and usual arithmetic conversion is an explicit node of the AST (`ImplicitCastExpr`). The
   skeleton was built with Apple clang 17.0.0; the reference is to be one pinned LLVM release on every
-  platform (decision 2): the newest major release that macOS, Linux and Windows all offer when the human
-  installs it (question B).
+  platform (decision 2): the newest major release when the human installs it (question B); when Linux and
+  Windows come back, one that all three offer.
 - `far`, `near` and `huge` are dropped for parsing: in the large model every data pointer is far, so
   tc2c gives every pointer 4 bytes itself and computes every struct layout itself (bytes, no padding,
   unions at offset 0). clang's own sizes (2-byte MSP430 pointers) are never used.
@@ -104,7 +104,7 @@ byte for byte, so the goldens would test less.
   stops (`build/port/gen/unported.c`), so the worklist is always printed.
 
 The generated C uses GNU statement expressions (compound assignment, `++` and `--` evaluate the address
-once); clang and gcc build it, MSVC does not (decision 2: allowed; Windows builds with clang).
+once); clang and gcc build it, MSVC does not (decision 2: allowed; a Windows build, when it comes, uses clang).
 
 Other ways considered:
 
@@ -352,8 +352,9 @@ make port
 
 ## Order of work
 
-Every step's check runs on macOS and on Linux (a container on this Mac) from M1, and on Windows too
-from M5 (decision 9 as question D settles it).
+Every step's check runs on macOS (arm64). Linux and Windows are deferred (the human, 2026-11-05): the
+platform separation and the portability rules keep them possible, and nothing is built or checked for
+them until the human brings them back.
 
 | Step | Deliverable | Check |
 |---|---|---|
@@ -362,7 +363,7 @@ from M5 (decision 9 as question D settles it).
 | M3 | the machine: vector table, PIT, ports, INT 33h, INT 10h, DOS memory, files and 4B03h; the 19 assembly units hand-written in `port/asm/`; the C-unit clock in the oracle and the `.clock.json` recordings | M2's test of each hand-written routine |
 | M4 | the MCGA driver, hand-written from `MCGA.ASM` | screens of `boot-title` |
 | D | the program's data as C definitions in `src/` (question C): a P6 task after the review of `work/p6-review.md`, proven by `make match` and `make rebuild`; then tc2c places the initialisers and the port's runtime writes the library's own data; the generated image is checked against `EOB.EXE`'s | the generated image equals the original's load module, but for the library data listed |
-| M5 | `port/platform/replay.c`: headless replay of `boot-title` to the title menu, from the generated image (step D comes first); the Windows build joins | its checkpoints |
+| M5 | `port/platform/replay.c`: headless replay of `boot-title` to the title menu, from the generated image (step D comes first) | its checkpoints |
 | M6 | every `EOB.EXE` golden (`boot-adlib`, `load-walk`, `mouse-party`, `new-party`); then `INTRO.EXE` (the twin map of `make twin` gives its addresses for the shared units) | `make port-golden` in `make check` |
 | M7 | live play: real-time pacing from the PIT, AdLib synthesis with ymfm, the launcher's choices (VGA, AdLib, mouse) | a human plays |
 
@@ -380,7 +381,7 @@ The human answered all nine on 2026-11-04:
 | 6 | The initial image | **generated from `src/`**, so the port ships no game bytes (not read from the player's `EOB.EXE`) |
 | 7 | The OPL emulator | ymfm (BSD 3-clause); the human installs it, at M7 |
 | 8 | Start-up | `EOB.EXE` directly with `3 4 0 homie 3` and the port's own settings; `INTRO.EXE` later |
-| 9 | Platforms | **macOS, Linux and Windows from the start** |
+| 9 | Platforms | macOS, Linux and Windows from the start; **then deferred 2026-11-05: macOS only for now, Linux and Windows later** |
 
 And a note: keep poolrad's platform separation. It is the section "Platform separation" above, now
 enforced by the build.
@@ -390,9 +391,9 @@ enforced by the build.
 | # | Question | Answer |
 |---|---|---|
 | A | The clock with hand-written assembly | the clock counts only the instructions of the C units ("The clock with hand-written assembly") |
-| B | Which LLVM | the newest major release macOS, Linux and Windows all offer when it is installed; `make doctor` checks it |
+| B | Which LLVM | the newest major release when it is installed (one all three platforms offer, once Linux and Windows return); `make doctor` checks it |
 | C | The data of a generated image | **convert the data first**: the program's data becomes C definitions in `src/` (step D of "Order of work") before the port runs from its own image; the port program never loads `EOB.EXE`. Tests keep reading `eob/` as the oracle does (the self-test, M2's per-function tests on the oracle's memory), since they compare with the original |
-| D | Where Linux and Windows build | a Linux container on this Mac from M1; Windows from M5 |
+| D | Where Linux and Windows build | a Linux container from M1, Windows from M5; **superseded 2026-11-05**: both deferred |
 | E | The recording file | `tests/sessions/golden/<name>.clock.json`, beside each golden |
 
 Step D changes `src/`, so it waits for the independent review (`work/p6-review.md`) to finish; M1 to M4
@@ -402,12 +403,10 @@ do not need it, since none of them runs the port from its own image.
 
 Downloads, so the human does them (AGENTS.md rule 5):
 
-- the newest LLVM (macOS: Homebrew; Linux: apt.llvm.org in the container; Windows at M5: the LLVM
-  installer), and its version is then pinned in `make doctor`;
-- a Linux container runtime on this Mac and an image with that LLVM, SDL3 and Python, plus the command
-  agents use to run `make port` in it;
-- at M5, a Windows machine or virtual machine with the same;
-- at M7, ymfm.
+- the newest LLVM (Homebrew), and its version is then pinned in `make doctor`;
+- at M7, ymfm;
+- when Linux and Windows return: a Linux container and a Windows machine or virtual machine, each with
+  that LLVM, SDL3 and Python, and the command agents use to run `make port` there.
 
 ## Open questions (none needs `src/` changed now)
 
