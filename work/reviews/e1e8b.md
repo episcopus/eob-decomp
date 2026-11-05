@@ -1,5 +1,17 @@
 # Review: e1e8b
 
+# Round P6 re-review (2026-11-04), commit 24711ec
+
+Reviewer: p6-rev-r2
+Commit reviewed: 24711ec (P6 re-review; the P6 round read ce0608f)
+
+Judged: the open P6 must-fix (the ShutdownOverlayManager header) and the diff since ce0608f for src/E1E8B.ASM. `make match FILE=src/E1E8B.ASM`: 30 of 30 (2329 bytes), exit 0. `make readability UNIT=e1e8b`: 0 findings.
+
+- [x] must-fix src/E1E8B.ASM:240-244: fixed right. The header now says the teardown half of InitOverlayManager, names the open-handle check at 1E8B:0190, the close, the SwapAndReopenOverlayFile vector restore, and the two near hooks, with re/renames.toml, ShutdownOverlayManager as the evidence. The placeholder sentence is gone. "Purpose unknown" remains only for the two hooks and the missing caller, which is honest.
+- [ ] note No new false claim in the changed lines.
+
+# Round P6 (2026-11-04), commit ce0608f
+
 # Round P6 (2026-11-04), commit ce0608f
 
 Reviewer: p6-rev-1
