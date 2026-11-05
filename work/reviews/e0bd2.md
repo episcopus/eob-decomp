@@ -1,5 +1,18 @@
 # Review: e0bd2
 
+# Round P6 re-review (2026-11-04), commit 24711ec
+
+Reviewer: p6-rev-r2
+Commit reviewed: 24711ec (P6 re-review; the P6 round read ce0608f)
+
+Judged: the 10 open P6 must-fix items and the diff since ce0608f for src/E0BD2.C. `make match FILE=src/E0BD2.C`: 22 of 22 (4681 bytes), exit 0. `make readability UNIT=e0bd2`: 0 findings.
+
+- [x] must-fix The item-record wording is fixed right in all ten places: `TakeItemFromSlot` uses `key = -1` and `value`; `InsertListItem` uses the owner `key`, `level`, `nextLink` and `prevLink`; `PushListItem` uses `nextLink`; `DrainListItem` uses `type`, `key`, `level` and `cellPos`; `DrawItemName` uses `nameIndex` and `identifiedNameIndex`; `AddDDEffect` uses `rec->m02`; `CopyItemToFreeSlot` tests `key`; `ApplyItemEffect` tests the character's `status` bit 1; and `UseWandItem` tests the Monster `cell`. Each matches the code and re/fields.toml.
+- [ ] should src/E0BD2.C:713-714 (UseWandItem): the table index is now `gWandSpells[value]`, but the same sentence still says "the item's m0B is 0" and "when it is not 5". `m0B` is the old name for `value`. Make the three consistent when the file is next edited; it does not block.
+- [ ] note The P6 round's other shoulds and notes remain (the `ApplyItemEffect` m0D/m0E wording, `gCursorSlot`, `gWallTypeFlags`, the panel colours, `gStagingPage`, `gViewDirty`, and the stale notes). They are non-blocking.
+
+# Round P6 (2026-11-04), commit ce0608f
+
 Reviewer: p6-rev-9
 Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27
 
