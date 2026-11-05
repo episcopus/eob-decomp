@@ -1,5 +1,18 @@
 # Review: e0d1c
 
+# Round P6 re-review (2026-11-04), commit 24711ec
+
+Reviewer: p6-rev-r2
+Commit reviewed: 24711ec (P6 re-review; the P6 round read ce0608f)
+
+Judged: the one open P6 must-fix and the diff since ce0608f for src/E0D1C.C. `make match FILE=src/E0D1C.C`: 26 of 26 (3265 bytes), exit 0. `make readability UNIT=e0d1c`: 0 findings.
+
+- [x] must-fix src/E0D1C.C:600 (TurnUndead): fixed right. The comment now says `flags |= 0x10`, matching `obj->flags |= 0x10` at :638 and the Monster +16 field name in re/fields.toml. The older rounds' must-fix items are unchanged and remain ticked.
+- [ ] should The P6 shoulds remain non-blocking: the unmarked [H] on HoldsHolySymbol, the `m01` field name in CanUseHand, and the placeholder MonsterType fields.
+- [ ] note No new false claim in the changed line.
+
+# Round P6 (2026-11-04), commit ce0608f367ed01b1b1df84e254eef04d1a734b27
+
 Reviewer: p6-rev-5
 Commit reviewed: ce0608f367ed01b1b1df84e254eef04d1a734b27 (review/e0d1c HEAD at the start of this round; src/E0D1C.C last changed in d0ed4202, the P6 naming pass; `make match FILE=src/E0D1C.C`: 26 of 26, 3265 bytes, exit 0; `make readability UNIT=e0d1c`: 0 findings)
 Round 2 at b45d745 (main, after round 1 was merged as 5529429): diff since afdb33a of src/E0D1C.C, re/symbols.toml and re/globals.toml

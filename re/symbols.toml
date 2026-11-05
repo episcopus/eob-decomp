@@ -3063,7 +3063,7 @@ size = 57
 evidence = ["far", "segment"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "IsCellInView"
 
 [[function]]
@@ -3075,7 +3075,7 @@ evidence = ["far", "frame"]
 name = "SelectCharacter"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e0d1c_006d"
@@ -3085,7 +3085,7 @@ size = 11
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "NoOpAfterCursorMove"
 
 [[function]]
@@ -3096,7 +3096,7 @@ size = 8
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "NoOpBeforeCursorMove"
 
 [[function]]
@@ -3107,7 +3107,7 @@ size = 90
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "StepIfOpen"
 
 [[function]]
@@ -3118,7 +3118,7 @@ size = 23
 evidence = ["far", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "StepCell"
 
 [[function]]
@@ -3130,7 +3130,7 @@ evidence = ["near", "frame"]
 name = "FindCarriedSlot"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e0d1c_0163"
@@ -3141,7 +3141,7 @@ evidence = ["far", "frame"]
 notes = "matched 2026-11-02 under -v: the redundant `mov ax,di` reload before the first multiply (0D1C:0194) is what TCC -O keeps when the loop body follows an early `continue`, not an `if` around it. The source is `for (i = 25; i <= 26; i++) { if (!(item = rec->m77[i])) continue; if (gTable8DD2[item].m02 == 0x2F && gTable8DD2[item].m0B == fieldB) return 1; }`; with `if (item = rec->m77[i]) { ... }` TCC elides the load (101 of 103 bytes). Probes: -O elides with or without -Z/-v/-G/-P; without -O the load stays but the trailing `jmp` is kept too; the same redundant-load-after-early-exit quirk is in the e08E6 note."
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "IsWearingRing"
 
 [[function]]
@@ -3153,7 +3153,7 @@ evidence = ["frame"]
 name = "RemoveCarriedItems"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e0d1c_02dc"
@@ -3164,7 +3164,7 @@ evidence = ["far", "frame"]
 name = "GetCurrentItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e0d1c_0304"
@@ -3175,7 +3175,7 @@ evidence = ["far", "frame"]
 name = "SetCurrentItem"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e0d1c_035a"
@@ -3185,7 +3185,7 @@ size = 250
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "RemovePartyMember"
 
 [[function]]
@@ -3197,7 +3197,7 @@ evidence = ["frame"]
 name = "DrawRowList"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e0d1c_0583"
@@ -3208,7 +3208,7 @@ evidence = ["far", "frame"]
 name = "RedrawCharacters"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e0d1c_059b"
@@ -3218,7 +3218,7 @@ size = 213
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "RollMemberSave"
 
 [[function]]
@@ -3229,7 +3229,7 @@ size = 159
 evidence = ["far", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "MemberIs"
 
 [[function]]
@@ -3241,7 +3241,7 @@ evidence = ["far", "frame"]
 name = "DrawItemIcon"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e0d1c_07a7"
@@ -3252,7 +3252,7 @@ evidence = ["far", "frame"]
 name = "SkipStrings"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e0d1c_07db"
@@ -3262,7 +3262,7 @@ size = 214
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "CanUseHand"
 
 [[function]]
@@ -3273,7 +3273,7 @@ size = 82
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "HoldsHolySymbol"
 
 [[function]]
@@ -3285,7 +3285,7 @@ evidence = ["near", "frame"]
 notes = "matched 2026-11-02 under -v: the game modules were compiled with debug information, which keeps identical code tails apart while TCC sizes the jumps (whitepaper 2.1.1); the earlier -B question is answered"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "FindBestUndeadTurner"
 
 [[function]]
@@ -3296,7 +3296,7 @@ size = 120
 evidence = ["near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "TryTurnMonster"
 
 [[function]]
@@ -3309,7 +3309,7 @@ notes = "matched 2026-11-01: the m0F test at 0D1C:0B17 is `mov ax,word [bx+0x1a4
 name = "TurnUndead"
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "e0d1c_0bab"
@@ -3319,7 +3319,7 @@ size = 64
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "MonsterResistsMagic"
 
 [[function]]
@@ -3330,7 +3330,7 @@ size = 54
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "IsWeaponDamageHalved"
 
 [[function]]
@@ -3341,7 +3341,7 @@ size = 166
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -v"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 name = "DrawFramedPanel"
 
 [[function]]
