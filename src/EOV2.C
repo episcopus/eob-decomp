@@ -9,9 +9,9 @@
    graphics driver export 16) from the page after the draw page, so from the art just loaded (CellSource,
    src/drivers/MCGA.ASM:1485-1499). Its fifth argument is a 32-byte CGA colour map of values 0..3, not a
    source: MCGA does not use it (src/drivers/MCGA.ASM:1522-1525) and CGA reads it only for its dither tables
-   (src/drivers/CGA.ASM:1666-1671). Each art has its own map, one TLINK data segment each (DECORATE at 2069,
-   ITEML1 at 20A3, ITEMS1 at 20A5, THROWN at 20A7, ITEMICN at 20A9); gCgaMapDefault (ds:113F) is the default
-   map, the one LoadOverlayScreen passes to LoadScreenImage as its `extra` argument (src/E082C.C:301-314, :329).
+   (src/drivers/CGA.ASM:1666-1671). The PLAYFLD and item art have their own maps, one TLINK data segment each (PLAYFLD
+   at 2069, ITEML1 at 20A3, ITEMS1 at 20A5, THROWN at 20A7, ITEMICN at 20A9); gCgaMapDefault (ds:113F) is the default
+   map: DECORATE uses it for its six cells (LoadDecorateIcons), and LoadOverlayScreen passes it to LoadScreenImage as its `extra` argument (src/E082C.C:301-314, :329).
    LoadOverlayScreen passes mode -1, which makes LoadScreenImage return before the 19EC:002A blit, so only a
    load with another mode, such as the INTRO load below (ovl2:078D, mode 2), hands the map to 19EC:002A
    (src/E19EC.C:29-35). ITEMICN is loaded and cut twice: SetPointerShape takes the pointer cell with gCgaMapDefault
@@ -117,7 +117,7 @@ extern char gBoxCycleColours16[]; /*@ ds:65EA */
 extern char gCgaMapDefault[]; /*@ ds:113F */
 extern char far *gOptionNames[]; /*@ ds:65DE */
 
-/* the 32-byte colour maps (values 0..3) of the item and DECORATE art, one TLINK data segment each */
+/* the 32-byte colour maps (values 0..3) of the item and PLAYFLD art, one TLINK data segment each */
 extern unsigned char far gCgaMapPlayfld[]; /*@ 2069:0000 */
 extern unsigned char far gCgaMapItemL1[]; /*@ 20A3:0000 */
 extern unsigned char far gCgaMapItemS1[]; /*@ 20A5:0000 */
