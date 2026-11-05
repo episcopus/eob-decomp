@@ -1,5 +1,18 @@
 # Review: e19bc
 
+# Round P6 re-review (2026-11-04), commit 24711ec
+
+Reviewer: p6-rev-r2
+Commit reviewed: 24711ec (P6 re-review; the P6 round read ce0608f)
+
+Judged: the one open P6 must-fix (the NormalizePtr comment) and the diff since ce0608f for src/E19BC.C. `make match FILE=src/E19BC.C`: 5 of 5 (728 bytes), exit 0. `make readability UNIT=e19bc`: 0 findings.
+
+- [x] must-fix src/E19BC.C:32-34: fixed right. The sentence "the name stays a placeholder" is gone. The remaining comment says NormalizePtr normalizes a far pointer to DX:AX and calls _NormFar (src/E1BA8.ASM:81-90), which the code and re/renames.toml:7602 back. The changed line introduces no new false claim.
+- [ ] should src/E19BC.C:44-49: the MEMALLOC_ALIGNED comment still cites the old per-unit defines and uses after the move to src/EOB.H. Update it when the file is next edited; it does not block.
+- [ ] note The P6 round's stale cites at :46-49, :210-216 and :183-186 remain; they are non-blocking and carried for the next editor.
+
+# Round P6 (2026-11-04), commit ce0608f
+
 # Round P6 (2026-11-04), commit ce0608f
 
 Reviewer: p6-rev-1
