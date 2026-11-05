@@ -136,14 +136,15 @@ void platform_set_game_dir(const char *dir) { (void)dir; }
 
 /* Boots the machine on tc_mem (cleared first) and loads the program, as the oracle's Machine does
    before it runs: 0, or the stop's code with its message in tc_hybrid_message. */
-int tc_hybrid_boot(const char *exe_path, const char *exe_name, const u8 *cmdline, u16 cmdlen, int mouse)
+int tc_hybrid_boot(const char *exe_path, const char *exe_name, const u8 *cmdline, u16 cmdlen, int mouse,
+                   int adlib)
 {
     int code;
     tc_hybrid_message[0] = 0;
     code = sigsetjmp(jb, 1);
     if (code == 0) {
         memset(tc_mem, 0, TC_MEM_SIZE);
-        machine_boot(exe_name, cmdline, cmdlen, mouse);
+        machine_boot(exe_name, cmdline, cmdlen, mouse, adlib);
         if (tc_load_program(exe_path, MACHINE_LOAD_SEG, 0x212Eu) != 0) {
             tc_fail(70, "cannot load %s", exe_path);
         }
@@ -153,13 +154,13 @@ int tc_hybrid_boot(const char *exe_path, const char *exe_name, const u8 *cmdline
 
 /* Resets the machine's state for a session (no memory written but by machine_boot's own writes,
    which the shadow overwrites with the oracle's memory before every call). */
-int tc_hybrid_machine_reset(const char *exe_name, const u8 *cmdline, u16 cmdlen)
+int tc_hybrid_machine_reset(const char *exe_name, const u8 *cmdline, u16 cmdlen, int mouse, int adlib)
 {
     int code;
     tc_hybrid_message[0] = 0;
     code = sigsetjmp(jb, 1);
     if (code == 0) {
-        machine_boot(exe_name, cmdline, cmdlen, 0);
+        machine_boot(exe_name, cmdline, cmdlen, mouse, adlib);
     }
     return code;
 }
@@ -175,6 +176,50 @@ int tc_hybrid_service(u8 n, tc_regs *r)
         if (machine_service(n, r) != 0) {
             tc_fail(74, "the machine has no service %02Xh", n);
         }
+    }
+    return code;
+}
+
+/* the hardware outputs, recorded for the shadow to compare with the oracle's logs */
+u32 tc_hybrid_adlib_count;
+u8 tc_hybrid_adlib_last[2];
+u32 tc_hybrid_speaker_count;
+u16 tc_hybrid_speaker_divisor;
+u8 tc_hybrid_speaker_bits;
+
+void platform_adlib_write(uint8_t reg, uint8_t value)
+{
+    tc_hybrid_adlib_count++;
+    tc_hybrid_adlib_last[0] = reg;
+    tc_hybrid_adlib_last[1] = value;
+}
+
+void platform_speaker(uint16_t divisor, uint8_t port61_low2)
+{
+    tc_hybrid_speaker_count++;
+    tc_hybrid_speaker_divisor = divisor;
+    tc_hybrid_speaker_bits = port61_low2;
+}
+
+/* one port access of the machine: 0, or the stop's code (74: a port the machine lacks) */
+int tc_hybrid_in(u16 port, int size, u16 *value)
+{
+    int code;
+    tc_hybrid_message[0] = 0;
+    code = sigsetjmp(jb, 1);
+    if (code == 0) {
+        *value = machine_in(port, size);
+    }
+    return code;
+}
+
+int tc_hybrid_out(u16 port, int size, u16 value)
+{
+    int code;
+    tc_hybrid_message[0] = 0;
+    code = sigsetjmp(jb, 1);
+    if (code == 0) {
+        machine_out(port, size, value);
     }
     return code;
 }

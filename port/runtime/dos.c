@@ -18,8 +18,6 @@
 
 #define MAX_HANDLES 20
 
-typedef int64_t s64;      /* a file position: DOS seeks past 4 GB as Python does, signed */
-typedef uint64_t u64;
 #define PATH_MAX_ 160
 #define FILE_DATE (((1988 - 1980) << 9) | (11 << 5) | 1)
 #define FILE_TIME (12 << 11)
@@ -753,7 +751,7 @@ void dos_int21(tc_regs *r)
         }
         return;
     case 0x2A: {                                /* the date: 1991-06-11 and the days the clock has run */
-        u32 days = (machine_time.now / machine_time.insn_per_sec) / 86400u;
+        u32 days = (machine_now() / machine_time.insn_per_sec) / 86400u;
         r->cx = 1991;
         r->dx = (u16)((6u << 8) | (11u + days));
         r->ax = (u16)((r->ax & 0xFF00u) | ((2u + days) % 7u));

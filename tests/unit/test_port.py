@@ -322,10 +322,11 @@ def test_the_assembly_routines_in_c_against_the_original():
 @pytest.mark.slow
 def test_the_machine_against_the_oracle(tmp_path):
     """M3 (playbook 80): the machine boots to the oracle's memory before the program runs (the vector
-    table, the ROM, the BIOS data area, the PSP and environment, the loaded image: every byte), and
-    shadowing every service call of the five EOB.EXE goldens it answers as the oracle does. A copy of
-    the library with two DOS bugs (the current drive one off, a relocation of a 4B03h load one off)
-    is caught by the shadow on boot-title."""
+    table, the ROM, the BIOS data area, the PSP and environment, the loaded image: every byte; with no
+    mouse and no sound, and with the mouse driver and the AdLib), and shadowing every service call and
+    port access of the five EOB.EXE goldens it answers as the oracle does. A copy of
+    the library with three bugs (the current drive one off, a relocation of a 4B03h load one off, a
+    retrace poll charging one instruction too many) is caught by the shadow on boot-title."""
     import ctypes
     r = subprocess.run(["make", "--no-print-directory", "-f", "port/port.mk", "PY=%s" % sys.executable,
                         "port-hybrid"], cwd=ROOT, capture_output=True, text=True)
@@ -333,38 +334,45 @@ def test_the_machine_against_the_oracle(tmp_path):
     sys.path.insert(0, str(ROOT / "tools"))
     from oracle import run
     lib = ctypes.CDLL(str(ROOT / "build" / "port" / "hybrid" / "libeobhybrid.so"))
-    m = run.build_machine()
-    cmd = b" " + run.command_line(run.DEFAULT_ARGS, False, None).encode()
-    lib.tc_hybrid_boot.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint16, ctypes.c_int]
-    assert lib.tc_hybrid_boot(str(ROOT / "eob" / "EOB.EXE").encode(), b"EOB.EXE", cmd, len(cmd), 0) == 0
-    mem = ctypes.string_at(ctypes.addressof(ctypes.c_uint8.in_dll(lib, "tc_mem")), 0x100000)
-    assert mem[:0xA0000] == bytes(m.uc.mem_read(0, 0xA0000)), "conventional memory after boot"
-    assert mem[0xF0000:] == bytes(m.uc.mem_read(0xF0000, 0x10000)), "the ROM"
+    lib.tc_hybrid_boot.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint16, ctypes.c_int,
+                                   ctypes.c_int]
+    for mouse, sound in ((False, None), (True, "adlib")):
+        m = run.build_machine(mouse=mouse, sound=sound)
+        cmd = b" " + run.command_line(run.DEFAULT_ARGS, mouse, sound).encode()
+        assert lib.tc_hybrid_boot(str(ROOT / "eob" / "EOB.EXE").encode(), b"EOB.EXE", cmd, len(cmd), mouse,
+                                  sound == "adlib") == 0
+        mem = ctypes.string_at(ctypes.addressof(ctypes.c_uint8.in_dll(lib, "tc_mem")), 0x100000)
+        assert mem[:0xA0000] == bytes(m.uc.mem_read(0, 0xA0000)), "conventional memory after boot (mouse %s)" % mouse
+        assert mem[0xF0000:] == bytes(m.uc.mem_read(0xF0000, 0x10000)), "the ROM (mouse %s)" % mouse
 
     hybrid = [sys.executable, str(ROOT / "tools" / "port" / "hybrid.py"), "--shadow"]
     r = subprocess.run(hybrid + ["--out", str(tmp_path / "ok")], cwd=ROOT, capture_output=True, text=True)
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
     n = int(re.search(r"(\d+) service calls the same as the oracle's, 0 differ; the machine lacks none", r.stdout).group(1))
-    assert n > 20000, r.stdout
+    assert n > 300000, r.stdout
 
-    src = (ROOT / "port" / "runtime" / "dos.c").read_text()
-    for old, new in (("r->ax = (u16)((r->ax & 0xFF00u) | 2u);", "r->ax = (u16)((r->ax & 0xFF00u) | 1u);"),
-                     ("tc_va16(image + p, (u16)(tc_vr16(image + p) + factor));",
-                      "tc_va16(image + p, (u16)(tc_vr16(image + p) + factor + (i == 3u)));")):
-        assert old in src, old
-        src = src.replace(old, new)
-    (tmp_path / "dos.c").write_text(src)
+    mutants = {"dos": (("r->ax = (u16)((r->ax & 0xFF00u) | 2u);", "r->ax = (u16)((r->ax & 0xFF00u) | 1u);"),
+                       ("tc_va16(image + p, (u16)(tc_vr16(image + p) + factor));",
+                        "tc_va16(image + p, (u16)(tc_vr16(image + p) + factor + (i == 3u)));")),
+               "ports": (("machine_time.extra += 40;", "machine_time.extra += 41;"),)}
     cc = shutil.which("cc") or shutil.which("clang")
-    r = subprocess.run([cc, "-std=gnu99", "-O2", "-w", "-DTC_HYBRID", "-fPIC", "-I", str(ROOT / "port" / "include"),
-                        "-I", str(ROOT / "build" / "port" / "gen"), "-c", "-o", str(tmp_path / "dos.o"),
-                        str(tmp_path / "dos.c")], capture_output=True, text=True)
-    assert r.returncode == 0, r.stderr
-    objs = [str(o) for o in (ROOT / "build" / "port" / "hybrid" / "obj").rglob("*.o") if o.name != "dos.o"]
-    r = subprocess.run([cc, "-shared", "-o", str(tmp_path / "mutant.so"), *objs, str(tmp_path / "dos.o")],
-                       capture_output=True, text=True)
+    for unit, edits in mutants.items():
+        src = (ROOT / "port" / "runtime" / ("%s.c" % unit)).read_text()
+        for old, new in edits:
+            assert old in src, old
+            src = src.replace(old, new)
+        (tmp_path / ("%s.c" % unit)).write_text(src)
+        r = subprocess.run([cc, "-std=gnu99", "-O2", "-w", "-DTC_HYBRID", "-fPIC", "-I", str(ROOT / "port" / "include"),
+                            "-I", str(ROOT / "build" / "port" / "gen"), "-c", "-o", str(tmp_path / ("%s.o" % unit)),
+                            str(tmp_path / ("%s.c" % unit))], capture_output=True, text=True)
+        assert r.returncode == 0, r.stderr
+    objs = [str(o) for o in (ROOT / "build" / "port" / "hybrid" / "obj").rglob("*.o") if o.stem not in mutants]
+    r = subprocess.run([cc, "-shared", "-o", str(tmp_path / "mutant.so"), *objs,
+                        *[str(tmp_path / ("%s.o" % u)) for u in mutants]], capture_output=True, text=True)
     assert r.returncode == 0, r.stderr
     r = subprocess.run(hybrid + ["--session", "boot-title", "--lib", str(tmp_path / "mutant.so"), "--out",
                                  str(tmp_path / "bad")], cwd=ROOT, capture_output=True, text=True)
     assert r.returncode == 1, r.stdout + r.stderr
     assert "INT 21h AH=19h" in r.stdout and "AX 1901, the oracle 1902" in r.stdout, r.stdout
     assert "INT 21h AH=4Bh" in r.stdout, r.stdout
+    assert "in 3DAh" in r.stdout and "the clock's charges" in r.stdout, r.stdout

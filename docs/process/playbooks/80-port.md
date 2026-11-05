@@ -19,7 +19,7 @@ sound and state.
 | Decisions | the nine answered by the human 2026-11-04, the five follow-ups (A to E) 2026-11-05 (section "Decisions"). Linux and Windows deferred by the human 2026-11-05: macOS only for now. Left for the human: install the newest LLVM (section "What the human installs") |
 | M1 tc2c for every C unit | done 2026-11-05 except the LLVM pin, which waits for the human's install: `make port` translates all 41 C units of `EOB.EXE` (609 functions) with none refused, compiles them with `-Werror` and links them; what is still a stub is 63 assembly routines (M3) and 23 library functions that need the machine (section "M1") |
 | M2 the per-function test | the machinery done 2026-11-05: `make port-hybrid` (section "M2"); on the five `EOB.EXE` goldens 129 of the 594 functions with an entry are reached, 118 are the same as the original on every call tested (635 calls), none differ, 11 are reached only where they wait for an interrupt (M3). The rest of the check, every function of `src/`, needs sessions that reach them |
-| M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), each the same as the original on every call tested; the machine boots to the oracle's memory byte for byte, and its DOS, its INT 10h for MCGA and its BIOS time answer every one of the 24,962 service calls of the five goldens as the oracle does. Next: the ports, the PIT and the interrupts with the clock, INT 33h, the library functions on the machine, the other 15 units |
+| M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), each the same as the original on every call tested; the machine boots to the oracle's memory byte for byte, and its DOS, INT 10h for MCGA, BIOS time, INT 33h driver and ports (PIC, PIT, 61h, 60h, retrace, DAC, AdLib) answer every one of the 335,055 service calls and port accesses of the five goldens as the oracle does. Next: the hardware interrupts with the clock and the handlers' units, the library functions and the assembly units on the machine, the other 15 units |
 | M4 to M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
@@ -377,7 +377,14 @@ make port-hybrid && .venv/bin/python tools/port/hybrid.py --shadow [--session NA
   the vector decides as the CPU's INT does), `dos.c` (INT 21h, 20h, 29h, 2Fh; the PSP and the
   environment; the memory arena; the files over a VFS that keeps writes in memory, as the oracle's),
   `bios.c` (the BIOS data area, INT 11h, 12h, 13h, 1Ah), `video.c` (INT 10h for MCGA: mode set, the
-  DAC; mode 13h's memory is the arena at A000:0000). Each is written from the oracle's model
+  DAC; mode 13h's memory is the arena at A000:0000), `ports.c` (`machine_in`, `machine_out`: the
+  interrupt controller's mask and EOI, the timer's channels 0 and 2 with the next timer interrupt's
+  clock, port 61h, the keyboard's data port, the retrace bit and the DAC ports, the AdLib with its
+  timers; AdLib writes and speaker changes go to the platform), `mouse.c` (the INT 33h driver and its
+  event trampoline in the ROM). The clock is the oracle's: instructions plus what polls charge (a
+  retrace poll 40, an AdLib status poll 20); the AdLib's timers are decided in whole instructions
+  where the oracle uses float seconds (no floating point in the port), and no poll of the goldens
+  falls on a boundary where the two differ. Each is written from the oracle's model
   (`tools/oracle/dos.py`, `vfs.py`, `bios.py`, `ega.py`), function by function, because the goldens
   are the oracle's. A service the oracle has and the goldens never call stops with the oracle's words
   (`machine_unimplemented`); the shadow would report it.
@@ -391,13 +398,21 @@ make port-hybrid && .venv/bin/python tools/port/hybrid.py --shadow [--session NA
   - **shadow** (`hybrid.py --shadow`): through each golden, every call of a service the machine has is
     made to the machine just before the oracle's own service answers it, on a copy of the oracle's
     memory with the same registers and pushed flags; the machine's state (files, positions, the arena)
-    lives on from call to call, as the oracle's does. Compared: the registers, the flags returned,
-    memory but the INT frame's flags word, the video mode, the DAC and A000. The five goldens make
-    24,962 calls of 19 functions (20,566 reads; overlay loads of the graphics driver with 4B03h); all
-    the same. A copy with two bugs (the current drive, one relocation of a 4B03h load) is caught.
-- Not yet: the ports and the PIT, the interrupts the hardware raises and the clock; the INT 33h driver
-  (the mouse sessions' calls are not shadowed); the library functions and the assembly units on
-  `machine_int` (they still run as the original's code in the hybrid build); text output.
+    lives on from call to call, as the oracle's does. Every port access is shadowed the same way.
+    Compared: the registers, the flags returned, memory but the INT frame's flags word, the video
+    mode, the DAC and A000, the value a port reads, the hardware state (the PIC, the PIT, the next
+    timer interrupt, the clock's charges, the AdLib's registers, status and timers, the mouse
+    driver), the AdLib writes and speaker changes. What the shadow does not run yet comes from the
+    oracle before each call: the interrupts' in-service flags and keyboard byte, the next timer
+    interrupt's clock, the mouse's position and buttons. The five goldens make 335,055 calls and
+    accesses: 24,966 service calls (20,566 reads; overlay loads of the graphics driver with 4B03h),
+    144,585 AdLib status polls, 63,946 retrace polls, 90,793 EOIs, the rest; all the same. A copy
+    with three bugs (the current drive, one relocation of a 4B03h load, a retrace poll's charge) is
+    caught.
+- Not yet: the interrupts the hardware raises (INT 8, 9, the mouse's events) with the clock of the C
+  units, which need the handlers' units (`E_TEXT.ASM`, `E1948.ASM`, `E1AAD.ASM`, `E1D8F.ASM`); the
+  library functions and the assembly units on `machine_int` and `machine_in`/`machine_out` (they
+  still run as the original's code in the hybrid build); text output.
 
 ## M2: the per-function test (2026-11-05)
 

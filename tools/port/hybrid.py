@@ -471,8 +471,24 @@ class Video(ctypes.Structure):
     _fields_ = [("mode", ctypes.c_uint8), ("page", ctypes.c_uint8), ("dac", ctypes.c_uint8 * 768)]
 
 
+class Hw(ctypes.Structure):
+    u8, u16, u32 = ctypes.c_uint8, ctypes.c_uint16, ctypes.c_uint32
+    _fields_ = [("pic_mask", u8), ("port61", u8), ("irq0_in_service", u8), ("irq1_in_service", u8),
+                ("kbd_data", ctypes.c_int16), ("pit_reload", u32), ("pit_latch_lo", u8), ("pit_mode_access", u8),
+                ("pit_lo", u8), ("pit2_lo", u8), ("pit2_reload", u16), ("next_irq0", u32), ("dac_read", u16),
+                ("dac_write", u16), ("attr_ff", u8), ("adlib", u8), ("adlib_index", u8), ("adlib_flags", u8),
+                ("adlib_regs", u8 * 256), ("adlib_running", u8 * 2), ("adlib_started", u32 * 2)]
+
+
+class MouseState(ctypes.Structure):
+    u16 = ctypes.c_uint16
+    _fields_ = [("x", u16), ("y", u16), ("buttons", u16), ("visible", u16), ("range_x0", u16), ("range_x1", u16),
+                ("range_y0", u16), ("range_y1", u16), ("has_handler", ctypes.c_uint8), ("handler_seg", u16),
+                ("handler_off", u16), ("handler_mask", u16)]
+
+
 class Clock(ctypes.Structure):
-    _fields_ = [("now", ctypes.c_uint32), ("insn_per_sec", ctypes.c_uint32), ("pinned", ctypes.c_int),
+    _fields_ = [("insns", ctypes.c_uint32), ("extra", ctypes.c_uint32), ("insn_per_sec", ctypes.c_uint32), ("pinned", ctypes.c_int),
                 ("clock_pin", ctypes.c_uint32), ("tod_offset_set", ctypes.c_int), ("tod_offset", ctypes.c_int32)]
 
 
@@ -499,7 +515,17 @@ class Shadow:
         self.lib.tc_hybrid_init.argtypes = [ctypes.c_uint16, ctypes.c_uint16]
         self.lib.tc_hybrid_init(LOAD_SEG, DGROUP)
         self.lib.tc_hybrid_service.argtypes = [ctypes.c_uint8, ctypes.POINTER(Regs)]
-        self.lib.tc_hybrid_machine_reset.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint16]
+        self.lib.tc_hybrid_machine_reset.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint16, ctypes.c_int,
+                                                     ctypes.c_int]
+        self.lib.tc_hybrid_in.argtypes = [ctypes.c_uint16, ctypes.c_int, ctypes.POINTER(ctypes.c_uint16)]
+        self.lib.tc_hybrid_out.argtypes = [ctypes.c_uint16, ctypes.c_int, ctypes.c_uint16]
+        self.hw = Hw.in_dll(self.lib, "hw")
+        self.mouse = MouseState.in_dll(self.lib, "mouse")
+        self.adlib_count = ctypes.c_uint32.in_dll(self.lib, "tc_hybrid_adlib_count")
+        self.adlib_last = (ctypes.c_uint8 * 2).in_dll(self.lib, "tc_hybrid_adlib_last")
+        self.speaker_count = ctypes.c_uint32.in_dll(self.lib, "tc_hybrid_speaker_count")
+        self.speaker = (ctypes.c_uint16.in_dll(self.lib, "tc_hybrid_speaker_divisor"),
+                        ctypes.c_uint8.in_dll(self.lib, "tc_hybrid_speaker_bits"))
         self.base = ctypes.addressof(ctypes.c_uint8.in_dll(self.lib, "tc_mem"))
         self.message = (ctypes.c_char * 512).in_dll(self.lib, "tc_hybrid_message")
         self.clock = Clock.in_dll(self.lib, "machine_time")
@@ -540,31 +566,132 @@ class Shadow:
         self.m = m
         for n in SHADOWED:
             fn = m.services.get(n)
-            if fn is None or (n == 0x33 and m.mouse is not None):
-                continue                     # the INT 33h driver comes later in M3
-            m.services[n] = (lambda mach, n=n, fn=fn: self.call(mach, n, fn))
+            if fn is not None:
+                m.services[n] = (lambda mach, n=n, fn=fn: self.call(mach, n, fn))
+        rd, wr = m.port_read, m.port_write
+        m.port_read = lambda port, size: self.port(m, "in", port, size, None, rd)
+        m.port_write = lambda port, size, val: self.port(m, "out", port, size, val, wr)
 
     def key(self, m, n) -> str:
         ah = m.get("ax") >> 8
         return "INT %02Xh" % n + (" AH=%02Xh" % ah if n in (0x10, 0x21, 0x1A, 0x13) else "")
 
-    def call(self, m, n, fn):
+    def start(self, m):
+        """The first call of the session: the machine boots as the session's machine was built."""
         if self.vfs is None:
             self.vfs = copy.deepcopy(m.vfs)
             cmd = m.read(0x0FF0, 0x81, m.rb(0x0FF0, 0x80))
-            code = self.lib.tc_hybrid_machine_reset(m.exe.name.upper().encode(), cmd, len(cmd))
+            code = self.lib.tc_hybrid_machine_reset(m.exe.name.upper().encode(), cmd, len(cmd),
+                                                    m.mouse is not None, hasattr(m, "adlib_log"))
             if code:
                 raise SystemExit("hybrid: the machine does not boot: %s" % self.message.value.decode())
+
+    def set_clock(self, m):
+        self.clock.insns = m.insns & 0xFFFFFFFF
+        self.clock.extra = m.extra & 0xFFFFFFFF
+        self.clock.insn_per_sec = m.insn_per_sec
+        self.clock.pinned = m.clock_pin is not None
+        self.clock.clock_pin = m.clock_pin or 0
+
+    def state(self, m) -> list[str]:
+        """The hardware and driver state the machine keeps, against the oracle's."""
+        hw, out = self.hw, []
+        want = {"pic_mask": m.pic_mask, "port61": m.port61, "irq0_in_service": int(m.irq0_in_service),
+                "irq1_in_service": int(m.irq1_in_service), "pit_reload": m.pit_reload,
+                "pit_latch_lo": int(m.pit_latch_lo), "pit_mode_access": m.pit_mode_access,
+                "pit2_reload": m.pit2_reload, "pit2_lo": int(m.pit2_lo), "next_irq0": m.next_irq0,
+                "dac_read": m.ega.dac_read, "dac_write": m.ega.dac_write, "attr_ff": int(m.ega.attr_ff)}
+        for k, v in want.items():
+            if getattr(hw, k) != v:
+                out.append("%s %X, the oracle %X" % (k, getattr(hw, k), v))
+        if self.clock.extra != m.extra & 0xFFFFFFFF:
+            out.append("the clock's charges %d, the oracle %d" % (self.clock.extra, m.extra))
+        if bytes(self.video.dac) != bytes(m.ega.dac):
+            out.append("the DAC differs")
+        ad = getattr(m, "adlib_log", None)
+        if ad is not None:
+            o = m.port_handlers[0x388][0].__self__
+            if bytes(hw.adlib_regs) != bytes(o.regs) or hw.adlib_flags != o.flags or hw.adlib_index != o.index:
+                out.append("the AdLib's registers or status differ")
+            for t in range(2):
+                started = None if not hw.adlib_running[t] else hw.adlib_started[t]
+                theirs = None if o.started[t] is None else round(o.started[t] * m.insn_per_sec)
+                if started != theirs:
+                    out.append("AdLib timer %d started at %s, the oracle %s" % (t + 1, started, theirs))
+        mo = m.mouse
+        if mo is not None:
+            mine = (self.mouse.x, self.mouse.y, self.mouse.buttons, self.mouse.visible & 0xFFFF,
+                    (self.mouse.range_x0, self.mouse.range_x1), (self.mouse.range_y0, self.mouse.range_y1),
+                    (self.mouse.handler_seg, self.mouse.handler_off, self.mouse.handler_mask) if self.mouse.has_handler else None)
+            theirs = (mo.x, mo.y, mo.buttons, mo.visible & 0xFFFF, tuple(mo.range_x), tuple(mo.range_y),
+                      tuple(mo.handler) if mo.handler else None)
+            if mine != theirs:
+                out.append("the mouse driver %r, the oracle %r" % (mine, theirs))
+        return out
+
+    def sync(self, m):
+        """What the interrupts and the host's input change, which the shadow does not run yet: the
+        oracle's, before a call."""
+        self.hw.irq0_in_service = int(m.irq0_in_service)
+        self.hw.irq1_in_service = int(m.irq1_in_service)
+        self.hw.kbd_data = -1 if m.kbd_data is None else m.kbd_data
+        self.hw.next_irq0 = m.next_irq0 & 0xFFFFFFFF
+        if m.mouse is not None:              # the host's moves and clicks (input.py Mouse.move, buttons_to)
+            self.mouse.x, self.mouse.y, self.mouse.buttons = m.mouse.x, m.mouse.y, m.mouse.buttons
+
+    def port(self, m, d, port, size, val, fn):
+        self.start(m)
+        self.sync(m)
+        self.set_clock(m)
+        key = "%s %Xh" % (d, port)
+        ad0, sp0 = self.adlib_count.value, self.speaker_count.value
+        ad_len = len(getattr(m, "adlib_log", []))
+        sp_len = len(m.speaker_log)
+        got = ctypes.c_uint16(0)
+        if d == "in":
+            code = self.lib.tc_hybrid_in(port, size, ctypes.byref(got))
+        else:
+            code = self.lib.tc_hybrid_out(port, size, val & 0xFFFF)
+        why = self.message.value.decode("latin-1")
+        res = fn(port, size) if d == "in" else fn(port, size, val)
+        st = self.calls.setdefault(key, {"same": 0, "differs": 0, "machine lacks": 0})
+        out = []
+        if code == 74:
+            st["machine lacks"] += 1
+            out.append("the machine: %s" % why)
+        else:
+            if d == "in" and got.value != (res & 0xFFFF):
+                out.append("reads %X, the oracle %X" % (got.value, res))
+            out += self.state(m)
+            ad = getattr(m, "adlib_log", [])
+            if (self.adlib_count.value - ad0) != (len(ad) - ad_len):
+                out.append("%d AdLib writes, the oracle %d" % (self.adlib_count.value - ad0, len(ad) - ad_len))
+            elif len(ad) > ad_len and tuple(self.adlib_last) != tuple(ad[-1][1:]):
+                out.append("AdLib %r, the oracle %r" % (tuple(self.adlib_last), ad[-1][1:]))
+            if (self.speaker_count.value - sp0) != (len(m.speaker_log) - sp_len):
+                out.append("%d speaker changes, the oracle %d" % (self.speaker_count.value - sp0, len(m.speaker_log) - sp_len))
+            elif len(m.speaker_log) > sp_len:
+                div, bits = self.speaker[0].value, self.speaker[1].value
+                on = m.speaker_log[-1][2]
+                # the oracle's port 42h entry tests port61 & 1 (`port61 & 3 == 3` binds as port61 & True)
+                mine_on = (bits == 3) if port == 0x61 else bool(bits & 1)
+                if div != m.speaker_log[-1][1] or mine_on != on:
+                    out.append("speaker (%X, %s), the oracle %r" % (div, mine_on, m.speaker_log[-1][1:]))
+            st["differs" if out else "same"] += 1
+        if out and len(self.differences) < 50:
+            self.differences.append({"session": self.session, "call": key, "at": m.insns, "what": out})
+        return res
+
+    def call(self, m, n, fn):
+        self.start(m)
+        self.sync(m)
         key = self.key(m, n)
         ss, sp = m.get("ss"), m.get("sp")
         frame = m.linear(ss, (sp + 4) & 0xFFFF)
         r = Regs(*[m.get(x) for x in REG_NAMES], m.rw(ss, (sp + 4) & 0xFFFF))
         ctypes.memmove(self.base, ctypes.addressof(m.ram), RAM)
         ctypes.memmove(self.base + 0xA0000, bytes(m.ega.vga), 0x10000)    # mode 13h's memory
-        self.clock.now = m.now() & 0xFFFFFFFF
-        self.clock.insn_per_sec = m.insn_per_sec
-        self.clock.pinned = m.clock_pin is not None
-        self.clock.clock_pin = m.clock_pin or 0
+        self.set_clock(m)
         code = self.lib.tc_hybrid_service(n, ctypes.byref(r))
         why = self.message.value.decode("latin-1")
         raised = None
@@ -589,10 +716,9 @@ class Shadow:
             of = m.rw(ss, (sp + 4) & 0xFFFF)
             if (r.flags ^ of) & 0x0FD5:
                 out.append("flags %04X, the oracle %04X" % (r.flags, of))
+            out += self.state(m)
             if self.video.mode != m.ega.mode:
                 out.append("video mode %02Xh, the oracle %02Xh" % (self.video.mode, m.ega.mode))
-            if bytes(self.video.dac) != bytes(m.ega.dac):
-                out.append("the DAC differs")
             if ctypes.string_at(self.base + 0xA0000, 0x10000) != bytes(m.ega.vga):
                 out.append("A000 differs")
             a, b = bytes(m.ram), ctypes.string_at(self.base, RAM)

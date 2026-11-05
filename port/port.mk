@@ -38,7 +38,7 @@ TC2C_IN := port/units.txt tools/port/tc2c.py port/include/tc/prelude.h $(wildcar
 
 GEN_C := $(addprefix $(GEN)/,$(UNITS:.C=.c)) $(GEN)/units.c $(GEN)/unported.c
 # the machine (M3): the vector table, DOS and the BIOS
-MACHINE_C := port/runtime/machine.c port/runtime/dos.c port/runtime/bios.c port/runtime/video.c
+MACHINE_C := port/runtime/machine.c port/runtime/dos.c port/runtime/bios.c port/runtime/video.c port/runtime/ports.c port/runtime/mouse.c
 HYB := $(OUT)/hybrid
 HYB_C := $(GEN_C) $(GEN)/hybrid.c port/runtime/arena.c port/runtime/tclib.c port/runtime/hybrid.c $(MACHINE_C) $(ASM_C)
 HYB_O := $(patsubst %.c,$(HYB)/obj/%.o,$(HYB_C))

@@ -6,7 +6,7 @@
 #include "tcport.h"
 #include "machine.h"
 
-machine_clock machine_time = {0, 1000000u, 0, 0, 0, 0};
+machine_clock machine_time = {0, 0, 1000000u, 0, 0, 0, 0};
 int machine_exit_code = -1;
 
 typedef void (*service_fn)(tc_regs *r);
@@ -32,7 +32,7 @@ static void register_service(u8 n, service_fn fn)
     set_ivt(n, MACHINE_ROM_SEG, (u16)(MACHINE_STUB_OFF0 + n * 4u));
 }
 
-void machine_boot(const char *exe_name, const u8 *cmdline, u16 cmdlen, int mouse)
+void machine_boot(const char *exe_name, const u8 *cmdline, u16 cmdlen, int with_mouse, int adlib)
 {
     static const u8 stub[4] = {0xCF, 0x90, 0x90, 0x90};
     /* default INT 8: inc the BIOS tick count, chain INT 1Ch, EOI (machine.py _build_rom) */
@@ -82,10 +82,13 @@ void machine_boot(const char *exe_name, const u8 *cmdline, u16 cmdlen, int mouse
     register_service(0x2F, dos_int2f);
     dos_reset(cmdline, cmdlen, exe_name);
     /* run.py build_machine: the mouse driver, or "no driver" */
-    if (mouse) {
-        tc_fail(74, "the machine has no INT 33h mouse driver yet (M3)");
+    ports_reset(adlib);
+    if (with_mouse) {
+        register_service(0x33, mouse_int33);
+        mouse_reset();
+    } else {
+        register_service(0x33, mouse_none_int33);
     }
-    register_service(0x33, mouse_none_int33);
 }
 
 int machine_service(u8 n, tc_regs *r)
@@ -119,7 +122,7 @@ void machine_int(u8 n, tc_regs *r)
 u32 machine_time_of_day(void)
 {
     /* Machine.time_of_day: 12:00:00.00 plus the clock; a pinned clock's first read returns the pin */
-    s32 t = (s32)(12u * 360000u + (u32)(((unsigned long long)machine_time.now * 100u) / machine_time.insn_per_sec));
+    s32 t = (s32)(12u * 360000u + (u32)(((unsigned long long)machine_now() * 100u) / machine_time.insn_per_sec));
     if (machine_time.pinned) {
         if (!machine_time.tod_offset_set) {
             machine_time.tod_offset = (s32)machine_time.clock_pin - t;
@@ -132,6 +135,11 @@ u32 machine_time_of_day(void)
         t += 8640000;
     }
     return (u32)t;
+}
+
+void machine_unimplemented_port(const char *dir, u16 port, int size)
+{
+    tc_fail(74, "UNIMPLEMENTED in the machine: %s port %04Xh (size %d)", dir, port, size);
 }
 
 void machine_unimplemented(const char *what, const tc_regs *r)

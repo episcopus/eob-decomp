@@ -10,7 +10,7 @@
    A game routine issues a software interrupt as `machine_int(n, &regs)`: the vector in the arena
    decides, as the CPU's INT does: one of the machine's service stubs (F000:1000 + 4n) runs that
    service; the generic IRET at F000:0000 does nothing; any other address is a handler the game
-   installed. A service reports through the registers and through the flags the INT would return
+   installed. A port is `machine_in(port, size)` and `machine_out(port, size, value)`. A service reports through the registers and through the flags the INT would return
    (CF for an error), as the oracle's services edit the flags the INT pushed. */
 #ifndef TC_MACHINE_H
 #define TC_MACHINE_H
@@ -38,7 +38,8 @@ typedef struct {
    plus what port polls charge; the port's is the clock of the C units (playbook 80, "The clock").
    The host sets `now` before a service that reads it. */
 typedef struct {
-    u32 now;                 /* instructions, as Machine.now() */
+    u32 insns;               /* instructions run */
+    u32 extra;               /* what polls charged (3DAh, the AdLib's status): Machine.extra */
     u32 insn_per_sec;        /* 1000000, as the oracle's default */
     int pinned;              /* a session's `clock HH:MM:SS.hh`: the first read returns clock_pin */
     u32 clock_pin;
@@ -47,13 +48,14 @@ typedef struct {
 } machine_clock;
 
 extern machine_clock machine_time;
+static inline u32 machine_now(void) { return machine_time.insns + machine_time.extra; }   /* Machine.now() */
 extern int machine_exit_code;      /* -1 while the program runs; INT 21h 4Ch sets it */
 
 /* Builds the vector table, the ROM, the BIOS data area, the PSP and the environment in the arena,
    and resets the services' state, as the oracle's Machine does before it loads the program (the
    load module itself is tc_load_program's). cmdline is the command tail (" 3 4 0 homie 3"); mouse:
    the INT 33h driver is there (0: the oracle's "no driver", which answers a reset with AX=0). */
-void machine_boot(const char *exe_name, const u8 *cmdline, u16 cmdlen, int mouse);
+void machine_boot(const char *exe_name, const u8 *cmdline, u16 cmdlen, int mouse, int adlib);
 
 /* A software interrupt from the game, through the vector table. */
 void machine_int(u8 n, tc_regs *r);
@@ -86,6 +88,42 @@ void bios_int12(tc_regs *r);
 void bios_int13(tc_regs *r);
 void bios_int1a(tc_regs *r);
 void mouse_none_int33(tc_regs *r);
+void mouse_reset(void);
+void mouse_int33(tc_regs *r);
+
+/* the ports (ports.c) */
+u16 machine_in(u16 port, int size);
+void machine_out(u16 port, int size, u16 value);
+void ports_reset(int adlib);
+u32 machine_irq0_period(void);
+void machine_unimplemented_port(const char *dir, u16 port, int size) __attribute__((noreturn));
+
+/* the hardware state the ports keep (machine.py, ega.py, adlib.py) */
+typedef struct {
+    u8 pic_mask, port61;
+    u8 irq0_in_service, irq1_in_service;   /* the interrupts set them, an EOI clears them */
+    s16 kbd_data;                          /* the scancode port 60h returns; -1 none */
+    u32 pit_reload;
+    u8 pit_latch_lo, pit_mode_access, pit_lo, pit2_lo;
+    u16 pit2_reload;
+    u32 next_irq0;                         /* the clock of the next timer interrupt */
+    u16 dac_read, dac_write;               /* DAC index * 3 + component */
+    u8 attr_ff;
+    u8 adlib, adlib_index, adlib_flags;
+    u8 adlib_regs[256];
+    u8 adlib_running[2];
+    u32 adlib_started[2];
+} machine_hw;
+extern machine_hw hw;
+
+/* the INT 33h driver's state (mouse.c) */
+typedef struct {
+    u16 x, y, buttons, visible;
+    u16 range_x0, range_x1, range_y0, range_y1;
+    u8 has_handler;
+    u16 handler_seg, handler_off, handler_mask;
+} machine_mouse;
+extern machine_mouse mouse;
 
 /* the flags an INT returns: CF clear (ok) or set with AX the DOS error code (err) */
 static inline void machine_ok(tc_regs *r) { r->flags &= (u16)~TC_FLAG_CF; }
