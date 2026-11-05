@@ -1,4 +1,5 @@
 /* arena.c: the arena, the program loader and the code address table (tcport.h). */
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +11,22 @@ u16 tc_load_seg;
 u16 tc_ds;
 u16 tc_ss;
 u16 tc_sp;
+
+void (*tc_fail_hook)(int code, const char *msg);
+
+void tc_fail(int code, const char *fmt, ...)
+{
+    char msg[256];
+    va_list ap;
+    va_start(ap, fmt);
+    vsnprintf(msg, sizeof msg, fmt, ap);
+    va_end(ap);
+    if (tc_fail_hook != NULL) {
+        tc_fail_hook(code, msg);
+    }
+    fprintf(stderr, "tcport: %s\n", msg);
+    exit(code);
+}
 
 farptr tc_copy(farptr dst, farptr src, u16 n)
 {
@@ -33,8 +50,7 @@ tc_frame tc_frame_enter(u16 size)
     tc_frame f;
     u16 need = (u16)((size + 1u) & ~1u);
     if (tc_ss == 0 || tc_sp < need) {
-        fprintf(stderr, "tcport: the arena stack (%04X:%04X) has no room for a frame of %u bytes\n", tc_ss, tc_sp, size);
-        exit(70);
+        tc_fail(70, "the arena stack (%04X:%04X) has no room for a frame of %u bytes", tc_ss, tc_sp, size);
     }
     f.sp = tc_sp;
     tc_sp = (u16)(tc_sp - need);
@@ -62,8 +78,7 @@ void tc_code_register(farptr addr, tc_fn fn, const char *name)
         }
     }
     if (code_count == CODE_MAX) {
-        fprintf(stderr, "tcport: code table full at %s\n", name);
-        exit(70);
+        tc_fail(70, "code table full at %s", name);
     }
     code[code_count].addr = addr;
     code[code_count].fn = fn;
@@ -71,7 +86,7 @@ void tc_code_register(farptr addr, tc_fn fn, const char *name)
     code_count++;
 }
 
-tc_fn tc_code_lookup(farptr addr, const char *site)
+tc_fn tc_code_find(farptr addr)
 {
     unsigned i;
     for (i = 0; i < code_count; i++) {
@@ -79,15 +94,29 @@ tc_fn tc_code_lookup(farptr addr, const char *site)
             return code[i].fn;
         }
     }
-    fprintf(stderr, "tcport: no C function at %04X:%04X (load-relative %04X:%04X), called from %s\n",
+    return 0;
+}
+
+#ifdef TC_HYBRID
+#include "hybrid.h"
+#endif
+
+u32 tc_code_far(farptr addr, const u8 *args, u16 n, const char *site)
+{
+#ifdef TC_HYBRID
+    (void)site;
+    return tc_hybrid_far(addr, args, n);
+#else
+    (void)args;
+    (void)n;
+    tc_fail(70, "no C function at %04X:%04X (load-relative %04X:%04X), called from %s",
             TC_SEG(addr), TC_OFF(addr), (u16)(TC_SEG(addr) - tc_load_seg), TC_OFF(addr), site);
-    exit(70);
+#endif
 }
 
 void tc_unported(const char *name, const char *addr)
 {
-    fprintf(stderr, "tcport: %s (%s) is not ported yet\n", name, addr);
-    exit(71);
+    tc_fail(71, "%s (%s) is not ported yet", name, addr);
 }
 
 static u16 word_at(const u8 *b) { return (u16)(b[0] | (b[1] << 8)); }

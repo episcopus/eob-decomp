@@ -203,3 +203,51 @@ def test_the_literal_table_agrees_with_src_and_the_original():
         for hexb, off, _how in rows:
             b = bytes.fromhex(hexb) + b"\0"
             assert prog.dgroup[off:off + len(b)] == b, "%s: ds:%04X" % (name, off)
+
+
+@needs_clang
+@pytest.mark.slow
+def test_each_function_against_the_original(tmp_path):
+    """M2 (playbook 80): boot-title plays on the oracle; at the first call of each translated function
+    it reaches, the original and the C run on the bench from the same state and their memory, return
+    registers, screen, sound and files agree. The session is still its golden afterwards (the bench
+    never touches it). Then with two translated functions made wrong in a copy of the library (FindMaskBit
+    counts one bit more, SetTextWindow stores the region plus one): the test must see both."""
+    r = subprocess.run(["make", "--no-print-directory", "-f", "port/port.mk", "PY=%s" % sys.executable,
+                        "port-hybrid"], cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
+    hybrid = [sys.executable, str(ROOT / "tools" / "port" / "hybrid.py"), "--session", "boot-title",
+              "--samples", "1"]
+    r = subprocess.run(hybrid + ["--out", str(tmp_path / "ok")], cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
+    assert "the session is still its golden" in r.stdout
+    m = re.search(r"(\d+) the same on every call tested, 0 differ or stop", r.stdout)
+    assert m and int(m.group(1)) >= 30, r.stdout
+
+    # the mutants
+    gen, obj = ROOT / "build" / "port" / "gen", ROOT / "build" / "port" / "hybrid" / "obj"
+    mutants = {"E14EF": ("s16 i = 0;", "s16 i = 0; n = (s16)(n + 1);", "s16 FindMaskBit("),
+               "E1DE7": ("tc_st_s16(TC_MKFP(tc_ds, 0x811F), region);",
+                         "tc_st_s16(TC_MKFP(tc_ds, 0x811F), (s16)(region + 1));", "void SetTextWindow(")}
+    cc = shutil.which("cc") or shutil.which("clang")
+    objs = [str(o) for o in obj.rglob("*.o") if o.stem not in mutants]
+    for unit, (old, new, fn) in mutants.items():
+        text = (gen / ("%s.c" % unit)).read_text()
+        at = text.index(fn)
+        assert old in text[at:], unit
+        text = text[:at] + text[at:].replace(old, new, 1)
+        (tmp_path / ("%s.c" % unit)).write_text(text)
+        o = tmp_path / ("%s.o" % unit)
+        r = subprocess.run([cc, "-std=gnu99", "-O2", "-w", "-DTC_HYBRID", "-fPIC", "-I", str(ROOT / "port" / "include"),
+                            "-I", str(gen), "-c", "-o", str(o), str(tmp_path / ("%s.c" % unit))], capture_output=True, text=True)
+        assert r.returncode == 0, r.stderr
+        objs.append(str(o))
+    lib = tmp_path / "mutant.so"
+    r = subprocess.run([cc, "-shared", "-o", str(lib), *objs], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    r = subprocess.run(hybrid + ["--out", str(tmp_path / "bad"), "--lib", str(lib), "--function", "FindMaskBit",
+                                 "--function", "SetTextWindow"], cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 1, r.stdout + r.stderr
+    assert "0 the same on every call tested, 2 differ or stop" in r.stdout, r.stdout
+    assert re.search(r"FindMaskBit \(E14EF.C\): returns \w+, the original", r.stdout), r.stdout
+    assert "SetTextWindow (E1DE7.C): ds:811F" in r.stdout, r.stdout

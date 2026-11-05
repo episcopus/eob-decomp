@@ -7,6 +7,10 @@
 #   build/port/eob-port-headless   with port/platform/null.c; needs no SDL; the self-test runs on it
 #   build/port/eob-port            with port/platform/sdl_host.c and SDL3 (built when SDL3 is found)
 #
+# make port-hybrid builds the same translation, the runtime and port/runtime/hybrid.c, with TC_HYBRID,
+# as the shared library build/port/hybrid/libeobhybrid.so for the per-function test (M2,
+# tools/port/hybrid.py): the oracle runs it on its own memory.
+#
 # port-boundary fails if any file outside port/platform/ includes SDL or calls it, so the boundary stays
 # platform.h. The self-test runs on the pinned eob/EOB.EXE (read only); tc2c reads it too, to place
 # the string literals where its DGROUP holds them, and reads build/re/eob.json (make overlays) for the
@@ -30,10 +34,13 @@ TC2C_IN := port/units.txt tools/port/tc2c.py port/include/tc/prelude.h $(wildcar
 	port/include/tclib.h port/literals.json build/re/eob.json eob/EOB.EXE $(wildcard src/*.H src/*.ASM)
 
 GEN_C := $(addprefix $(GEN)/,$(UNITS:.C=.c)) $(GEN)/units.c $(GEN)/unported.c
+HYB := $(OUT)/hybrid
+HYB_C := $(GEN_C) $(GEN)/hybrid.c port/runtime/arena.c port/runtime/tclib.c port/runtime/hybrid.c
+HYB_O := $(patsubst %.c,$(HYB)/obj/%.o,$(HYB_C))
 CORE_C := port/runtime/arena.c port/runtime/tclib.c port/main.c
 CORE_O := $(patsubst $(GEN)/%.c,$(OBJ)/gen/%.o,$(GEN_C)) $(patsubst %.c,$(OBJ)/%.o,$(CORE_C))
 
-.PHONY: port port-check port-boundary port-sdl
+.PHONY: port port-check port-boundary port-sdl port-hybrid
 
 port: port-boundary $(OUT)/eob-port-headless port-check port-sdl
 
@@ -46,7 +53,7 @@ $(GEN)/.stamp: $(TC2C_IN) $(addprefix src/,$(UNITS))
 	$(PY) tools/port/tc2c.py --out $(GEN) --image eob/EOB.EXE --layout build/re/eob.json $(addprefix src/,$(UNITS))
 	@touch $@
 
-$(GEN_C): $(GEN)/.stamp
+$(GEN_C) $(GEN)/hybrid.c: $(GEN)/.stamp
 
 $(OBJ)/gen/%.o: $(GEN)/%.c $(GEN)/.stamp $(HEADERS)
 	@mkdir -p $(dir $@)
@@ -72,3 +79,13 @@ else
 port-sdl:
 	@echo "port: SDL3 not found (pkg-config sdl3): built the headless program only. Ask the human to install SDL3 (macOS: brew install sdl3); do not download it from a tool."
 endif
+
+# the hybrid build: position independent, TC_HYBRID (unported.c runs the original's routines)
+port-hybrid: $(HYB)/libeobhybrid.so
+
+$(HYB)/obj/%.o: %.c $(GEN)/.stamp $(HEADERS)
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) $(GEN_CFLAGS) -DTC_HYBRID -fPIC -c -o $@ $<
+
+$(HYB)/libeobhybrid.so: $(HYB_O)
+	$(CC) -shared -o $@ $^

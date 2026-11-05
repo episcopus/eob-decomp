@@ -135,7 +135,7 @@ static int self_test(const char *exe)
         return 2;
     }
     tc2c_init();
-    check(tc_code_lookup(TC_MKFP(tc_load_seg + 0x1658u, 0x001Eu), "self-test") == (tc_fn)ListAdd,
+    check(tc_code_find(TC_MKFP(tc_load_seg + 0x1658u, 0x001Eu)) == (tc_fn)ListAdd,
           "code table", "1658:001E is not ListAdd");
     for (i = 0; i < sizeof lists / sizeof lists[0]; i++) {
         check_list(i);

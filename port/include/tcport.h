@@ -115,10 +115,20 @@ static inline u32 tc_vr32(const u8 *b) { return (u32)tc_vr16(b) | ((u32)tc_vr16(
    from the arena (a callback field, a driver slot, an interrupt vector) finds its C function. */
 typedef void (*tc_fn)(void);
 void tc_code_register(farptr addr, tc_fn fn, const char *name);
-tc_fn tc_code_lookup(farptr addr, const char *site);
+/* The C function at addr, or null. A call through a far pointer with no C behind it (code the
+   original loads, such as a driver) goes to tc_code_far with its arguments as Turbo C pushes them:
+   the port stops there; the hybrid build runs the original's code (hybrid.h). */
+tc_fn tc_code_find(farptr addr);
+u32 tc_code_far(farptr addr, const u8 *args, u16 n, const char *site);
 
 /* A function of the original that the port has no C for yet: reports it and stops. */
 void tc_unported(const char *name, const char *addr);
+
+/* Every stop of the runtime goes through tc_fail: the message on stderr and exit(code). A host that
+   must not exit (the per-function test, tools/port/hybrid.py) sets tc_fail_hook, which gets the
+   message and does not return. */
+extern void (*tc_fail_hook)(int code, const char *msg);
+void tc_fail(int code, const char *fmt, ...) __attribute__((noreturn, format(printf, 2, 3)));
 
 /* Loads an MZ program's load module at tc_load_seg with its relocations applied (as DOS 4Bh and
    the oracle do); returns 0, or -1 with a message on stderr. ds_para is DGROUP's paragraph in the

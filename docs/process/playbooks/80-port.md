@@ -18,7 +18,8 @@ sound and state.
 | M0 skeleton | done 2026-11-04: `make port` translates `src/E0CF7.C` and `src/E1658.C`, links them with the arena runtime twice, headless (`build/port/eob-port-headless`, no SDL) and with the SDL3 host (`build/port/eob-port`), and the self-test runs them headless on `EOB.EXE`'s own DGROUP (`tests/unit/test_port.py`, fast set) |
 | Decisions | the nine answered by the human 2026-11-04, the five follow-ups (A to E) 2026-11-05 (section "Decisions"). Linux and Windows deferred by the human 2026-11-05: macOS only for now. Left for the human: install the newest LLVM (section "What the human installs") |
 | M1 tc2c for every C unit | done 2026-11-05 except the LLVM pin, which waits for the human's install: `make port` translates all 41 C units of `EOB.EXE` (609 functions) with none refused, compiles them with `-Werror` and links them; what is still a stub is 63 assembly routines (M3) and 23 library functions that need the machine (section "M1") |
-| M2 to M7 | not started (section "Order of work") |
+| M2 the per-function test | the machinery done 2026-11-05: `make port-hybrid` (section "M2"); on the five `EOB.EXE` goldens 129 of the 594 functions with an entry are reached, 118 are the same as the original on every call tested (635 calls), none differ, 11 are reached only where they wait for an interrupt (M3). The rest of the check, every function of `src/`, needs sessions that reach them |
+| M3 to M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
 
@@ -57,7 +58,9 @@ by hand: the arena **is** the real-mode address space.
   (`/*@ 0000:3B36 */`) at its segment moved by the load segment.
 - A function of `src/` is registered under its original far address (`tc_code_register`), so a far
   function pointer read from the arena (a node's `callback30`, a driver slot, an interrupt vector) finds
-  its C function (`tc_code_lookup`).
+  its C function (`tc_code_find`); with none there (code the original loads, such as a graphics driver)
+  the call goes to `tc_code_far` with its arguments as Turbo C pushes them, which stops the port and,
+  in the hybrid build, runs the original's code.
 - Locals and parameters whose address is never taken are ordinary C variables of the exact width.
   Address-taken locals, local arrays and local structs (an `&x` passed to a callee, `union REGS` on the
   stack) get a frame on an arena stack in the original's stack segment (the header's `SS`), as Turbo C
@@ -126,7 +129,7 @@ Other ways considered:
 | `p + n`, `p++` | offset only, wrapping at 64 KB | skeleton |
 | `p == q`, `if (p)` | all 32 bits (null is `0000:0000`) | skeleton |
 | `p < q` | the offsets only [H]: settle by compiling a probe with Turbo C++ 1.00 (rule 1) | skeleton, [H] |
-| far function pointer call | `tc_code_lookup(address)` then the C function | skeleton |
+| far function pointer call | `tc_code_find(address)` then the C function; none: `tc_code_far` (the hybrid build runs the original's code there) | skeleton, M2 |
 | `p - q` | the offsets' difference over the element size [H] | M1, [H] |
 | `MK_FP`, `FP_SEG`, `FP_OFF` | the identity on `farptr` (`TC_MKFP`, `TC_SEG`, `TC_OFF`); in an overlay unit a constant segment is TLINK's segment-table index times 8 (`EOV3.C`'s `MK_FP(0x1d8, 0)`, entry 59), resolved through `build/re/eob.json` | M1 |
 | string literals | at the DGROUP offset the original's code uses: `port/literals.json`, recorded by the matcher (`make port-literals`), checked against `src/` on every build and against the original's bytes by the fast tests; a unit the table does not list falls back to a search by content | M1 |
@@ -316,10 +319,11 @@ The alternative not taken was to recompile just the handlers and the hardware wa
 Whatever the clock, the proof has two levels:
 
 - **Per function (M2)**: `make port-hybrid` builds the translated units as a shared library;
-  `tools/port/hybrid.py` points `tc_mem` at the oracle's RAM, stops a golden at a call of a translated
-  function, runs the C on the same memory, runs the original on a copy, and compares memory and the
-  return registers. Every function of `src/` can be checked so, on states the goldens actually reach,
-  before anything else of the port exists.
+  `tools/port/hybrid.py` plays a golden, and at a call of a translated function a second oracle
+  machine whose memory is the library's `tc_mem` takes the session's state, runs the original, takes
+  the state again, runs the C, and compares memory and the return registers (section "M2"). Every
+  function of `src/` can be checked so, on states the goldens actually reach, before anything else of
+  the port exists.
 - **Per session (M5, M6)**: the port runs a golden headless, inputs from the recording, and its
   checkpoints are compared with the golden's: state digest of the arena (stack and overlay buffer
   masked, the rest as `Machine.canonical` does), the screen (`A000` and the DAC in the form `ega.py`
@@ -329,6 +333,49 @@ Whatever the clock, the proof has two levels:
 The new recording artefacts (per golden: the clock positions of each interrupt and input) are files
 beside the goldens, `tests/sessions/golden/<name>.clock.json`; the human approved this change to the
 golden format (decision 5). The goldens themselves do not change.
+
+## M2: the per-function test (2026-11-05)
+
+```
+make port-hybrid                       # every EOB.EXE golden, 3 calls of each function (about 6 minutes)
+make port-hybrid SESSION=load-walk FUNC=DrawViewFrame SAMPLES=10
+```
+
+- `make port-hybrid` builds the translation, the runtime and `port/runtime/hybrid.c` with `TC_HYBRID`
+  as `build/port/hybrid/libeobhybrid.so`, then runs `tools/port/hybrid.py`. tc2c writes
+  `build/port/gen/hybrid.c`: a thunk per function that reads its arguments where the caller pushed them
+  (SS:SP+4) and returns its value as DX:AX, and the table of entries (a resident function's address,
+  an overlay function's stub entry; the 15 static overlay functions have none). In `unported.c`, under
+  `TC_HYBRID`, each routine the port has no C for runs the original's code at its address with the
+  arguments laid out as Turbo C pushes them; so do calls through a far pointer with no C behind it
+  (the graphics driver's slots).
+- Each golden plays on the oracle unchanged. At the first `SAMPLES` calls of each function it reaches,
+  a second machine, the bench, takes the session's state (memory, registers, and the oracle's Python
+  state: the EGA, DOS and the files, the BIOS, the devices), runs the original to its return, takes
+  the same state again and runs the C on it (the library's arena is the bench's memory). No interrupt
+  reaches the bench. Nested runs of one Unicorn engine lose the outer run's instruction count (tested:
+  the outer run did not stop at its count), so the bench is a separate engine and the session's
+  machine is only read; every session is checked against its golden at the end (all five still are).
+- Compared: memory, but for the stack below the caller's frame (the C's frames are not the original's,
+  and a callee may write its arguments) and for what the overlay manager wrote in the original's run,
+  measured there: the writes of its code (CS the segment of the vector the game's INT 3Fh handler
+  chains to, ds:FC08) and its reads of an overlay from `EOB.EXE` (11,763 bytes for `EnterMapScreen`;
+  TLINK's kind-4 segments are not the manager: two of them lie inside DGROUP); the registers the
+  function's type returns (AL, AX, DX:AX); the screen, the AdLib and speaker logs and the files.
+- `tests/unit/test_port.py` (slow set): `boot-title` with one call of each function (36 the same, none
+  different), then a copy of the library with two functions made wrong (`FindMaskBit` counts one
+  more, `SetTextWindow` stores the region plus one): both are reported, the second as
+  `ds:811F (gTextRegion), 1 bytes: original 00, C 01`.
+- Results on the five goldens of `EOB.EXE` (`build/port/hybrid/report.json`): 129 functions reached,
+  118 the same on every call tested (635 calls, in 28 units), none different, none stopped. 11 are
+  reached only where the original waits for what an interrupt changes, so they are not tested until
+  the bench has the clock (M3): `Main` and `StartupGame` (they do not return), `CalibrateRetrace`
+  (the BIOS tick), `StartupAlloc`, `LoadItemData`, `RunMapLoop` and `RunCharacterPanel` (a key, read
+  through the keyboard interrupt), `UpdateMonsters`, `UpdateMonsterGroup`, `UpdateHuntingMonster` and
+  `StepMonsterToward` (`PlaySoundAtCell` waits for the sound driver's busy countdown, 177D:0135).
+- Not done: the other 465 functions with an entry are not reached by the goldens, so "every function
+  of `src/`" needs sessions that reach them (combat, spells, the inventory, the camp menus, the other
+  levels, the end); and `INTRO.EXE`.
 
 ## M1: every C unit (done 2026-11-05)
 

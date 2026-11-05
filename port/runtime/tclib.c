@@ -4,9 +4,6 @@
    library, AGENTS.md). Where a detail of the result is Turbo C's own and not yet checked against the
    original it is marked [H]; M2's per-function test (playbook 80) runs each of these beside the
    original's on the states the goldens reach. */
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "tcport.h"
 #include "tclib.h"
 
@@ -363,8 +360,7 @@ s16 tcl_sprintf(farptr buf, farptr fmt, const u8 *va, u16 va_size)
             break;
         }
         default:
-            fprintf(stderr, "tcport: sprintf conversion %%%c is not in the port's runtime\n", c);
-            exit(70);
+            tc_fail(70, "sprintf conversion %%%c is not in the port's runtime", c);
         }
         {
             int np = 0;
