@@ -29,15 +29,18 @@ SDL_LIBS := $(shell pkg-config --libs sdl3 2>/dev/null)
 CFLAGS := -std=gnu99 -O2 -Wall -Wextra -Werror -Wno-unused-value -Wno-parentheses-equality -Iport/include -I$(GEN)
 # the generated C keeps every parameter of src/, read or not
 GEN_CFLAGS := -Wno-unused-parameter
-HEADERS := $(wildcard port/include/*.h port/include/tc/*.h)
+HEADERS := $(wildcard port/include/*.h port/include/tc/*.h port/asm/*.h)
+# the assembly units written in C (M3); tc2c reads their `/*@ */` addresses
+ASM_C := $(wildcard port/asm/*.c)
 TC2C_IN := port/units.txt tools/port/tc2c.py port/include/tc/prelude.h $(wildcard port/include/tc/sys/*.h) \
-	port/include/tclib.h port/literals.json build/re/eob.json eob/EOB.EXE $(wildcard src/*.H src/*.ASM)
+	port/include/tclib.h port/literals.json build/re/eob.json eob/EOB.EXE $(wildcard src/*.H src/*.ASM) \
+	$(ASM_C)
 
 GEN_C := $(addprefix $(GEN)/,$(UNITS:.C=.c)) $(GEN)/units.c $(GEN)/unported.c
 HYB := $(OUT)/hybrid
-HYB_C := $(GEN_C) $(GEN)/hybrid.c port/runtime/arena.c port/runtime/tclib.c port/runtime/hybrid.c
+HYB_C := $(GEN_C) $(GEN)/hybrid.c port/runtime/arena.c port/runtime/tclib.c port/runtime/hybrid.c $(ASM_C)
 HYB_O := $(patsubst %.c,$(HYB)/obj/%.o,$(HYB_C))
-CORE_C := port/runtime/arena.c port/runtime/tclib.c port/main.c
+CORE_C := port/runtime/arena.c port/runtime/tclib.c port/main.c $(ASM_C)
 CORE_O := $(patsubst $(GEN)/%.c,$(OBJ)/gen/%.o,$(GEN_C)) $(patsubst %.c,$(OBJ)/%.o,$(CORE_C))
 
 .PHONY: port port-check port-boundary port-sdl port-hybrid

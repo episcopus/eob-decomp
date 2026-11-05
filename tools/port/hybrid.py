@@ -394,6 +394,75 @@ class Tester:
         return "%s, %d bytes: original %s, C %s" % (where, n, o_mem[a:b][:16].hex(" "), c_mem[a:b][:16].hex(" "))
 
 
+class Direct:
+    """One routine called with chosen arguments, on the bench: the original, then the C from the same
+    state, compared as a golden's calls are. For the routines the goldens do not reach (an unpacker no
+    pinned file uses, the encoder the game runs when it saves); tests/unit/test_port.py feeds them.
+    The bench is the program as loaded, not started. After a call the bench keeps the original's
+    result, so a sequence of calls (a random generator's) goes on from the original's state."""
+
+    STACK = (0x9000, 0xFFF0)          # SS:SP of the calls: conventional memory the loaded program leaves free
+
+    def __init__(self, lib: Path = LIB):
+        self.t = Tester(1, None, lib)
+        self.bench = Bench(self.t.lib, run.build_machine)
+        self.m = self.bench.m
+        self.index = {e.name.decode(): i for i, e in enumerate(self.t.entries)}
+
+    def write(self, seg: int, off: int, data: bytes) -> None:
+        self.m.write(seg, off, data)
+
+    def read(self, seg: int, off: int, n: int) -> bytes:
+        return bytes(self.m.read(seg, off, n))
+
+    def call(self, name: str, *args) -> dict:
+        """args: ints (a word each) or (value, 4) for a long or a far pointer. Returns {"status":
+        "same" | "differs" | "C stopped" | "not tested: ...", "value": the original's DX:AX, ...}."""
+        m, bench, i = self.m, self.bench, self.index[name]
+        e = self.t.entries[i]
+        block = b""
+        for a in args:
+            v, w = a if isinstance(a, tuple) else (a, 2)
+            block += (v & (0xFFFFFFFF if w == 4 else 0xFFFF)).to_bytes(w, "little")
+        ss, top = self.STACK
+        sp = (top - len(block) - 4) & 0xFFFF
+        m.write(ss, sp + 4, block)
+        m.ww(ss, sp, SENTINEL[1])
+        m.ww(ss, sp + 2, SENTINEL[0])
+        for r, v in (("ss", ss), ("sp", sp), ("ds", DGROUP), ("es", DGROUP), ("cs", LOAD_SEG + e.seg), ("ip", e.off)):
+            m.set(r, v)
+        before = bench.memory()
+        why = bench.until(SENTINEL[0], SENTINEL[1], (sp + 4) & 0xFFFF)
+        r = {"function": name}
+        if why:
+            r["status"] = "not tested: the original %s" % why
+            return r
+        o_mem, o_regs = bench.memory(), (m.get("ax"), m.get("dx"))
+        r["value"] = (o_regs[1] << 16) | o_regs[0]
+        ctypes.memmove(bench.base, before, RAM)
+        m.uc.ctl_remove_cache(0, RAM)
+        val = ctypes.c_uint32(0)
+        code = self.t.lib.tc_hybrid_run(i, ss, sp, DGROUP, ctypes.byref(val), LIMIT_MS)
+        c_mem = bench.memory()
+        ctypes.memmove(bench.base, o_mem, RAM)          # go on from the original's state
+        m.uc.ctl_remove_cache(0, RAM)
+        if code:
+            r["status"] = "C stopped"
+            r["why"] = bench.message.value.decode("latin-1")
+            return r
+        spans = diff(o_mem, c_mem, [(ss * 16, ss * 16 + top)])
+        regs = []
+        if e.ret_bytes:
+            mask = (1 << (8 * e.ret_bytes)) - 1
+            if r["value"] & mask != val.value & mask:
+                regs.append("returns %X, the original %X" % (val.value & mask, r["value"] & mask))
+        r["status"] = "same" if not spans and not regs else "differs"
+        if r["status"] == "differs":
+            r["registers"] = regs
+            r["memory"] = [self.t.describe(a, b, o_mem, c_mem) for a, b in spans[:8]]
+        return r
+
+
 def diff(a: bytes, b: bytes, masks, skip=frozenset()) -> list[tuple[int, int]]:
     """The spans [start, end) where a and b differ, outside the masks and the bytes in skip."""
     spans = []

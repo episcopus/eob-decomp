@@ -49,16 +49,23 @@ static inline farptr tc_fp_add(farptr p, u16 delta)
     return TC_MKFP(TC_SEG(p), (u16)(TC_OFF(p) + delta));
 }
 
-/* Loads and stores. A word is little-endian at any alignment; its second byte is at offset + 1 in
-   the same segment, so a word at xxxx:FFFF wraps to xxxx:0000 (8086). Stores return the value
-   stored, so an assignment stays an expression. */
+/* Loads and stores. A word is little-endian at any alignment; its second byte is at the next linear
+   address, so a word at xxxx:FFFF has its high byte at (xxxx + 1000h):0000, as the oracle does
+   (Unicorn, tested 2026-11-05: `mov ax,[0FFFFh]` and `movsw` from offset FFFFh both carry into the
+   next 64 KB; an 8086 would wrap to xxxx:0000, a 286 or later would fault). The goldens are the
+   oracle's, so the arena follows it. Stores return the value stored, so an assignment stays an
+   expression. */
+#define TC_NEXT(lin) (((lin) + 1u) & 0xFFFFFu)
 static inline u8 tc_ld_u8(farptr p) { return tc_mem[TC_LINEAR(p)]; }
 static inline s8 tc_ld_s8(farptr p) { return (s8)tc_mem[TC_LINEAR(p)]; }
 static inline u16 tc_ld_u16(farptr p)
 {
-    return (u16)(tc_mem[TC_LINEAR(p)] | ((u16)tc_mem[TC_LINEAR(tc_fp_add(p, 1))] << 8));
+    u32 a = TC_LINEAR(p);
+    return (u16)(tc_mem[a] | ((u16)tc_mem[TC_NEXT(a)] << 8));
 }
 static inline s16 tc_ld_s16(farptr p) { return (s16)tc_ld_u16(p); }
+/* a long or a far pointer is two words, as the compiled code moves it (`mov ax,[bx]`, `mov dx,[bx+2]`:
+   the second offset wraps within the segment) */
 static inline u32 tc_ld_u32(farptr p)
 {
     return (u32)tc_ld_u16(p) | ((u32)tc_ld_u16(tc_fp_add(p, 2)) << 16);
@@ -69,8 +76,9 @@ static inline u8 tc_st_u8(farptr p, u8 v) { tc_mem[TC_LINEAR(p)] = v; return v; 
 static inline s8 tc_st_s8(farptr p, s8 v) { tc_mem[TC_LINEAR(p)] = (u8)v; return v; }
 static inline u16 tc_st_u16(farptr p, u16 v)
 {
-    tc_mem[TC_LINEAR(p)] = (u8)v;
-    tc_mem[TC_LINEAR(tc_fp_add(p, 1))] = (u8)(v >> 8);
+    u32 a = TC_LINEAR(p);
+    tc_mem[a] = (u8)v;
+    tc_mem[TC_NEXT(a)] = (u8)(v >> 8);
     return v;
 }
 static inline s16 tc_st_s16(farptr p, s16 v) { tc_st_u16(p, (u16)v); return v; }

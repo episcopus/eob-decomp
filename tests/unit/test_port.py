@@ -251,3 +251,68 @@ def test_each_function_against_the_original(tmp_path):
     assert "0 the same on every call tested, 2 differ or stop" in r.stdout, r.stdout
     assert re.search(r"FindMaskBit \(E14EF.C\): returns \w+, the original", r.stdout), r.stdout
     assert "SetTextWindow (E1DE7.C): ds:811F" in r.stdout, r.stdout
+
+
+@needs_clang
+@pytest.mark.slow
+def test_the_assembly_routines_in_c_against_the_original():
+    """M3 (playbook 80): the routines of port/asm, each called on the bench with chosen arguments, the
+    original's code then the C, compared as the per-function test compares (hybrid.py, Direct): the
+    random step in sequence, the far copy (overlaps, odd lengths, 64 KB blocks whose words straddle
+    offset FFFFh), the LCW encoder and Unpack4 on its output (a round trip), Unpack4 on random streams,
+    the dictionary unpackers on random code streams and Unpack3 on well-formed ones."""
+    import random
+    r = subprocess.run(["make", "--no-print-directory", "-f", "port/port.mk", "PY=%s" % sys.executable,
+                        "port-hybrid"], cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
+    sys.path.insert(0, str(ROOT / "tools" / "port"))
+    import hybrid
+    d = hybrid.Direct()
+    rng = random.Random(1)
+    bad = []
+
+    def call(name, *args):
+        res = d.call(name, *args)
+        if res["status"] != "same":
+            bad.append(res)
+        return res
+
+    def fp(seg, off):
+        return ((seg << 16) | off, 4)
+
+    for _ in range(100):
+        call("RandomByte")
+    for _ in range(20):
+        call("NormalizePtr", fp(rng.randrange(65536), rng.randrange(65536)))
+    for k, n in enumerate([0, 1, 2, 3, 255, 4096, 0x10001, 0x18003]):
+        d.write(0x5000, 0, bytes(rng.randrange(256) for _ in range(0x300)))
+        call("Unpack0", fp(0x5000, rng.randrange(16)), fp(0x5000, rng.randrange(40)) if k % 2 else fp(0x7000, 3), (n, 4))
+    for n in (2, 16, 1000, 4096):
+        data = bytes(rng.choice(b"aab") for _ in range(n // 2)) + bytes(rng.randrange(256) for _ in range(n - n // 2))
+        d.write(0x5000, 0, data)
+        call("CompressLcw", fp(0x5000, 0), fp(0x6000, 5), n)
+        call("Unpack4", fp(0x6000, 5), fp(0x7000, 9), n)
+        assert d.read(0x7000, 9, n) == data, "the original's Unpack4 inverts the original's CompressLcw"
+    for _ in range(8):
+        d.write(0x6000, 0, bytes(rng.randrange(256) for _ in range(3000)))
+        call("Unpack4", fp(0x6000, 0), fp(0x7000, 0x10), rng.randrange(1, 3000))
+    for name in ("Unpack1", "Unpack2"):
+        for _ in range(8):
+            hdr = b"\0\0" + rng.randrange(1, 6000).to_bytes(2, "little") + b"\0\0\0\0"
+            d.write(0x6000, 0, hdr + bytes(rng.randrange(256) for _ in range(12000)))
+            call(name, 0x6000, 0x7000, 0x8000)
+    for _ in range(8):
+        toks, total, target = bytearray(), 0, rng.randrange(1, 5000)
+        while total < target:
+            n = min(rng.randrange(1, 128), target - total)
+            kind = rng.randrange(3)
+            if kind == 0:
+                toks += bytes([n]) + bytes(rng.randrange(256) for _ in range(n))
+            elif kind == 1:
+                toks += bytes([256 - n]) + bytes([rng.randrange(256)])
+            else:
+                toks += b"\0" + n.to_bytes(2, "big") + bytes([rng.randrange(256)])
+            total += n
+        d.write(0x6000, 0, b"\0\0" + target.to_bytes(4, "little") + b"\0\0" + bytes(toks))
+        call("Unpack3", 0x6000, 0x7000)
+    assert bad == [], bad[:5]
