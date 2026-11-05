@@ -8708,7 +8708,7 @@ evidence = ["ovl", "near", "segment"]
 name = "FreePtrTable"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_004f"
@@ -8719,7 +8719,7 @@ evidence = ["ovl", "near", "frame"]
 name = "LoadWallSet"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_01aa"
@@ -8730,7 +8730,7 @@ evidence = ["ovl", "frame"]
 name = "IsBitSet"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_01c8"
@@ -8740,8 +8740,8 @@ size = 338
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
 name = "DefineWallType"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_031a"
@@ -8752,7 +8752,7 @@ evidence = ["ovl", "near", "frame"]
 name = "FreeSlotTables"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_03a2"
@@ -8762,8 +8762,8 @@ size = 560
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
 name = "LoadDoorShapes"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_05d2"
@@ -8773,8 +8773,8 @@ size = 82
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
 name = "FreeMonsterShapes"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_0624"
@@ -8784,8 +8784,8 @@ size = 122
 evidence = ["ovl", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
 name = "LoadMonsterShapesA"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_069e"
@@ -8795,8 +8795,8 @@ size = 122
 evidence = ["ovl", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
 name = "LoadMonsterShapesB"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_0718"
@@ -8806,8 +8806,8 @@ size = 141
 evidence = ["ovl", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
 name = "LoadMonsterShapesC"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_07a5"
@@ -8818,7 +8818,7 @@ evidence = ["ovl", "near", "frame"]
 name = "LoadWallTextures"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_0951"
@@ -8829,7 +8829,7 @@ evidence = ["ovl", "near", "frame"]
 name = "RebuildItemList"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_09aa"
@@ -8839,8 +8839,8 @@ size = 210
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
 name = "LoadMaze"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_0a7c"
@@ -8850,8 +8850,8 @@ size = 1365
 evidence = ["ovl", "near", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
 name = "LoadLevel"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_0fd1"
@@ -8862,7 +8862,7 @@ evidence = ["ovl", "near", "frame"]
 name = "PackLevelState"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_109d"
@@ -8873,7 +8873,7 @@ evidence = ["ovl", "near", "frame"]
 name = "UnpackLevelState"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_1147"
@@ -8884,7 +8884,7 @@ evidence = ["ovl", "near", "frame"]
 name = "LoadLevelState"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_11af"
@@ -8895,7 +8895,7 @@ evidence = ["ovl", "frame"]
 name = "SaveLevelState"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_123d"
@@ -8906,7 +8906,7 @@ evidence = ["ovl", "near", "frame"]
 name = "AgeCharTimers"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_12f1"
@@ -8917,7 +8917,7 @@ evidence = ["ovl", "near", "frame"]
 name = "AdvanceCharTimers"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_1368"
@@ -8928,7 +8928,7 @@ evidence = ["ovl", "frame"]
 name = "SaveGame"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_15b9"
@@ -8939,7 +8939,7 @@ evidence = ["ovl", "frame"]
 name = "LoadGame"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov3_19f7"
@@ -8950,7 +8950,7 @@ evidence = ["ovl", "near", "frame"]
 name = "ResetLevel"
 level = "L2"
 match_flags = "-ml -O -Z"
-review = "passed 2026-11-02 rev-haiku"
+review = "passed 2026-11-04 p6-rev-r2"
 
 [[function]]
 id = "eov4_0000"
