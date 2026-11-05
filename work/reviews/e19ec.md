@@ -18,10 +18,10 @@ The names match their WHYs: the odd slot is the MemAlloc'd memory copy (GetPageB
 slot the video page (GetPageVideo), and ds:8046 the graphics driver's page copy (gCopyPage); the
 callers in src/E07A9.C, src/E1B82.C, src/EOV5.C and src/IOV0.C use the new names.
 
-- [ ] must-fix src/E19EC.C:33: the comment calls gCopyPage "its export 7". The evidence in
+- [x] must-fix src/E19EC.C:33: the comment calls gCopyPage "its export 7". The evidence in
   re/renames.toml (ds:8046=gCopyPage and 19EC:002A=CopyPage) and the driver table mapping
   (ds:8046 + 4*i is mcga.ovl export i) make ds:8046 graphics driver export 0 (mcga.ovl 04F8);
-  export 7 would be ds:8062. Say "export 0", or drop the parenthetical.
+  export 7 would be ds:8062. Say "export 0", or drop the parenthetical. Fixed in 6af4a72: export 0, mcga.ovl 04F8.
 - [ ] should src/E19EC.C:5-9: the header's fill list still omits the mode 4 block's 0xAC00 into
   ds:FC18 (07C8:03E0) and the 0xFC00 MemAlloc for ds:FC1A (07C8:03EC); the previous round's
   should item remains open. (should, not must-fix)

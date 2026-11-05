@@ -21,9 +21,9 @@ gMemTopSeg    dw 0                      ; 1990:0002: segment where the program's
                                         ;   ReserveMemoryBelowVideo stores the end of DOS memory
                                         ;   here (1990:01F0: the segment just past the last block);
                                         ;   the caller StartupGame then stores atol(gArgv->number)
-                                        ;   over it (07C8:0212, src/E07C8.C:189). What that numeric
-                                        ;   string holds is Purpose unknown: nothing in src/ or
-                                        ;   docs/ writes ds:8894. TrimMemoryToVideo reads it back.
+                                        ;   over it (07C8:0212, src/E07C8.C:305). gArgv is the C
+                                        ;   library's _argv (whitepaper 2.6), so the string is argv[6],
+                                        ;   a launcher argument. TrimMemoryToVideo reads it back.
 gVideoTopSeg  dw 0                      ; 1990:0004: the base of the memory reserved below the
                                         ;   probed segment (the caller uses it as the base of the
                                         ;   64000 byte Tandy buffer, src/E07C8.C:206 to 207 and
