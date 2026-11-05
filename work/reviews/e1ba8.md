@@ -1,5 +1,17 @@
 # Review: e1ba8
 
+# Round P6 re-review (2026-11-04), commit 24711ec
+
+Reviewer: p6-rev-r2
+Commit reviewed: 24711ec (P6 re-review; the P6 round read ce0608f)
+
+Judged: the open P6 must-fix (the header's "Placeholder names.") and the diff since ce0608f for src/E1BA8.ASM. `make match FILE=src/E1BA8.ASM`: 4 of 4 (140 bytes), exit 0. `make readability UNIT=e1ba8`: 0 findings.
+
+- [x] must-fix src/E1BA8.ASM:6: fixed right. "Placeholder names." is gone. The header names PadBeforeUnpack0 (1BA8:0005, the lone 00 pad), Unpack0 (1BA8:0006, the format 0 copy), NormalizePtr (1BA8:0072, by-value far pointer, returns DX:AX) and NormFar (1BA8:0081, offset & 0Fh, segment + offset >> 4), with re/renames.toml as the evidence. The claims match the code and the registry.
+- [ ] note No new false claim in the changed lines.
+
+# Round P6 (2026-11-04), commit ce0608f
+
 # Round P6 (2026-11-04), commit ce0608f
 
 Reviewer: p6-rev-1
