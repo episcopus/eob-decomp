@@ -16,7 +16,7 @@ sound and state.
 | Step | State |
 |---|---|
 | M0 skeleton | done 2026-11-04: `make port` translates `src/E0CF7.C` and `src/E1658.C`, links them with the arena runtime twice, headless (`build/port/eob-port-headless`, no SDL) and with the SDL3 host (`build/port/eob-port`), and the self-test runs them headless on `EOB.EXE`'s own DGROUP (`tests/unit/test_port.py`, fast set) |
-| Decisions | answered by the human 2026-11-04 (section "Decisions"); five questions they raise wait for the human |
+| Decisions | the nine answered by the human 2026-11-04, the five follow-ups (A to E) 2026-11-05 (section "Decisions"). Left for the human: install the newest LLVM and a Linux container (section "What the human installs") |
 | M1 to M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
@@ -88,7 +88,8 @@ byte for byte, so the goldens would test less.
   (`port/include/tc/prelude.h`), clang applies C's conversion rules with Turbo C's widths, and every
   promotion and usual arithmetic conversion is an explicit node of the AST (`ImplicitCastExpr`). The
   skeleton was built with Apple clang 17.0.0; the reference is to be one pinned LLVM release on every
-  platform (decision 2), installed by the human (question B below).
+  platform (decision 2): the newest major release that macOS, Linux and Windows all offer when the human
+  installs it (question B).
 - `far`, `near` and `huge` are dropped for parsing: in the large model every data pointer is far, so
   tc2c gives every pointer 4 bytes itself and computes every struct layout itself (bytes, no padding,
   unions at offset 0). clang's own sizes (2-byte MSP430 pointers) are never used.
@@ -282,7 +283,8 @@ a clock both sides can count. Three choices were offered (decision 5); the human
 ### The clock with hand-written assembly (decisions 3 and 5)
 
 Hand-written C runs none of the original's instructions and has no blocks the matcher can map, and the
-Borland library (which the port's runtime replaces) has none either. Proposed rule (question A below):
+Borland library (which the port's runtime replaces) has none either. The rule (question A, chosen by the
+human 2026-11-05):
 **the clock counts only the instructions of the C units.**
 
 - In the oracle: the clock advances on an instruction whose `CS:IP` lies in a C unit's code (resident
@@ -301,9 +303,8 @@ Borland library (which the port's runtime replaces) has none either. Proposed ru
 - What this cannot reproduce: an interrupt landing midway through an assembly routine that reads what
   the handler writes. The goldens show it if it happens; none is known.
 
-The alternative is to recompile just the handlers and the hardware waits (`E_TEXT.ASM`, `E1948.ASM`,
-`E1AAD.ASM`, `E1D8F.ASM`, `E1DE4.ASM`) with asm2c, so their instructions count exactly, and hand-write
-the rest.
+The alternative not taken was to recompile just the handlers and the hardware waits (`E_TEXT.ASM`,
+`E1948.ASM`, `E1AAD.ASM`, `E1D8F.ASM`, `E1DE4.ASM`) with asm2c and hand-write the rest.
 
 Whatever the clock, the proof has two levels:
 
@@ -351,8 +352,8 @@ make port
 
 ## Order of work
 
-Every step's check runs on macOS, Linux and Windows from M1 on (decision 9), once the human has said
-where the other two build (question D).
+Every step's check runs on macOS and on Linux (a container on this Mac) from M1, and on Windows too
+from M5 (decision 9 as question D settles it).
 
 | Step | Deliverable | Check |
 |---|---|---|
@@ -360,7 +361,8 @@ where the other two build (question D).
 | M2 | `make port-hybrid`, `tools/port/hybrid.py`: each translated function against the original on golden states | every function of `src/` |
 | M3 | the machine: vector table, PIT, ports, INT 33h, INT 10h, DOS memory, files and 4B03h; the 19 assembly units hand-written in `port/asm/`; the C-unit clock in the oracle and the `.clock.json` recordings | M2's test of each hand-written routine |
 | M4 | the MCGA driver, hand-written from `MCGA.ASM` | screens of `boot-title` |
-| M5 | `port/platform/replay.c`: headless replay of `boot-title` to the title menu | its checkpoints |
+| D | the program's data as C definitions in `src/` (question C): a P6 task after the review of `work/p6-review.md`, proven by `make match` and `make rebuild`; then tc2c places the initialisers and the port's runtime writes the library's own data; the generated image is checked against `EOB.EXE`'s | the generated image equals the original's load module, but for the library data listed |
+| M5 | `port/platform/replay.c`: headless replay of `boot-title` to the title menu, from the generated image (step D comes first); the Windows build joins | its checkpoints |
 | M6 | every `EOB.EXE` golden (`boot-adlib`, `load-walk`, `mouse-party`, `new-party`); then `INTRO.EXE` (the twin map of `make twin` gives its addresses for the shared units) | `make port-golden` in `make check` |
 | M7 | live play: real-time pacing from the PIT, AdLib synthesis with ymfm, the launcher's choices (VGA, AdLib, mouse) | a human plays |
 
@@ -383,29 +385,29 @@ The human answered all nine on 2026-11-04:
 And a note: keep poolrad's platform separation. It is the section "Platform separation" above, now
 enforced by the build.
 
-### Questions the answers raise (for the human)
+### The follow-up questions (the human, 2026-11-05)
 
-- **A. The clock with hand-written assembly** (decisions 3 and 5): accept the rule that the clock counts
-  only the instructions of the C units ("The clock with hand-written assembly"), or recompile just the
-  interrupt handlers and hardware waits with asm2c and hand-write the rest. Recommended: the C-unit
-  clock; it keeps decision 3 whole and needs only a counter in the oracle's tools.
-- **B. Which LLVM** (decision 2): a release every platform ships (Homebrew on macOS, apt.llvm.org on
-  Linux, the LLVM installer on Windows), installed by the human; `make doctor` then checks its version.
-  Recommended: the newest major release all three offer on the day it is installed.
-- **C. The data of a generated image** (decision 6): the rebuild's program data is still a copy of the
-  original's bytes (`DATA.ASM`, generated from `EOB.EXE`, playbook 50), and DGROUP also holds the Borland
-  library's data, which is library, not ours. A generated image needs (1) the program's data as C
-  definitions in `src/`, which P6 was to do and which is a source change (after the review in
-  `work/p6-review.md`), and (2) the port's runtime writing its own library data at the same offsets.
-  Until both are done, may the port keep reading the data from the player's `EOB.EXE` at start (what the
-  skeleton does), with a test that the generated part equals it? Recommended: yes, and the data
-  conversion as its own P6 task.
-- **D. Where Linux and Windows build** (decision 9): this Mac has neither, and pushing is not allowed, so
-  CI is out. A Linux virtual machine or container on this Mac and a Windows machine or virtual machine,
-  each with the pinned LLVM and SDL3, installed by the human; the agents then run `make port` there
-  through a command the human names. Recommended: a Linux container now, Windows when M5 runs.
-- **E. The recording file** (decision 5): `tests/sessions/golden/<name>.clock.json`, written by the
-  golden tools beside each golden. Recommended as named; say if the format should live elsewhere.
+| # | Question | Answer |
+|---|---|---|
+| A | The clock with hand-written assembly | the clock counts only the instructions of the C units ("The clock with hand-written assembly") |
+| B | Which LLVM | the newest major release macOS, Linux and Windows all offer when it is installed; `make doctor` checks it |
+| C | The data of a generated image | **convert the data first**: the program's data becomes C definitions in `src/` (step D of "Order of work") before the port runs from its own image; the port program never loads `EOB.EXE`. Tests keep reading `eob/` as the oracle does (the self-test, M2's per-function tests on the oracle's memory), since they compare with the original |
+| D | Where Linux and Windows build | a Linux container on this Mac from M1; Windows from M5 |
+| E | The recording file | `tests/sessions/golden/<name>.clock.json`, beside each golden |
+
+Step D changes `src/`, so it waits for the independent review (`work/p6-review.md`) to finish; M1 to M4
+do not need it, since none of them runs the port from its own image.
+
+### What the human installs
+
+Downloads, so the human does them (AGENTS.md rule 5):
+
+- the newest LLVM (macOS: Homebrew; Linux: apt.llvm.org in the container; Windows at M5: the LLVM
+  installer), and its version is then pinned in `make doctor`;
+- a Linux container runtime on this Mac and an image with that LLVM, SDL3 and Python, plus the command
+  agents use to run `make port` in it;
+- at M5, a Windows machine or virtual machine with the same;
+- at M7, ymfm.
 
 ## Open questions (none needs `src/` changed now)
 
