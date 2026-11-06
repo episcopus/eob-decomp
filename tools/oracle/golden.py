@@ -11,6 +11,11 @@ the end of the run) with the screenshots beside it in tests/sessions/golden/<nam
                                       verify on the programs `make rebuild` linked (Phase 5, playbook 50):
                                       the same instructions, screens, sound and state digests, the state
                                       read in the original's form (tools/oracle/layout.py)
+  golden.py --clock [--check] [NAME ...]
+                                      record or verify the C-clock recording of an EOB.EXE session,
+                                      tests/sessions/golden/<name>.clock.json (playbook 80, tools/oracle/cclock.py):
+                                      the session is played once more with the clock attached and must still
+                                      be its golden
 Exit code 0 when everything recorded or verified, 1 otherwise. A rebuilt run that differs is played
 again on the originals, and the first checkpoint whose state differs is reported with the memory that
 differs (in the original's form).
@@ -67,6 +72,89 @@ def play(name: str, out: Path, memory: list | None = None) -> dict:
                         for c in s["checkpoints"]]
     g["args"] = s["args"]
     return g
+
+
+def play_clock(name: str, out: Path) -> tuple[dict, dict] | None:
+    """The session with the C-unit clock attached: (its golden form, the clock recording); None for a
+    session of another program (the C clock is EOB.EXE's for now)."""
+    from oracle.cclock import CClock
+    text = (SESSIONS / ("%s.keys" % name)).read_text()
+    opts = Script(text).options
+    if opts.get("program", "EOB.EXE") != "EOB.EXE":
+        return None
+    save = SESSIONS / opts["save"] if "save" in opts else None
+    build = run.build_machine
+    held = {}
+
+    def build_and_clock(*a, **k):
+        m = build(*a, **k)
+        cc = held["cc"] = CClock(m)
+        digest = m.state_digest
+
+        def counted(*aa, **kk):
+            held.setdefault("at", []).append([m.insns, cc.count])
+            return digest(*aa, **kk)
+        m.state_digest = counted
+        return m
+    run.build_machine = build_and_clock
+    try:
+        s = run.run_session(text, out=out, max_insns=int(opts.get("insns", 60_000_000)),
+                            mouse="mouse" in opts, sound=opts.get("sound"), save=save)
+    finally:
+        run.build_machine = build
+    g = {k: s[k] for k in KEEP}
+    g["checkpoints"] = [{k: c[k] for k in ("kind", "name", "instructions", "digest", "image") if k in c}
+                        for c in s["checkpoints"]]
+    g["args"] = s["args"]
+    rec = held["cc"].recording()
+    names = [c["name"] for c in s["checkpoints"]] + ["end"]
+    rec["checkpoints"] = [[n, i, c] for n, (i, c) in zip(names, held.get("at", []))]
+    return g, {"session": name, **rec}
+
+
+def write_clock(path: Path, rec: dict) -> None:
+    """One line per entry, so a change reads as a diff."""
+    lines = ["{"]
+    keys = list(rec)
+    for j, k in enumerate(keys):
+        v = rec[k]
+        end = "," if j < len(keys) - 1 else ""
+        if isinstance(v, list):
+            lines.append(' "%s": [' % k)
+            lines += ["%s%s" % (json.dumps(x, separators=(",", ":")), "," if i < len(v) - 1 else "")
+                      for i, x in enumerate(v)]
+            lines.append(" ]%s" % end)
+        else:
+            lines.append(' "%s": %s%s' % (k, json.dumps(v), end))
+    lines.append("}")
+    path.write_text("\n".join(lines) + "\n")
+
+
+def clock(name: str, verify: bool) -> bool:
+    p = GOLDEN / ("%s.clock.json" % name)
+    with tempfile.TemporaryDirectory() as tmp:
+        r = play_clock(name, Path(tmp))
+    if r is None:
+        print("%s: not an EOB.EXE session, no C clock" % name)
+        return True
+    g, rec = r
+    diff = differences(json.loads((GOLDEN / ("%s.json" % name)).read_text()), g)
+    if diff:
+        print("%s: the run with the clock is not its golden: %s" % (name, "; ".join(diff)))
+        return False
+    if verify:
+        if not p.exists():
+            print("%s: no clock recording (make golden CLOCK=1 NAME=%s)" % (name, name))
+            return False
+        old = json.loads(p.read_text())
+        bad = [k for k in rec if old.get(k) != rec[k]]
+        print("%s: clock %s" % (name, "OK" if not bad else "DIFFERS: " + ", ".join(bad)))
+        return not bad
+    write_clock(p, rec)
+    print("%s: clock recorded: %d C-unit instructions of %d, %d interrupts, %d clock changes over %d accesses" % (
+        name, rec["checkpoints"][-1][2], rec["checkpoints"][-1][1], len(rec["interrupts"]), len(rec["times"]),
+        rec["accesses"]))
+    return True
 
 
 def differences(a: dict, b: dict) -> list[str]:
@@ -172,8 +260,12 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--rebuilt", action="store_true", help="with --check: on the programs `make rebuild` linked")
+    ap.add_argument("--clock", action="store_true", help="the C-clock recordings (playbook 80)")
     ap.add_argument("names", nargs="*")
     a = ap.parse_args(argv)
+    if a.clock:
+        names = a.names or sorted(p.stem for p in SESSIONS.glob("*.keys"))
+        return 0 if all([clock(n, a.check) for n in names]) else 1
     if a.rebuilt and not a.check:
         print("--rebuilt only checks: goldens are recorded on the originals")
         return 1

@@ -86,8 +86,8 @@ port-hybrid: overlays  ## M2 (playbook 80): each translated function against the
 port-literals: overlays  ## where the original keeps each string literal of port/units.txt (port/literals.json, from the matcher; needs Turbo C++)
 	$(PY) tools/port/literals.py
 
-golden:           ## record the golden sessions (NAME=x for one; CHECK=1 verifies instead; CHECK=1 REBUILT=1 on the programs make rebuild linked)
-	$(PY) tools/oracle/golden.py $(if $(CHECK),--check) $(if $(REBUILT),--rebuilt) $(NAME)
+golden:           ## record the golden sessions (NAME=x for one; CHECK=1 verifies instead; CHECK=1 REBUILT=1 on the programs make rebuild linked; CLOCK=1 the C-clock recordings, playbook 80)
+	$(PY) tools/oracle/golden.py $(if $(CHECK),--check) $(if $(REBUILT),--rebuilt) $(if $(CLOCK),--clock) $(NAME)
 
 test:             ## Python tests (the fast set)
 	$(PY) -m pytest -q -m "not slow" tests/unit

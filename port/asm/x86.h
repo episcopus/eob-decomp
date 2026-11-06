@@ -10,6 +10,19 @@
 #define PORT_X86_H
 
 #include "tcport.h"
+#include "machine.h"
+
+/* in, out and int: the machine's (machine.h), as the CPU would reach it */
+static inline u8 x86_inb(u16 port) { return (u8)machine_port_in(port, 1); }
+static inline void x86_outb(u16 port, u8 v) { machine_port_out(port, 1, v); }
+static inline void x86_int(u8 n, tc_regs *r) { machine_int(n, r); }
+
+/* a far jump or call to a saved vector (a handler chaining to the one it replaced) */
+static inline void x86_chain(farptr vector)
+{
+    tc_regs r = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    machine_call_handler(TC_SEG(vector), TC_OFF(vector), &r);
+}
 
 /* a word or byte of the routine's code segment (its `cs:` variables), in the arena */
 #define CS_VAR(seg, off) TC_MKFP(tc_load_seg + (seg), (off))

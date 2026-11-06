@@ -260,7 +260,8 @@ def test_the_assembly_routines_in_c_against_the_original():
     original's code then the C, compared as the per-function test compares (hybrid.py, Direct): the
     random step in sequence, the far copy (overlaps, odd lengths, 64 KB blocks whose words straddle
     offset FFFFh), the LCW encoder and Unpack4 on its output (a round trip), Unpack4 on random streams,
-    the dictionary unpackers on random code streams and Unpack3 on well-formed ones."""
+    the dictionary unpackers on random code streams and Unpack3 on well-formed ones; the INT 1Ch
+    handler, its install and removal; the retrace read and waits."""
     import random
     r = subprocess.run(["make", "--no-print-directory", "-f", "port/port.mk", "PY=%s" % sys.executable,
                         "port-hybrid"], cwd=ROOT, capture_output=True, text=True)
@@ -271,8 +272,8 @@ def test_the_assembly_routines_in_c_against_the_original():
     rng = random.Random(1)
     bad = []
 
-    def call(name, *args):
-        res = d.call(name, *args)
+    def call(name, *args, **regs):
+        res = d.call(name, *args, **regs)
         if res["status"] != "same":
             bad.append(res)
         return res
@@ -315,4 +316,126 @@ def test_the_assembly_routines_in_c_against_the_original():
             total += n
         d.write(0x6000, 0, b"\0\0" + target.to_bytes(4, "little") + b"\0\0" + bytes(toks))
         call("Unpack3", 0x6000, 0x7000)
+    # the INT 1Ch unit: install, the handler on random counters (and all ones, every carry) with any DS
+    call("InstallTickHandler")
+    for k in range(8):
+        d.write(hybrid.DGROUP, 0x8488, b"\xff" * 0x18 if k % 2 else bytes(rng.randrange(256) for _ in range(0x18)))
+        call("TickIsr", ds=rng.randrange(65536))
+    call("RemoveTickHandler")
+    call("TickIsr", ds=0x1234)
+    # the retrace, read and waited on in both modes at many phases of the frame (each poll charges the
+    # clock, which is compared: a wait that ends one poll early or late differs)
+    for k in range(30):
+        call("IsInVerticalRetrace")
+        call("WaitRetrace", k % 3)
+        call("WaitRetrace", 0x0101)
+        d.m.extra += 977 * k
     assert bad == [], bad[:5]
+
+
+@needs_clang
+@pytest.mark.slow
+def test_the_machine_against_the_oracle(tmp_path):
+    """M3 (playbook 80): the machine boots to the oracle's memory before the program runs (the vector
+    table, the ROM, the BIOS data area, the PSP and environment, the loaded image: every byte; with no
+    mouse and no sound, and with the mouse driver and the AdLib), and shadowing every service call and
+    port access of the five EOB.EXE goldens it answers as the oracle does. A copy of
+    the library with three bugs (the current drive one off, a relocation of a 4B03h load one off, a
+    retrace poll charging one instruction too many) is caught by the shadow on boot-title."""
+    import ctypes
+    r = subprocess.run(["make", "--no-print-directory", "-f", "port/port.mk", "PY=%s" % sys.executable,
+                        "port-hybrid"], cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
+    sys.path.insert(0, str(ROOT / "tools"))
+    from oracle import run
+    lib = ctypes.CDLL(str(ROOT / "build" / "port" / "hybrid" / "libeobhybrid.so"))
+    lib.tc_hybrid_boot.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint16, ctypes.c_int,
+                                   ctypes.c_int]
+    for mouse, sound in ((False, None), (True, "adlib")):
+        m = run.build_machine(mouse=mouse, sound=sound)
+        cmd = b" " + run.command_line(run.DEFAULT_ARGS, mouse, sound).encode()
+        assert lib.tc_hybrid_boot(str(ROOT / "eob" / "EOB.EXE").encode(), b"EOB.EXE", cmd, len(cmd), mouse,
+                                  sound == "adlib") == 0
+        mem = ctypes.string_at(ctypes.addressof(ctypes.c_uint8.in_dll(lib, "tc_mem")), 0x100000)
+        assert mem[:0xA0000] == bytes(m.uc.mem_read(0, 0xA0000)), "conventional memory after boot (mouse %s)" % mouse
+        assert mem[0xF0000:] == bytes(m.uc.mem_read(0xF0000, 0x10000)), "the ROM (mouse %s)" % mouse
+
+    hybrid = [sys.executable, str(ROOT / "tools" / "port" / "hybrid.py"), "--shadow"]
+    r = subprocess.run(hybrid + ["--out", str(tmp_path / "ok")], cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
+    n = int(re.search(r"(\d+) service calls the same as the oracle's, 0 differ; the machine lacks none", r.stdout).group(1))
+    assert n > 300000, r.stdout
+
+    mutants = {"dos": (("r->ax = (u16)((r->ax & 0xFF00u) | 2u);", "r->ax = (u16)((r->ax & 0xFF00u) | 1u);"),
+                       ("tc_va16(image + p, (u16)(tc_vr16(image + p) + factor));",
+                        "tc_va16(image + p, (u16)(tc_vr16(image + p) + factor + (i == 3u)));")),
+               "ports": (("machine_time.extra += 40;", "machine_time.extra += 41;"),)}
+    cc = shutil.which("cc") or shutil.which("clang")
+    for unit, edits in mutants.items():
+        src = (ROOT / "port" / "runtime" / ("%s.c" % unit)).read_text()
+        for old, new in edits:
+            assert old in src, old
+            src = src.replace(old, new)
+        (tmp_path / ("%s.c" % unit)).write_text(src)
+        r = subprocess.run([cc, "-std=gnu99", "-O2", "-w", "-DTC_HYBRID", "-fPIC", "-I", str(ROOT / "port" / "include"),
+                            "-I", str(ROOT / "build" / "port" / "gen"), "-c", "-o", str(tmp_path / ("%s.o" % unit)),
+                            str(tmp_path / ("%s.c" % unit))], capture_output=True, text=True)
+        assert r.returncode == 0, r.stderr
+    objs = [str(o) for o in (ROOT / "build" / "port" / "hybrid" / "obj").rglob("*.o") if o.stem not in mutants]
+    r = subprocess.run([cc, "-shared", "-o", str(tmp_path / "mutant.so"), *objs,
+                        *[str(tmp_path / ("%s.o" % u)) for u in mutants]], capture_output=True, text=True)
+    assert r.returncode == 0, r.stderr
+    r = subprocess.run(hybrid + ["--session", "boot-title", "--lib", str(tmp_path / "mutant.so"), "--out",
+                                 str(tmp_path / "bad")], cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 1, r.stdout + r.stderr
+    assert "INT 21h AH=19h" in r.stdout and "AX 1901, the oracle 1902" in r.stdout, r.stdout
+    assert "INT 21h AH=4Bh" in r.stdout, r.stdout
+    assert "in 3DAh" in r.stdout and "the clock's charges" in r.stdout, r.stdout
+
+
+@pytest.mark.slow
+def test_the_c_unit_clock():
+    """M3 (playbook 80): the oracle's C-unit clock (tools/oracle/cclock.py), which counts by blocks and
+    corrects where a run chunk cuts one, equals a count taken instruction by instruction, over the first
+    5 million instructions of EOB.EXE (the start-up, the overlay manager's first load, the title); and
+    every C-clock recording beside the goldens (tests/sessions/golden/<name>.clock.json) is what playing
+    its session with the clock gives again, the session still its golden."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    from oracle import run
+    from oracle.cclock import CClock
+    from unicorn import UC_HOOK_CODE
+    m = run.build_machine("EOB.EXE", args=run.PROGRAM_ARGS["EOB.EXE"])
+    cc = CClock(m)
+    exact = [0]
+
+    def each(uc, a, size, ud):
+        if cc.is_c(a):
+            exact[0] += 1
+    m.uc.hook_add(UC_HOOK_CODE, each)
+    m.run(5_000_000)
+    assert cc.overlay_ranges, "an overlay was loaded and its code counted"
+    assert cc.count == exact[0] and 0 < cc.count < m.insns
+    r = subprocess.run([sys.executable, str(ROOT / "tools" / "oracle" / "golden.py"), "--clock", "--check"],
+                       cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
+
+
+@needs_clang
+@pytest.mark.slow
+@pytest.mark.parametrize("unit", ["e1aad", "e1948", "e_text", "waits", "library", "heap", "e17a6", "pointer", "dosunits",
+                                  "mcga", "mcga_rect", "mcga_cell", "mcga_shape", "mcga_mask"])
+def test_the_interrupt_units_against_the_original(unit):
+    """M3 (playbook 80): the units with interrupt handlers, written in C (port/asm/E1AAD.c, the keyboard;
+    E1948.c, the speaker and Tandy driver; E_TEXT.c, the AdLib driver), each called on the bench with
+    chosen states, the original then the C, compared with the device logs and the clock charges; and the
+    machine's wait (port/runtime/irq.c), the routines that spin on interrupts called with the original's
+    interrupts; the library functions on the machine (port/runtime/tcdos.c, tcheap.c) at the library's
+    addresses; and the graphics (E17A6.c), the mouse and pointer (E1A72.c, E1BB1.c, E1BBE.c, E1BF3.c)
+    and the DOS units (E1990.c, E19EA.c, E1A19.c, E1C00.c); and MCGA.OVL in C (M4, port/drivers):
+    tests/port_asm/<unit>.py (each script's docstring says what it covers)."""
+    r = subprocess.run(["make", "--no-print-directory", "-f", "port/port.mk", "PY=%s" % sys.executable,
+                        "port-hybrid"], cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
+    r = subprocess.run([sys.executable, str(ROOT / "tests" / "port_asm" / ("%s.py" % unit))], cwd=ROOT,
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]

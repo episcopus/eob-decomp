@@ -35,6 +35,29 @@ farptr tcl_itoa(s16 value, farptr buf, s16 radix);
 farptr tcl_ltoa(s32 value, farptr buf, s16 radix);
 s16 tcl_toupper(s16 c);
 
+/* port/runtime/tcdos.c: on the machine, or with the library's data in DGROUP */
+s16 tcl_rand(void);
+void tcl_srand(u16 seed);
+s16 tcl_getdisk(void);
+s16 tcl_setdisk(s16 drive);
+s32 tcl_time(farptr timer);
+s16 tcl_int86(s16 intno, farptr in, farptr out);
+void tcl_harderr(farptr handler);
+s16 tcl_open(farptr path, s16 access, const u8 *va, u16 va_size);
+s16 tcl_close(s16 fd);
+s16 tcl_read(s16 fd, farptr buf, u16 len);
+s16 tcl_write(s16 fd, farptr buf, u16 len);
+s32 tcl_lseek(s16 fd, s32 offset, s16 whence);
+s32 tcl_filelength(s16 fd);
+s16 tcl_remove(farptr path);
+
+/* port/runtime/tcheap.c: the far heap */
+farptr tcl_farmalloc(u32 size);
+void tcl_farfree(farptr block);
+farptr tcl_realloc(farptr block, u16 size);
+u32 tcl_farcoreleft(void);
+s16 tcl_farheapwalk(farptr hi);
+
 /* STDIO.H */
 s16 tcl_sprintf(farptr buf, farptr fmt, const u8 *va, u16 va_size);
 

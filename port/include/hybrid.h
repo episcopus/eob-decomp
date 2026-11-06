@@ -13,6 +13,7 @@
 #define TC_HYBRID_H
 
 #include "tcport.h"
+#include "machine.h"
 
 /* One translated function: where the original's callers enter it (load-relative: a resident
    function's address, an overlay function's stub entry; FFFF:FFFF when it has none), its overlay
@@ -27,6 +28,7 @@ typedef struct {
     u32 (*thunk)(void);
     u8 ret_bytes;
     u8 arg_bytes;
+    u8 interrupt;              /* an interrupt handler of port/asm: entered with FLAGS, CS, IP pushed */
 } tc_hybrid_entry;
 
 extern const tc_hybrid_entry tc_hybrid_entries[];
@@ -35,5 +37,9 @@ extern const unsigned tc_hybrid_entry_count;
 /* Runs the original routine at `entry` (a runtime far address) in the oracle on tc_mem, with the
    n bytes of arguments pushed below tc_ss:tc_sp; returns DX:AX. */
 u32 tc_hybrid_far(farptr entry, const u8 *args, u16 n);
+
+/* The registers and flags that code left when tc_hybrid_far returned (set by the bench), for a C
+   caller of code that answers in registers a C prototype cannot state (E1C00.c's graphics driver). */
+extern tc_regs tc_hybrid_far_regs;
 
 #endif

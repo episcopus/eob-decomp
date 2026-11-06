@@ -46,7 +46,7 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 | `make twin [UNIT=] [WRITE=1] [FIND=1]` | Prove an `INTRO.EXE` unit by its `EOB.EXE` twin, the same module linked elsewhere (playbook 30) |
 | `make data` | Decode every data file: the PAKs, the fonts, the test save (whitepaper 4) |
 | `make oracle-run [INSNS=] [ARGS=] [SCRIPT=]` | Run the original `EOB.EXE` (or `--program INTRO.EXE`) in the emulator (playbook 25) |
-| `make golden [NAME=] [CHECK=1] [REBUILT=1]` | Record or verify the golden sessions in `tests/sessions/`; `REBUILT=1` replays them on the programs `make rebuild` linked (playbook 50) |
+| `make golden [NAME=] [CHECK=1] [REBUILT=1] [CLOCK=1]` | Record or verify the golden sessions in `tests/sessions/`; `REBUILT=1` replays them on the programs `make rebuild` linked (playbook 50); `CLOCK=1` the C-clock recordings beside them (playbook 80) |
 | `make test-slow` | The tests that run the game (every golden, on the originals and on the rebuilds) |
 | `make test` | Python tests (the fast set) |
 | `make p0-check` | Phase 0 exit criteria |

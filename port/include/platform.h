@@ -11,8 +11,9 @@
 
    The host never sees the arena or the game. Everything below is a plain value.
 
-   Status (skeleton, 2026-11-04): video present and the event pump are implemented by
-   port/platform/sdl_host.c (null.c, headless, answers them with nothing); the rest is declared for the plan and lands with the machine layer. */
+   Status (2026-11-05): video present and the event pump are implemented by port/platform/sdl_host.c
+   (null.c, headless, answers them with nothing); the files by port/platform/files.c for both; time
+   and sound are declared for the plan and land with the machine's clock and devices (M3, M7). */
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
@@ -66,16 +67,17 @@ void platform_adlib_write(uint8_t reg, uint8_t value);
 /* The PC speaker: PIT channel 2 divisor and the two low bits of port 61h (E1948.ASM). */
 void platform_speaker(uint16_t divisor, uint8_t port61_low2);
 
-/* ---- Files (planned) --------------------------------------------------------------------------- */
+/* ---- Files ----------------------------------------------------------------------------------- */
 
 /* The game's files live in one directory (the user's copy, never eob/ itself while the game can write
-   to it: AGENTS.md). Names are DOS 8.3, matched without case. The machine layer implements INT 21h
-   3Ch to 42h over these. */
-int platform_file_open(const char *dos_name, int write);   /* a handle, or -1 */
-int32_t platform_file_read(int handle, void *buf, uint32_t n);
-int32_t platform_file_write(int handle, const void *buf, uint32_t n);
-int32_t platform_file_seek(int handle, int32_t offset, int whence);
-void platform_file_close(int handle);
+   to it: AGENTS.md). The machine (port/runtime/dos.c) keeps DOS's view of them as the oracle's VFS
+   does: it reads a file once, whole, and keeps every write in memory. Names are DOS 8.3, upper case;
+   a host matches them without case. */
+int32_t platform_file_size(const char *name);                           /* -1: no such file */
+int platform_file_read(const char *name, uint8_t *buf, uint32_t size);  /* the whole file; 0 or -1 */
+
+/* where platform_file_* look (port/platform/files.c; a host with no directory of its own) */
+void platform_set_game_dir(const char *dir);
 
 /* ---- Lifetime -------------------------------------------------------------------------------- */
 
