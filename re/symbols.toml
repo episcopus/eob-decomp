@@ -6376,8 +6376,8 @@ size = 62
 evidence = ["far", "segment"]
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-01 rev-haiku"
 name = "DrawShape"
+review = "passed 2026-11-06 p6-rev-13"
 
 [[function]]
 id = "e1a29_004d"
@@ -6387,8 +6387,8 @@ size = 62
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-01 rev-haiku"
 name = "DrawShapeFlipped"
+review = "passed 2026-11-06 p6-rev-13"
 
 [[function]]
 id = "e1a29_008b"
@@ -6398,8 +6398,8 @@ size = 62
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-01 rev-haiku"
 name = "DrawShapeRemapped"
+review = "passed 2026-11-06 p6-rev-13"
 
 [[function]]
 id = "e1a29_00c9"
@@ -6409,8 +6409,8 @@ size = 62
 evidence = ["far", "frame"]
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-01 rev-haiku"
 name = "DrawShapeFlippedRemapped"
+review = "passed 2026-11-06 p6-rev-13"
 
 [[function]]
 id = "e1a29_0107"
@@ -6420,8 +6420,8 @@ size = 65
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-01 rev-haiku"
 name = "DrawShapeMasked"
+review = "passed 2026-11-06 p6-rev-13"
 
 [[function]]
 id = "e1a29_0148"
@@ -6431,8 +6431,8 @@ size = 65
 evidence = ["frame"]
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-01 rev-haiku"
 name = "DrawShapeMaskedFlipped"
+review = "passed 2026-11-06 p6-rev-13"
 
 [[function]]
 id = "e1a29_0189"
@@ -6443,7 +6443,7 @@ evidence = ["far", "frame"]
 name = "SelectRegion"
 level = "L2"
 match_flags = "-ml -O -Z -G"
-review = "passed 2026-11-01 rev-haiku"
+review = "passed 2026-11-06 p6-rev-13"
 
 [[function]]
 id = "e1a47_0005"
