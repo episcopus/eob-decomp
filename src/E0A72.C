@@ -38,6 +38,90 @@ extern signed char gHitDieSlot2[]; /*@ ds:1769 */     /* hit dice sides for grou
 extern signed char gConHitPointBonus[]; /*@ ds:1778 */     /* per-stat multiplier, indexed by the constitution byte minus 1 (0A72:01AE) */
 extern char gTextBuf[]; /*@ ds:FC4E */         /* static buffer the formatting helpers write into */
 
+/*@data */
+/* the data of e0a72, ds:337A to ds:36B0 (822 bytes, 12 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+char g337A[35] = { /*@ ds:337A */
+    10, 9, 7, 6, 5, 4, 2, 14, 13, 11, 10, 9,
+    8, 6, 13, 12, 10, 9, 8, 7, 5, 16, 15, 13,
+    12, 11, 10, 8, 15, 14, 12, 11, 10, 9, 7
+};
+char g339D[30] = { /*@ ds:339D */
+    13, 12, 11, 10, 9, 8, 14, 12, 10, 8, 6, 7,
+    12, 11, 10, 9, 8, 4, 16, 15, 14, 13, 12, 11,
+    15, 13, 11, 9, 7, 5
+};
+char g33BB[50] = { /*@ ds:33BB */
+    16, 14, 13, 11, 10, 8, 7, 5, 4, 3, 18, 16,
+    15, 13, 12, 10, 9, 7, 6, 5, 17, 15, 14, 12,
+    11, 9, 8, 6, 5, 4, 20, 17, 16, 13, 12, 9,
+    8, 5, 4, 4, 19, 17, 16, 14, 13, 11, 10, 8,
+    7, 6
+};
+char g33ED[25] = { /*@ ds:33ED */
+    14, 13, 11, 10, 8, 11, 9, 7, 5, 3, 13, 11,
+    9, 7, 5, 15, 13, 11, 9, 7, 12, 10, 8, 6,
+    4
+};
+char far *gSaveTables[6] = { g33BB, g33ED, g337A, g339D, g33BB, g33BB }; /*@ ds:3406 */
+signed char gSaveMaxLevel[6] = { 17, 21, 19, 21, 17, 17 }; /*@ ds:341E */
+signed char gSaveLevelStep[6] = { 2, 5, 3, 4, 2, 2 }; /*@ ds:3424 */
+signed char gSaveRowLength[6] = { 10, 5, 7, 6, 10, 10 }; /*@ ds:342A */
+signed char gStrPctHitSteps[5] = { 1, 51, 76, 91, 100 }; /*@ ds:3430 */
+signed char gStrPctHitBonus[4] = { 1, 2, 2, 2 }; /*@ ds:3435 */
+signed char gStrHitBonus[26] = { /*@ ds:3439 */
+    3, -5, -3, -3, -2, -2, -1, -1, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 1, 1, 3, 3, 4, 4, 5,
+    6, 7
+};
+signed char gStrPctDamageSteps[5] = { 1, 51, 76, 91, 100 }; /*@ ds:3453 */
+signed char gStrPctDamageBonus[4] = { 3, 3, 4, 5 }; /*@ ds:3458 */
+signed char gStrDamageBonus[24] = { /*@ ds:345C */
+    6, -4, -2, -1, -1, -1, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 1, 1, 2, 7, 8, 9, 10, 11
+};
+int gDexMissileBonus[21] = { /*@ ds:3474 */
+    3596, -6, -4, -3, -2, -1, 0, 0, 0, 0, 0, 0,
+    1, 2, 2, 3, 3, 4, 4, 4, 5
+};
+int gDexArmourAdjust[25] = { /*@ ds:349E */
+    5, 5, 5, 4, 3, 2, 1, 0, 0, 0, 0, 0,
+    0, 0, 0, -1, -2, -3, -4, -4, -5, -5, -5, -6,
+    -6
+};
+long g34D0[12] = { 0L, 2500L, 5000L, 10000L, 20000L, 40000L, 60000L, 90000L, 135000L, 250000L, 375000L, -1L }; /*@ ds:34D0 */
+long g3500[12] = { 0L, 2000L, 4000L, 8000L, 16000L, 32000L, 64000L, 125000L, 250000L, 500000L, 750000L, -1L }; /*@ ds:3500 */
+long g3530[11] = { 0L, 1500L, 3000L, 6000L, 13000L, 27500L, 55000L, 110000L, 225000L, 450000L, -1L }; /*@ ds:3530 */
+long g355C[12] = { 0L, 1250L, 2500L, 5000L, 10000L, 20000L, 40000L, 70000L, 110000L, 160000L, 220000L, -1L }; /*@ ds:355C */
+long g358C[12] = { 0L, 2250L, 4500L, 9000L, 18000L, 36000L, 75000L, 150000L, 300000L, 600000L, 900000L, -1L }; /*@ ds:358C */
+long far *gExpTables[6] = { g3500, g34D0, g3530, g355C, g358C, g358C }; /*@ ds:35BC */
+char gClassSlotBaseClass[60] = { /*@ ds:35D4 */
+    0, -1, -1, -1, 5, -1, -1, -1, 4, -1, -1, -1,
+    1, -1, -1, -1, 2, -1, -1, -1, 3, -1, -1, -1,
+    0, 2, -1, -1, 0, 3, -1, -1, 0, 1, -1, -1,
+    0, 1, 3, -1, 3, 1, -1, -1, 2, 3, -1, -1,
+    0, 2, 1, -1, 5, 2, -1, -1, 2, 1, -1, -1
+};
+signed char gHitGainPerStep[4] = { 2, 1, 1, 1 }; /*@ ds:3610 */
+signed char gHitLevelsPerStep[4] = { 3, 2, 1, 3 }; /*@ ds:3614 */
+signed char gTurnUndeadTable[140] = { /*@ ds:3618 */
+    10, 7, 4, 0, 0, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, 13, 10, 7, 4, 0, 0, -1, -1, -1, -1,
+    -1, -1, -1, -1, 16, 13, 10, 7, 4, 0, 0, -1,
+    -1, -1, -1, -1, -1, -1, 19, 16, 13, 10, 7, 4,
+    0, 0, -1, -1, -1, -1, -1, -1, 20, 19, 16, 13,
+    10, 7, 4, 0, 0, -1, -1, -1, -1, -1, 99, 20,
+    19, 16, 13, 10, 7, 4, 0, 0, 0, -1, -1, 0,
+    99, 99, 20, 19, 16, 13, 10, 7, 4, 0, 0, 0,
+    0, -1, 99, 99, 99, 20, 19, 16, 13, 10, 7, 4,
+    4, 0, 0, 0, 99, 99, 99, 99, 20, 19, 16, 13,
+    10, 7, 7, 4, 4, 0, 99, 99, 99, 99, 99, 20,
+    19, 16, 13, 10, 10, 7, 7, 4
+};
+/* ds:36A4-36AC: the code's (a literal or template, '%d/%02d'): written by its function */
+/* ds:36AC-36AF: the code's (a literal or template, '%d'): written by its function */
+/* ds:36AF: the pad byte to the next module (word alignment) */
+
+
 extern int far RollDice(char count, char sides, char bonus); /*@ 082C:0458 */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
