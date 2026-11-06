@@ -383,8 +383,8 @@ boundary:
 - **The relocation table, by module.** TLINK writes it module by module, and Turbo C writes a
   module's data fixups downward, one object-file record (about 1 KB) at a time, so a run of data
   relocations after a unit's code relocations is that unit's, or a code-less module's after it.
-  Every C unit's run falls; the driver slot table's (ds:802C-8046) rises, as TASM writes, so it is
-  an assembled data-only module's, not E1AAA's (C).
+  Every C unit's run falls; the driver slot table's (ds:802C-8046) rises, as TASM is taken to write [H,
+  not yet checked by assembling a test file], so it is an assembled data-only module's, not E1AAA's (C).
 - **The link order.** The resident units by address; a **data-only module** (`dSSSS` in the map)
   at each of the four empty code segments (07C8:0001, 177D:000A, 1AAD:000C, 1B82:0009), before the
   unit that starts there; and the seven overlays after E177D, in number order (their pools, EOV1's

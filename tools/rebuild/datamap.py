@@ -221,7 +221,8 @@ def build_map(lo: int, hi: int) -> dict:
                 break
             cands.append(m)
         # the direction tells the assembler from the compiler: Turbo C writes a module's data
-        # fixups downward (every C unit's run falls), TASM upward; a data-only module may be either
+        # fixups downward (every C unit's run falls), TASM upward [H: by the one rising run, not by
+        # assembling a test file]; a data-only module may be either
         if len(xs) > 1 and len(cands) > 1:
             up = all(y > x for x, y in zip(xs, xs[1:]))
             down = all(y < x for x, y in zip(xs, xs[1:])) or not up and sum(y < x for x, y in zip(xs, xs[1:])) > len(xs) // 2
