@@ -21,7 +21,7 @@ sound and state.
 | M2 the per-function test | the machinery done 2026-11-05: `make port-hybrid` (section "M2"); on the five `EOB.EXE` goldens 129 of the 594 functions with an entry are reached, 118 are the same as the original on every call tested (635 calls), none differ, 11 are reached only where they wait for an interrupt (M3). The rest of the check, every function of `src/`, needs sessions that reach them |
 | M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), and the interrupt handlers' units `E1D8F`, `E1AAD`, `E1948`, `E_TEXT` with the retrace `E1DE4` (35 routines in all), each the same as the original on every call tested; the C-unit clock in the oracle and the five `.clock.json` recordings ("The interrupts and the C clock"); the machine boots to the oracle's memory byte for byte, and its DOS, INT 10h for MCGA, BIOS time, INT 33h driver and ports (PIC, PIT, 61h, 60h, retrace, DAC, AdLib) answer every one of the 335,055 service calls and port accesses of the five goldens as the oracle does. the machine's wait delivers the recorded interrupts to spinning routines (`port/runtime/irq.c`); 19 library functions on the machine (`port/runtime/tcdos.c`: the files, `int86`, `time`, `rand`; `tcheap.c`: the far heap), each the same as the original's on every call tested; every assembly routine the C calls is in C (63, section "The other units") |
 | M4 the MCGA driver | done 2026-11-05 (section "M4"): `MCGA.OVL` in C (`port/drivers/`, 40 exports), entered with its argument bytes, the same as the original on every direct call and every golden call tested. Next: step D, then M5 |
-| D the program's data as C | planned 2026-11-06 (section "Step D"): 33,460 bytes and 969 relocations of initialised data, four sub-steps (D0 the data map, D1 the tools, D2 per unit, D3 tc2c and the generated image); P6 signed off, so `src/` is open |
+| D the program's data as C | started 2026-11-06 (section "Step D"): 33,826 bytes and 969 relocations of initialised data, four sub-steps (D0 the data map, D1 the tools, D2 per unit, D3 tc2c and the generated image); D0 done: `re/datamap.toml`, 31 modules, every boundary settled or free |
 | M5 to M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
@@ -345,9 +345,9 @@ Question C's answer: before the port runs from its own image, the program's data
 definitions in `src/`, so the port program never loads `EOB.EXE`. P6 is signed off (2026-11-06), so
 `src/` is open for it.
 
-**What there is.** `EOB.EXE`'s own initialised data is ds:01FE to ds:84B2 (33,460 bytes, 969
-relocations: far pointers in tables), between the start-up code's data and the library's (`make
-rebuild V=1`). Its uninitialised data (_BSS, ds:8A6C up) is zero at start: those globals stay
+**What there is.** `EOB.EXE`'s own initialised data is ds:0090 to ds:84B2 (33,826 bytes, 969
+relocations: far pointers in tables), between the start-up code's `_DATA` (to ds:008F, the
+rebuild's map) and the library's. Its uninitialised data (_BSS, ds:8A6C up) is zero at start: those globals stay
 `extern` and `make rebuild` keeps reserving them; the port clears the arena. The rebuild fills the
 initialised data today with the original's bytes, in 18 fillers cut by the relocation runs; that cut
 is good enough for bytes but not for definitions. E0A72's far-pointer table at ds:3406 points at
@@ -358,36 +358,55 @@ is E0ACD's `gHandSplitY`, so a unit's data is not the rebuild's piece.
 order, then the templates of its initialised locals, then its string pool, word aligned, and TLINK
 lays the modules out in link order. So each unit's data ends with its pool (the matcher's literal map,
 `port/literals.json`: E08E6's ends at ds:3378, E0A72's runs ds:36A4 to 36AE) and starts after the
-previous unit's (and its pad byte). Units with no literal (E0CF7, the 12 KB from ds:01FE that the
-main module E07C8 seems to own) are bounded by the other anchors: the templates, the relocation
-runs, the alignment pads and the readers.
+previous unit's (and its pad byte). Units with no literal (E0CF7, the data-only modules) are
+bounded by the other anchors: the relocation runs, the alignment pads and the names (D0 below).
 
 | Sub-step | Deliverable | Check |
 |---|---|---|
-| D0 | the data map: each unit's exact range of initialised data, with the evidence for each boundary (pool, template, relocation run, pad, reader), written by a tool and kept in `re/` | it covers ds:01FE to 84B2 with no gap or overlap; every declared global falls in the range of a unit that declares it or reads it |
+| D0 | the data map: each unit's exact range of initialised data, with the evidence for each boundary (pool, template, relocation run, pad, reader), written by a tool and kept in `re/` | it covers ds:0090 to 84B2 with no gap or overlap; every boundary settled by an anchor or free (no relocation inside it); the names a module's span holds that it does not declare listed |
 | D1 | the tools: `make match` compiles a unit's definitions, places its `_DATA` at the map's address and compares every byte and relocation with the original (code's references to the unit's own data resolve by the annotation); `make rebuild` links a unit's own data where the unit defines it and a filler where it does not yet; `make data-skeleton UNIT=` drafts the definitions from the bytes, typed by the declarations, a far pointer by the name at its target | a negative fixture per kind of defect (a byte, a relocation, the order); `make match-gate`, `make rebuild` as before |
 | D2 | per unit: the externs of its range become definitions in address order, the unnamed bytes between them named from their readers (playbook 65's rules, `make rename`), the far-pointer tables written as tables of names; claimable and reviewed like a lift (playbooks 30, 70) | `make match` with the data; `make rebuild` identical but for the documented differences, with one filler fewer |
 | D3 | tc2c translates the definitions (each initialiser written at its annotated arena address before `main`), the runtime writes the library's data (C0's, the RTL's: `_streams`, the ctype table, the heap and overlay variables), and the port starts from its own image | the generated image equals `EOB.EXE`'s load module but for the library data listed |
 
-**D0, first cut (2026-11-06).** The pools alone settle eight units: in E08E6 (ds:31F0-3378), E0A72
-(ds:3378-36AE), E0ACD (ds:36AE-37B2), E0BD2 (ds:37B2-3A61), E0DE8 (ds:5534-55E4), E1547
-(ds:5D1A-5DDF), EOV2 (ds:64F8-683E) and EOV3 (ds:683E-6B80) every name declared before the pool is
-the unit's own. The other ranges hold data of modules with no strings. The segment table has the
-answer for four of them: EOB.EXE has four empty code segments among its resident code, at 07C8:0001,
-177D:000A, 1AAD:000C and 1B82:0009 (`build/re/eob.json`, segments 2, 19, 39 and 41), each most likely the code
-segment of a **data-only module**, a source file with nothing but data, which `src/` has no file for
-yet. The first is linked right after E07A9, so the 12 KB from ds:01FE (448 relocations, names
-declared by every subsystem, none by E07C8, whose own data starts later) is most likely that module's
-[H until D0 bounds it]. D2 creates these four files.
+**D0, the data map (done 2026-11-06).** `re/datamap.toml` gives each of the 31 modules with
+initialised data its span, in link order, covering ds:0090 to 84B2 with no gap; `make datamap`
+shows how each boundary is placed and `make datamap WRITE=1` writes the file
+(`tools/rebuild/datamap.py`; `tests/unit/test_datamap.py` checks the coverage, that a free
+boundary has no relocation inside, and that the file is what the tool writes). What places a
+boundary:
 
-`make datamap` (`tools/rebuild/datamap.py`) lists the anchors in address order: each unit's pool, each
-run of data relocations with the unit whose code relocations it follows, the empty code segments,
-and between them the names `src/` declares and the units that declare them. Two things it shows
-that D0 must settle: E07C8's literals (ds:3067-31AB) have a run of its data relocations inside them
-(ds:3076-3088, `_ovrbuffer` at ds:3088), so its pool is not one block; and the overlays' data
-relocations all follow E177D's code (ds:65E0-7C06, 58 relocations), since the overlays' own code
-relocations are in their FBOV data, not the table, so the overlays' data is bounded by their pools
-and names only.
+- **A pool closes its module.** Turbo C writes a module's `_DATA` as its globals, its templates,
+  then its string literals, so the next module starts at the end of the pool, rounded up to even.
+  The literal map (`port/literals.json`) knows only the literals the matcher saw referenced, so a
+  pool goes on over the strings the unit declares `extern` right after it (E122E's "INVENT" at
+  ds:5BA1).
+- **The relocation table, by module.** TLINK writes it module by module, and Turbo C writes a
+  module's data fixups downward, one object-file record (about 1 KB) at a time, so a run of data
+  relocations after a unit's code relocations is that unit's, or a code-less module's after it.
+  Every C unit's run falls; the driver slot table's (ds:802C-8046) rises, as TASM writes, so it is
+  an assembled data-only module's, not E1AAA's (C).
+- **The link order.** The resident units by address; a **data-only module** (`dSSSS` in the map)
+  at each of the four empty code segments (07C8:0001, 177D:000A, 1AAD:000C, 1B82:0009), before the
+  unit that starts there; and the seven overlays after E177D, in number order (their pools, EOV1's
+  at ds:645B to EOV6's at 7F46, lie after E177D's, and the one run of relocations after E177D's code
+  falls into one record per overlay). The rebuild's own order (EOV0 to EOV2 before E14EF) works for
+  its fillers but is not the original's.
+- **Names.** A name only one unit declares places that unit when it is one of a cluster of three or
+  more, or next to the unit's other anchors, and the link order allows it; a name alone is weak (the
+  driver's slots at ds:802A are declared one by one by their callers).
+
+Of the 30 boundaries, 16 are settled (a pool's end), 4 settled [H] (a pool's end with modules
+between that the map takes to have no data), 2 touching (two anchors meet), and 9 free. A free
+boundary has no relocation inside it, so the image cannot tell where it is: any even cut gives the
+same bytes and the same relocation order, and `make rebuild` proves D2's data either way. The map
+places a free boundary by a default rule (the stretch goes to the module before, unless the module
+after declares names in it) and D2 may move it for readability. Each module's `notes` list the names
+in its span that it does not declare: shared data other units read, or a boundary to move.
+
+The largest data-only module is the one after E07A9: ds:009C to 3066, 12,234 bytes and 448
+relocations (the region table, the panels, the file table, the game's tables). D2 creates the four
+data-only files. ds:552F (E0DE8's `gLauncherAmmoType`) lies inside E0D1C's string at ds:550E: a
+table read from a base below its start, as ds:FB34 was; E0DE8's D2 settles it.
 
 The four sub-steps go in this order; D2's units are independent once D1 is in. `INTRO.EXE` follows at
 M6.

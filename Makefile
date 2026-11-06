@@ -70,8 +70,8 @@ match:            ## prove C and assembly units against their program (FILE=src/
 rebuild:          ## build a program from src/ and compare it with the original (PROGRAM=START1.EXE, or a driver MCGA.OVL; playbook 50)
 	$(PY) tools/rebuild/rebuild.py $(or $(PROGRAM),START1.EXE) $(if $(V),-v)
 
-datamap:          ## the anchors of EOB.EXE's data map: pools, relocation runs, data-only modules, names (playbook 80, step D0)
-	$(PY) tools/rebuild/datamap.py
+datamap:          ## EOB.EXE's data map: each module's span and how its boundaries are placed (WRITE=1: re/datamap.toml; playbook 80, step D0; needs make overlays)
+	$(PY) tools/rebuild/datamap.py $(if $(WRITE),--write,--map)
 
 twin:             ## prove INTRO.EXE units by their EOB.EXE twin, the same module linked elsewhere (UNIT=, WRITE=1 records L2; FIND=1 looks for twins)
 	$(PY) tools/match/twin.py $(if $(FIND),--find) $(if $(UNIT),--unit $(UNIT)) $(if $(WRITE),--write)

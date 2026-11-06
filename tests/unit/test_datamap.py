@@ -29,3 +29,39 @@ def test_main_runs(capsys):
     assert datamap.main([]) == 0
     out = capsys.readouterr().out
     assert "ds:3408-35D4 reloc e0a72" in out
+
+
+def _rows():
+    import tomllib
+    return tomllib.loads((ROOT / "re/datamap.toml").read_text())["module"]
+
+
+def test_map_covers_the_program_data_without_gap_or_overlap():
+    rows = _rows()
+    iv = [(int(r["start"][3:], 16), int(r["end"][3:], 16)) for r in rows]
+    assert iv[0][0] == 0x0090 and iv[-1][1] == 0x84B2       # from C0's _DATA (ds:008F, word aligned) to the library's
+    assert all(a[1] == b[0] for a, b in zip(iv, iv[1:]))
+    assert all(a % 2 == 0 and a < b for a, b in iv)
+
+
+def test_map_settles_each_boundary_or_says_why_it_is_free():
+    rows = _rows()
+    for r in rows:
+        assert r["start_by"] in ("settled", "settled [H]", "touching", "free")
+    rel = [x - datamap.DGROUP * 16 for x in datamap.relocations(datamap.EXE.read_bytes())]
+    for r in rows:                                    # a free boundary has no relocation the image could tell by
+        if r["start_by"] == "free":
+            m = __import__("re").search(r"between ds:([0-9A-F]{4}) and ds:([0-9A-F]{4})", r["start_why"])
+            a, b = int(m.group(1), 16), int(m.group(2), 16)
+            assert not any(a <= x < b for x in rel), r["id"]
+
+
+def test_map_is_what_the_tool_writes():
+    import pytest
+    if not (ROOT / "build/re/eob.json").exists():
+        pytest.skip("needs make overlays (the segment table)")
+    import tempfile
+    with tempfile.TemporaryDirectory() as t:
+        p = Path(t) / "datamap.toml"
+        datamap.write_toml(datamap.resolve(0x008F, 0x84B2), p)
+        assert p.read_text() == (ROOT / "re/datamap.toml").read_text()
