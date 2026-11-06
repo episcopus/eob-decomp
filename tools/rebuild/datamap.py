@@ -121,8 +121,10 @@ def declared() -> dict[int, set]:
     for f in sorted((ROOT / "src").glob("E*.*")):
         if f.suffix.upper() not in (".C", ".ASM"):
             continue
-        for m in re.finditer(r"/\*@ ds:([0-9A-Fa-f]{4}) \*/|;\s*@ ds:([0-9A-Fa-f]{4})", f.read_text(errors="replace")):
-            out[int(m.group(1) or m.group(2), 16)].add(f.stem.lower())
+        # every annotation, with or without text after the address (`/*@ ds:009E: records ... */`), as
+        # the matcher reads them
+        for m in re.finditer(r"(?:/\*|;)\s*@\s*ds:([0-9A-Fa-f]{4})\b", f.read_text(errors="replace")):
+            out[int(m.group(1), 16)].add(f.stem.lower())
     return out
 
 
@@ -365,6 +367,7 @@ def resolve(lo: int, hi: int) -> list[dict]:
     names = declared()
     seq = sorted(spans, key=lambda k: pos[k])
     cuts = {}                                        # module -> (start, how, why)
+    rel = {x - DGROUP * 16 for x in relocations(EXE.read_bytes())}
     for b in m["bounds"]:
         m1, m2 = b["after"], b["before"]
         if b["kind"] in ("settled", "settled [H]", "touching"):
@@ -373,11 +376,40 @@ def resolve(lo: int, hi: int) -> list[dict]:
                    "touching": "%s's last anchor ends at ds:%04X"}[b["kind"]] % (m1, b["end"])
             cuts[m2] = (b["cut"], b["kind"], why)
         else:
-            own = [x for x in sorted(names) if b["end"] <= x < b["start"] and names[x] == {m2}]
-            at = (own[0] & ~1) if own else b["start"] & ~1
+            # the next module's first anchor, or the far pointer whose relocated segment word it is (d1b82's
+            # run starts at ds:8106, the segment of the pointer at ds:8104)
+            limit = b["start"] - 2 if b["start"] in rel else b["start"]
+            own = [x for x in sorted(names) if b["end"] <= x < limit and names[x] == {m2}]
+            at = (own[0] & ~1) if own else limit & ~1
             at = max(at, (b["end"] + 1) & ~1)
             cuts[m2] = (at, "free", "no relocation between ds:%04X and ds:%04X; %s" % (
-                b["end"], b["start"], "the first name only %s declares" % m2 if own else "the stretch goes to %s" % m1))
+                b["end"], limit, "the first name only %s declares" % m2 if own else "the stretch goes to %s" % m1))
+    # a module the map took to have no data, between a pool's end and the next module's names, that alone
+    # declares a name there (E14EF's gHoverSelectsOption, ds:5D1A, after E1414's pool and before E1547's
+    # names): the stretch from the pool's end to the next module's first name is its own
+    for b in [b for b in m["bounds"] if b["kind"] == "settled [H]"]:
+        m1, m2 = b["after"], b["before"]
+        between = order[pos[m1] + 1:pos[m2]]
+        # the next module's first name, or its first anchor: a run of relocations starts at the far
+        # pointer whose segment word is the first relocated one, two bytes before it
+        first_name = min([x for x in names if x >= b["cut"] and m2 in names[x]], default=None)
+        stop = min([x for x in [first_name] if x is not None] + [spans[m2][0]] +
+                   [r - 2 for r in rel if r >= b["cut"]])
+        lone = [(x, next(iter(names[x]))) for x in sorted(names)
+                if b["cut"] <= x < stop and len(names[x]) == 1 and next(iter(names[x])) in between]
+        if not lone or any(stop & ~1 > x >= lone[0][0] for x in rel):
+            continue
+        mod = lone[0][1]
+        if any(u != mod for _, u in lone):
+            continue
+        rest = between[:between.index(mod)]
+        cuts[mod] = (b["cut"], "settled [H]" if rest else "settled", ("%s's pool ends at ds:%04X; " % (m1, b["end"])) + (
+            "the modules between are taken to have no data" if rest else "_DATA is word aligned"))
+        cuts[m2] = (stop & ~1, "free", "no relocation between ds:%04X and ds:%04X; %s" % (
+            lone[-1][0], stop, "the first name only %s declares" % m2 if stop == first_name
+            else "%s's first far pointer" % m2 if any(r - 2 == stop for r in rel) else "%s's first anchor" % m2))
+        spans[mod] = [b["cut"], stop & ~1, ["name ds:%04X declared only by %s" % (x, mod) for x, _ in lone]]
+        seq.insert(seq.index(m2), mod)
     last = seq[-1]                                   # a pool closes its module: what follows the last
     if spans[last][1] < hi:                          # pool goes to a module after it in link order
         later = order[pos[last] + 1:]

@@ -18,20 +18,20 @@ evidence = ["pool ds:0090-009D (2 literals)"]
 [[module]]
 id = "d07c8"
 start = "ds:009E"
-end = "ds:3066"
-bytes = 12232
+end = "ds:3056"
+bytes = 12216
 start_by = "settled"
 start_why = "e07a9's pool ends at ds:009D; _DATA is word aligned"
 evidence = ["relocations ds:0201-049C (36, a record of the run after e07a9's code)", "relocations ds:04AD-089E (54, a record of the run after e07a9's code)", "relocations ds:08AF-0C8D (53, a record of the run after e07a9's code)", "relocations ds:0C9E-108F (54, a record of the run after e07a9's code)", "relocations ds:10A0-1498 (161, a record of the run after e07a9's code)", "relocations ds:149C-174B (90, a record of the run after e07a9's code)"]
 
 [[module]]
 id = "e07c8"
-start = "ds:3066"
+start = "ds:3056"
 end = "ds:31AC"
-bytes = 326
+bytes = 342
 start_by = "free"
-start_why = "no relocation between ds:174B and ds:3067; the stretch goes to d07c8"
-evidence = ["relocations ds:3076-3088 (5)", "pool ds:3067-31AC (12 literals)"]
+start_why = "no relocation between ds:174B and ds:3056; the stretch goes to d07c8"
+evidence = ["relocations ds:3076-3088 (5)", "pool ds:3067-31AC (12 literals)", "name ds:3056 declared only by e07c8", "name ds:3057 declared only by e07c8"]
 
 [[module]]
 id = "e082c"
@@ -40,7 +40,7 @@ end = "ds:31F2"
 bytes = 70
 start_by = "settled"
 start_why = "e07c8's pool ends at ds:31AC; _DATA is word aligned"
-evidence = ["pool ds:31AF-31F1 (6 literals)"]
+evidence = ["pool ds:31AF-31F1 (6 literals)", "name ds:31AC declared only by e082c"]
 
 [[module]]
 id = "e08e6"
@@ -58,7 +58,7 @@ end = "ds:36B0"
 bytes = 822
 start_by = "settled"
 start_why = "e08e6's pool ends at ds:3379; _DATA is word aligned"
-evidence = ["relocations ds:3408-35D4 (12)", "pool ds:36A4-36AF (2 literals)", "name ds:3406 declared only by e0a72"]
+evidence = ["relocations ds:3408-35D4 (12)", "pool ds:36A4-36AF (2 literals)", "name ds:337A declared only by e0a72", "name ds:339D declared only by e0a72", "name ds:33BB declared only by e0a72", "name ds:33ED declared only by e0a72", "name ds:3406 declared only by e0a72"]
 
 [[module]]
 id = "e0acd"
@@ -136,23 +136,40 @@ evidence = ["relocations ds:5BAA-5C9C (16)", "pool ds:5CBB-5D1A (3 literals)"]
 notes = ["ds:5C74 is declared by e122e, eov3, not by this module", "ds:5C77 is declared by e122e, eov3, not by this module"]
 
 [[module]]
-id = "e1547"
+id = "e14ef"
 start = "ds:5D1A"
+end = "ds:5D1C"
+bytes = 2
+start_by = "settled"
+start_why = "e1414's pool ends at ds:5D1A; _DATA is word aligned"
+evidence = ["name ds:5D1A declared only by e14ef"]
+
+[[module]]
+id = "e1547"
+start = "ds:5D1C"
 end = "ds:5DE0"
-bytes = 198
-start_by = "settled [H]"
-start_why = "e1414's pool ends at ds:5D1A; the modules between are taken to have no data"
+bytes = 196
+start_by = "free"
+start_why = "no relocation between ds:5D1A and ds:5D1C; the first name only e1547 declares"
 evidence = ["pool ds:5D52-5DE0 (19 literals)", "name ds:5D1C declared only by e1547", "name ds:5D1F declared only by e1547", "name ds:5D21 declared only by e1547", "name ds:5D24 declared only by e1547", "name ds:5D26 declared only by e1547", "name ds:5D29 declared only by e1547", "name ds:5D2C declared only by e1547", "name ds:5D2E declared only by e1547", "name ds:5D31 declared only by e1547", "name ds:5D33 declared only by e1547", "name ds:5D39 declared only by e1547", "name ds:5D3F declared only by e1547", "name ds:5D42 declared only by e1547", "name ds:5D48 declared only by e1547", "name ds:5D4B declared only by e1547", "name ds:5D4D declared only by e1547", "name ds:5D4F declared only by e1547"]
 
 [[module]]
-id = "e177d"
+id = "e16a5"
 start = "ds:5DE0"
-end = "ds:5E44"
-bytes = 100
+end = "ds:5E22"
+bytes = 66
 start_by = "settled [H]"
 start_why = "e1547's pool ends at ds:5DE0; the modules between are taken to have no data"
+evidence = ["name ds:5DE0 declared only by e16a5", "name ds:5DE4 declared only by e16a5", "name ds:5DE8 declared only by e16a5", "name ds:5DEA declared only by e16a5", "name ds:5DF2 declared only by e16a5", "name ds:5E10 declared only by e16a5"]
+
+[[module]]
+id = "e177d"
+start = "ds:5E22"
+end = "ds:5E44"
+bytes = 34
+start_by = "free"
+start_why = "no relocation between ds:5E11 and ds:5E22; the stretch goes to e16a5"
 evidence = ["pool ds:5E2C-5E43 (2 literals)", "name ds:5E22 declared only by e177d", "name ds:5E24 declared only by e177d", "name ds:5E26 declared only by e177d", "name ds:5E28 declared only by e177d", "name ds:5E2A declared only by e177d"]
-notes = ["ds:5E12 is declared by e0acd, not by this module", "ds:5E1C is declared by e0acd, e0ef3, e1658, not by this module", "ds:5E1E is declared by e1658, not by this module", "ds:5E20 is declared by eov0, eov1, not by this module"]
 
 [[module]]
 id = "eov0"
@@ -237,50 +254,59 @@ start_why = "no relocation between ds:7FDD and ds:7FEC; the stretch goes to e17a
 evidence = ["pool ds:7FEC-8023 (1 literals)"]
 
 [[module]]
-id = "d1aad"
+id = "e1a72"
 start = "ds:8024"
-end = "ds:80EA"
-bytes = 198
+end = "ds:802A"
+bytes = 6
 start_by = "settled [H]"
 start_why = "e19bc's pool ends at ds:8023; the modules between are taken to have no data"
+evidence = ["name ds:8026 declared only by e1a72", "name ds:8028 declared only by e1a72"]
+
+[[module]]
+id = "d1aad"
+start = "ds:802A"
+end = "ds:80EC"
+bytes = 194
+start_by = "free"
+start_why = "no relocation between ds:8028 and ds:802A; d1aad's first far pointer"
 evidence = ["relocations ds:802C-8046 (7) (written upward, by TASM: d1aad)"]
 
 [[module]]
 id = "e1aad"
-start = "ds:80EA"
-end = "ds:8106"
-bytes = 28
+start = "ds:80EC"
+end = "ds:8104"
+bytes = 24
 start_by = "free"
-start_why = "no relocation between ds:8046 and ds:80EA; the stretch goes to d1aad"
-evidence = ["name ds:80EA declared only by e1aad", "name ds:80ED declared only by e1aad", "name ds:80EF declared only by e1aad", "name ds:80F1 declared only by e1aad", "name ds:80F3 declared only by e1aad", "name ds:80F5 declared only by e1aad", "name ds:80F7 declared only by e1aad"]
-notes = ["ds:8100 is declared by e1a47, e1de7, eov0, not by this module", "ds:8101 is declared by e1a47, e1de7, eov5, not by this module", "ds:8102 is declared by e07a9, e08e6, e0bd2, e0d1c, e0ef3, e1547, e17a6, e1de7, eov0, eov1, eov2, eov3, eov4, not by this module", "ds:8104 is declared by e1a72, not by this module"]
+start_why = "no relocation between ds:8046 and ds:80ED; the stretch goes to d1aad"
+evidence = ["name ds:80ED declared only by e1aad", "name ds:80EF declared only by e1aad", "name ds:80F1 declared only by e1aad", "name ds:80F3 declared only by e1aad", "name ds:80F5 declared only by e1aad", "name ds:80F7 declared only by e1aad"]
+notes = ["ds:80FA is declared by e07c8, not by this module", "ds:80FE is declared by e1c0e, not by this module", "ds:8100 is declared by e14ef, e1a47, e1de7, eov0, not by this module", "ds:8101 is declared by e14ef, e1a47, e1de7, eov5, not by this module", "ds:8102 is declared by e07a9, e07c8, e082c, e08e6, e0bd2, e0d1c, e0ef3, e14ef, e1547, e17a6, e1c0e, e1de7, eov0, eov1, eov2, eov3, eov4, not by this module"]
 
 [[module]]
 id = "d1b82"
-start = "ds:8106"
+start = "ds:8104"
 end = "ds:8176"
-bytes = 112
+bytes = 114
 start_by = "free"
-start_why = "no relocation between ds:80F8 and ds:8106; the stretch goes to e1aad"
+start_why = "no relocation between ds:80F8 and ds:8104; the stretch goes to e1aad"
 evidence = ["relocations ds:8106-8129 (4) (written downward, by Turbo C: d1b82)"]
 
 [[module]]
 id = "e1bbe"
 start = "ds:8176"
-end = "ds:8198"
-bytes = 34
+end = "ds:8196"
+bytes = 32
 start_by = "free"
 start_why = "no relocation between ds:8129 and ds:8176; the stretch goes to d1b82"
 evidence = ["name ds:8176 declared only by e1bbe", "name ds:8178 declared only by e1bbe", "name ds:817A declared only by e1bbe", "name ds:817C declared only by e1bbe", "name ds:817E declared only by e1bbe", "name ds:8180 declared only by e1bbe", "name ds:8182 declared only by e1bbe", "name ds:8184 declared only by e1bbe", "name ds:8186 declared only by e1bbe", "name ds:8188 declared only by e1bbe"]
 
 [[module]]
 id = "e1c0e"
-start = "ds:8198"
+start = "ds:8196"
 end = "ds:8484"
-bytes = 748
+bytes = 750
 start_by = "free"
-start_why = "no relocation between ds:8189 and ds:8198; the stretch goes to e1bbe"
-evidence = ["relocations ds:8198-81E6 (20)", "pool ds:8466-8483 (2 literals)"]
+start_why = "no relocation between ds:8189 and ds:8196; the stretch goes to e1bbe"
+evidence = ["relocations ds:8198-81E6 (20)", "pool ds:8466-8483 (2 literals)", "name ds:8196 declared only by e1c0e"]
 
 [[module]]
 id = "e1ddd"
@@ -289,5 +315,5 @@ end = "ds:84B2"
 bytes = 46
 start_by = "settled [H]"
 start_why = "e1c0e's pool ends at ds:8483; the rest, to the library's data, taken as e1ddd's"
-evidence = ["names ds:84A0,84A2 declared only by e1ddd"]
-notes = ["ds:8488 is declared by e1aad, not by this module", "ds:848A is declared by e0d1c, eov0, not by this module", "ds:8492 is declared by e08e6, e0acd, e1414, eov3, eov6, not by this module", "ds:849A is declared by e08e6, eov4, not by this module", "ds:849E is declared by e08e6, e0ef3, eov1, eov3, not by this module"]
+evidence = ["names ds:84A2 declared only by e1ddd"]
+notes = ["ds:8488 is declared by e1aad, not by this module", "ds:848A is declared by e082c, e0d1c, eov0, not by this module", "ds:8492 is declared by e08e6, e0acd, e1414, eov3, eov6, not by this module", "ds:849A is declared by e08e6, eov4, not by this module", "ds:849E is declared by e08e6, e0ef3, eov1, eov3, not by this module"]

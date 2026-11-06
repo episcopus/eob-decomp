@@ -22,7 +22,24 @@ def test_pools_bound_the_units_whose_names_are_their_own():
         between = [a for a in names if prev_end <= a < start]
         if between and all(u in names[a] for a in between):
             clean.add(u)
-    assert {"e08e6", "e0a72", "e0acd", "e0bd2", "e1547", "eov2", "eov3"} <= clean
+    # (not e1547: E14EF's gHoverSelectsOption, ds:5D1A, lies between E1414's pool and E1547's names)
+    assert {"e08e6", "e0a72", "e0acd", "e0bd2", "eov2", "eov3"} <= clean
+
+
+def test_declared_reads_annotations_with_text_after_the_address():
+    # `/*@ ds:5D1A: nonzero lets ...` (E14EF.C) and `; @ ds:80EA: the driver's option bits` (E1AAD.ASM)
+    names = datamap.declared()
+    assert "e14ef" in names[0x5D1A] and "e1aad" in names[0x80EA]
+
+
+def test_no_boundary_splits_a_far_pointer():
+    # a far pointer is an offset word and its relocated segment word: a cut never falls between them
+    import tomllib
+    dg = datamap.DGROUP * 16
+    rel = {x - dg for x in datamap.relocations(datamap.EXE.read_bytes())}
+    for m in tomllib.loads((ROOT / "re/datamap.toml").read_text())["module"]:
+        s = int(m["start"][3:], 16)
+        assert not {s - 1, s, s + 1} & rel, m["id"]
 
 
 def test_main_runs(capsys):
