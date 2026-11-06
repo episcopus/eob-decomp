@@ -72,6 +72,7 @@ Examples: `src/E0CF7.C`, `src/E07A9.C` (whole units), `src/E08E6.C` (a jump tabl
 | identical jump tails kept separately (several `case`s ending in the same store, each with its own copy), where our build merges them into one | the unit was compiled with debug information: `/*@flags -ml -O -Z -v */` (`-y` gives the same bytes). It keeps tails apart from different source lines while TCC still sizes jumps itself. Not `-B` (TCC -S then TASM): that also keeps the tails, but it sizes jumps conservatively and TASM writes `xchg ax,bx` as one byte, so its matches were partial (2026-11-02, whitepaper 2.1.1). The shared library units (`-G`, e19bc to e1de7) have no debug information: e1de7's tails are merged |
 | `test byte ptr [g],1` | `g & 1` on a char |
 | a `cmp` whose result is unused, after a conditional jump | an `if` with an empty body: `if (a == 0 && p[1][1]) ;` |
+| a table read 4 (or 2) bytes below a global the other units name | an array indexed from 1: `gFlameShapes[n - 1]` folds the `- 1` into the address (E0EF3, ds:FB34 for gFlameShapes at ds:FB38) |
 
 ## Rules
 

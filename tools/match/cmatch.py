@@ -97,6 +97,10 @@ DRAFTS: set = set()
 LITERALS: dict = {}   # offset of a literal in our unit's data -> the original's DGROUP offset of it
 FARDATA: set = set()   # externs annotated seg:off that are data, not functions: far objects in another segment
 FAR_BASE = 0x8000
+# each extern of DGROUP data is a block of 256 bytes in the stub DGROUP, after a guard of GUARD bytes,
+# so a reference a little below a symbol's start (a table indexed from 1, `gFlameShapes[n - 1]` folding
+# to gFlameShapes-4: E0EF3, ds:FB34, the human 2026-11-06) is told apart from the end of the block before
+GUARD = 16
 # -B: units compiled through the assembler. Their bytes come from TASM without SMART encoding: with
 # SMART, TASM 2.0 shortens `or bx,1` to 83 and changes other forms the original has (e14ef, e19ec)
 # /m2: two passes, so a forward jump that turns out short is not padded with a NOP (EB xx 90): the
@@ -157,7 +161,7 @@ def stub_source(funcs: dict, data: dict, defined: set, pad: bool, cname: bool = 
     if pad:
         out.append("padd db %d dup (0)" % PAD)
     for n in sorted(data):
-        out += ["PUBLIC %s" % sym(n), "%s db 256 dup (0)" % sym(n)]
+        out += ["db %d dup (0)" % GUARD, "PUBLIC %s" % sym(n), "%s db 256 dup (0)" % sym(n)]
     out.append(".CODE")
     if pad:
         out.append("padc db %d dup (90h)" % (PAD_CODE_SMALL if small else PAD_CODE))
@@ -402,11 +406,11 @@ def compare(fname, a: Build, b: Build, at_a: int, at_b: int, length: int, orig: 
         va, vb, vo = a.word(pa), b.word(pb), orig.word(po)
         delta = (vb - va) & 0xFFFF
         if PAD <= delta < PAD + 16:  # DGROUP moved by the pad, plus the alignment of later segments
-            g = max(((off, n) for n, (off, _) in data_a.items() if off <= va), default=None)
-            if g and va - g[0] < 256:
+            g = next(((off, n) for n, (off, _) in data_a.items() if off - GUARD <= va < off + 256), None)
+            if g:
                 want = data_a[g[1]][1] + (va - g[0])
                 if vo != want:
-                    return fail(k, "%s+%d is ds:%04X, original ds:%04X" % (g[1].lstrip("_"), va - g[0], want, vo))
+                    return fail(k, "%s%+d is ds:%04X, original ds:%04X" % (g[1].lstrip("_"), va - g[0], want, vo))
             elif a.lits[0] <= va < a.lits[1] and template_size(a, pa):
                 # an initialiser template copied by F_SCOPY@ (`push ax; mov cx,n; call`): its n bytes,
                 # far pointers in it by name (an overlay function as its stub entry)

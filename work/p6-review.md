@@ -23,6 +23,10 @@ fields and the comments.
 
 A subsystem is signed off when every unit in it has passed again (`make review-pass`).
 
+**Signed off 2026-11-06**: every unit of all twelve subsystems has passed its P6 round (reviewers
+p6-rev-1 to p6-rev-13; the last round, p6-rev-13, re-reviewed e1a29, eov2 and e082c after their
+fixes). The review is closed; `src/` is open for step D of playbook 80.
+
 ## The prompt
 
 Paste this into a new agent session started in `<your clone>`, with `<N>` replaced by
