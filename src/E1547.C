@@ -72,10 +72,8 @@ extern int CanUseHand(int who, int flag); /*@ 0D1C:07DB */
 
 extern char far *gCurFont; /*@ ds:FE4E */  /* the current font (src/E1A47.C) */
 extern char far *gFont6x6; /*@ ds:A9C0 */      /* the 6x6 font loaded from FONT6.FNT (src/E07A9.C) */
-extern char gIconTable; /*@ ds:FB34 */          /* the party member being moved, -1 when none
-                                                (src/E0ACD.C:42); src/EOV2.C:142 records the
-                                                conflict with src/E0EF3.C:227, which reads ds:FB34 as
-                                                an array of far sprite pointers */
+extern char gMovingMember; /*@ ds:FB34 */          /* the party member being moved, -1 when none
+                                                (PickOrSwapMember 0ACD:0264) */
 extern char gAltPanelFill; /*@ ds:FB7B */          /* a colour (src/EOV2.C) */
 extern void far *gThrownIcon3; /*@ ds:EFB4 */ /* the third thrown-item icon (src/EOV2.C) */
 
@@ -428,7 +426,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
 /* 1547:0991: redraws one member's block on the character screen. It returns unless the member
    passes MemberIs(who, 1). The block layout depends on the screen mode gPanelMode: mode 0 (the
    plain character screen) draws the name (or "Swapping" while this member is the one being moved,
-   gIconTable), the portrait, the two carried-item slots, the HP line, the status bar and, while
+   gMovingMember), the portrait, the two carried-item slots, the HP line, the status bar and, while
    lastDamage (the last damage amount) is above zero, the thrown-damage icon gThrownIcon3 and its number;
    mode 1 (the inventory up) draws the HP line, the food bar, one status line (DEAD, UNCONSCIOUS,
    POISON (SLOW), POISONED or PARALYZED) and the item rows; mode 2 (the character information
@@ -475,7 +473,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
         savedStatusLine = gDrawPage;
         gDrawPage = 2;
         x <<= 3;    /* the layout tables hold 8-pixel columns; the text routines take pixels */
-        if (gIconTable == who)
+        if (gMovingMember == who)
             gDrawText("Swapping", x + 2, y + 2, 8, gPanelFillColour);
         else
             gDrawText(rec->name, x + 2, y + 2, textColour, gPanelFillColour);

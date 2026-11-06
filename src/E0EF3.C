@@ -108,9 +108,9 @@ extern signed char gBurningHandsShapes[];    /*@ ds:571B */ /* a per-member icon
                                                            picks the 004D region drawing (0EF3:0F99) */
 extern int gBurningHandsX[];                /*@ ds:5721 */ /* the x of each of the six flames CastBurningHands draws, mirrored in pairs (0EF3:0F99) */
 extern signed char gBurningHandsY[];        /*@ ds:572D */ /* the y of each of the six flames (0EF3:0F99) */
-extern void far *gIconTable[];          /*@ ds:FB34 */ /* far sprite pointers indexed by an icon
-                                                           magnitude; entry 1 is ds:FB38 (src/EOV2.C
-                                                           names the entries gThrownIcon0..2 singly) */
+extern void far *gFlameShapes[];        /*@ ds:FB38 */ /* the three flame sprites InitGameTables cuts
+                                                           from the THROWN sheet (ovl2:0496); flame n
+                                                           (1 to 3) is entry n - 1 */
 extern void DrawShapeClipped(int page, void far *src, int x, int y, int region); /*@ 082C:063B */
 extern void DrawShapeClippedFlipped(int page, void far *src, int x, int y, int region); /*@ 082C:0681 */
 extern void DamageNearRowMonsters(int key, char count, char sides, char bonus, char flag); /*@ 08E6:16D6 */
@@ -907,7 +907,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 }
 
 /* 0EF3:0F99: draw one icon per party member in its panel cell, then strike the object the current
-   page faces. For each of the six members it draws the far sprite gIconTable[abs(icon)] at
+   page faces. For each of the six members it draws the flame sprite gFlameShapes[abs(icon) - 1] at
    (gBurningHandsX[i], gBurningHandsY[i]) with region 0: a positive icon (gBurningHandsShapes) goes through
    082C:063B, a negative one (through its magnitude) through 082C:0681. It then waits two ticks,
    takes the panel member's class-slot 1 value, finds the object the party cell faces (0D1C:00DA)
@@ -922,10 +922,10 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
 
     for (i = 0; i < 6; i++) {
         if (gBurningHandsShapes[i] < 0)
-            DrawShapeClippedFlipped(0, gIconTable[gBurningHandsShapes[i] < 0 ? -gBurningHandsShapes[i] : gBurningHandsShapes[i]],
+            DrawShapeClippedFlipped(0, gFlameShapes[(gBurningHandsShapes[i] < 0 ? -gBurningHandsShapes[i] : gBurningHandsShapes[i]) - 1],
                            gBurningHandsX[i], gBurningHandsY[i], 0);
         else
-            DrawShapeClipped(0, gIconTable[gBurningHandsShapes[i]], gBurningHandsX[i], gBurningHandsY[i], 0);
+            DrawShapeClipped(0, gFlameShapes[gBurningHandsShapes[i] - 1], gBurningHandsX[i], gBurningHandsY[i], 0);
     }
     WaitTicks(2);
     value = GetCasterLevel(gPanelMember);

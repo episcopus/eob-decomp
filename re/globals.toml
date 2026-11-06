@@ -3140,3 +3140,12 @@ why = "ds:0169 is gRegions[12].textAttr2 (ds:009F + 12*16 + 0xA); WinnerPanel (o
 id = "ds:0139"
 name = "gDialogWindowFill"
 why = "ds:0139 is gRegions[9].textAttr2 (ds:009F + 9*16 + 0xA); CharOverlay (ovl5:1A82) stores gPanelFillColour in it just before SetTextWindow(9), the full-width lower window (1, 125, 38, 63) its portrait encounter panels such as TemplePanel and FreeHimPanel talk in."
+[[global]]
+id = "ds:FB34"
+name = "gMovingMember"
+why = "ds:FB34 is a byte, the party member being moved, -1 when none: PickOrSwapMember (0ACD:0264) stores the clicked slot and swaps the two 243-byte gChars records on the second click, CancelMemberSwap (0ACD:0393) clears it to -1, BlinkSelected (1414:0000) hides it with 0xFF and restores it, RedrawMember (1547:0991) compares it with the member it draws, InitGameTables (ovl2:0496) sets it to 0xFF. The far-pointer table E0EF3 had declared here is gFlameShapes at ds:FB38, indexed from 1 (the human, 2026-11-06)"
+
+[[global]]
+id = "ds:FB38"
+name = "gFlameShapes"
+why = "Three far sprite pointers, ds:FB38, FB3C and FB40 (EOV2 had them as gThrownIcon0 to 2, E0EF3 as entries 1 to 3 of a table at ds:FB34): InitGameTables (ovl2:0496) cuts them from the THROWN sheet (gGetSpriteCell 0x10 with y 0, 0x18 and 0x30), and their one reader, CastBurningHands (0EF3:0F99, the burning hands apply callback), draws entry abs(n) - 1 at each of the six flame positions, so the C is gFlameShapes[n - 1] (the human, 2026-11-06: make match resolves a reference below a symbol's start). Flame is the spell's, the sprites were not looked at [H]"

@@ -10179,3 +10179,21 @@ new = "gOverlayCacheUp"
 kind = "global"
 why = "One name for the twin flag: INTRO ds:19E6 is EOB's ds:3056 gOverlayCacheUp (src/E07C8.C:80), set to 1 after InitOverlayCache and checked by ShutdownGame; review i0892 (P6)"
 date = "2026-11-04"
+
+[[rename]]
+id = "ds:FB34=gMovingMember"
+addr = "ds:FB34"
+old = "gIconTable"
+new = "gMovingMember"
+kind = "global"
+why = "ds:FB34 is a byte, the party member being moved, -1 when none: PickOrSwapMember (0ACD:0264) stores the clicked slot and swaps the two 243-byte gChars records on the second click, CancelMemberSwap (0ACD:0393) clears it to -1, BlinkSelected (1414:0000) hides it with 0xFF and restores it, RedrawMember (1547:0991) compares it with the member it draws, InitGameTables (ovl2:0496) sets it to 0xFF. The far-pointer table E0EF3 had declared here is gFlameShapes at ds:FB38, indexed from 1 (the human, 2026-11-06)"
+date = "2026-11-06"
+
+[[rename]]
+id = "ds:FB38=gFlameShapes"
+addr = "ds:FB38"
+old = "gThrownIcon0"
+new = "gFlameShapes"
+kind = "global"
+why = "Three far sprite pointers, ds:FB38, FB3C and FB40 (EOV2 had them as gThrownIcon0 to 2, E0EF3 as entries 1 to 3 of a table at ds:FB34): InitGameTables (ovl2:0496) cuts them from the THROWN sheet (gGetSpriteCell 0x10 with y 0, 0x18 and 0x30), and their one reader, CastBurningHands (0EF3:0F99, the burning hands apply callback), draws entry abs(n) - 1 at each of the six flame positions, so the C is gFlameShapes[n - 1] (the human, 2026-11-06: make match resolves a reference below a symbol's start). Flame is the spell's, the sprites were not looked at [H]"
+date = "2026-11-06"
