@@ -6,7 +6,7 @@ PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
 .PHONY: help setup doctor inputs overlays pak data emu2 test p0-check tc-install tc-check rtl-compare map match oracle-run golden test-slow \
 	match-gate check queue next claim locks unlock packet skeleton handoff handoffs handoff-done integrate review-pass worker progress \
-	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port port-literals port-hybrid handbook handbook-setup handbook-figs datamap
+	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port port-literals port-hybrid handbook handbook-setup handbook-figs datamap data-skeleton
 
 help:
 	@echo "Phase 0:  setup doctor inputs overlays pak emu2 test p0-check"
@@ -72,6 +72,9 @@ rebuild:          ## build a program from src/ and compare it with the original 
 
 datamap:          ## EOB.EXE's data map: each module's span and how its boundaries are placed (WRITE=1: re/datamap.toml; playbook 80, step D0; needs make overlays)
 	$(PY) tools/rebuild/datamap.py $(if $(WRITE),--write,--map)
+
+data-skeleton:    ## Draft a module's data as C (or assembly, when its relocations rise) from the original's bytes, UNIT= (playbook 80, step D)
+	$(PY) tools/rebuild/dataskel.py $(UNIT)
 
 twin:             ## prove INTRO.EXE units by their EOB.EXE twin, the same module linked elsewhere (UNIT=, WRITE=1 records L2; FIND=1 looks for twins)
 	$(PY) tools/match/twin.py $(if $(FIND),--find) $(if $(UNIT),--unit $(UNIT)) $(if $(WRITE),--write)

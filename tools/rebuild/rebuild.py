@@ -241,6 +241,22 @@ def sources(program: str) -> list[tuple[Path, bool, dict]]:
                 if own:
                     first = min(o if isinstance(s, str) else s * 16 + o for s, o in own)
                     out.append(((k, first), p, bool(u.get("twin")) or program == "EOB.EXE", u))
+    # a data-only module (src/D1AAD.ASM: the data map's d1aad, re/datamap.toml): the original's empty code
+    # segment at its address is its own, so it goes before the unit that starts there, in place of the
+    # empty module empty_segments would make
+    man = ROOT / "build" / "re" / ("%s.json" % program.split(".")[0].lower())
+    segs = json.loads(man.read_text()).get("segments", []) if man.exists() else []
+    units = own_units(program)
+    for p in sorted((ROOT / "src").glob("D*.*")):
+        m = re.fullmatch(r"D([0-9A-F]{4})", p.stem.upper())
+        sg = next((x for x in segs if m and x["kind_name"] == "code" and not x["size"] and x["para"] == int(m.group(1), 16)), None)
+        if p.suffix.upper() not in (".C", ".ASM") or not sg:
+            continue
+        k = next((k for k, u in enumerate(units) if ":" in u["start"] and not u["start"].startswith("ovl")
+                  and lin(u["start"]) >= sg["start"]), len(units))
+        u = {"id": p.stem.lower(), "program": program, "kind": "data", "bytes": 0,
+             "start": "%04X:%04X" % (sg["para"], sg["start"] - sg["para"] * 16)}
+        out.append(((k, -1), p, program == "EOB.EXE", u))
     return [(p, eob, u) for _, p, eob, u in sorted(out, key=lambda t: t[0])]
 
 
@@ -272,9 +288,14 @@ class Copy:
         self.text = src.read_text() if self.asm else cmatch.expand(src.read_text())   # src/EOB.H inlined
         self.funcs, self.data, self.defined, self.stubs = cmatch.parse_annotations(self.text, self.asm)
         self.fardata = set(cmatch.FARDATA)              # externs at seg:off that are data (far objects)
+        # /*@data */: the file defines its unit's whole _DATA (playbook 80, step D); it is linked as it
+        # is, at its span of re/datamap.toml, and no filler holds that span
+        self.whole_data = bool(cmatch.OWN)
+        self.defdata = dict(cmatch.DEFDATA)
         # a C global is defined by a top-level line without extern (EOV5.C has both for gTable7B89)
         self.data_defined = set(DATA_DEF.findall(self.text)) if self.asm else {
             n for n in self.data if re.search(r"^(?!extern\b)[A-Za-z_][^;\n(]*\b%s\b\s*(\[[^\]]*\])?\s*[=;]" % re.escape(n), self.text, re.M)}
+        self.data_defined |= set(self.defdata)
 
 
 def make_copies(program: str, w: Path, space: Space, main_addr: str | None) -> list[Copy]:
@@ -384,9 +405,10 @@ def make_copies(program: str, w: Path, space: Space, main_addr: str | None) -> l
                 if k:
                     c.statics = getattr(c, "statics", set()) | {n}
     for c in copies:
-        relabel_literals(c, space, w, names_lit)
-        for d in define_between_templates(c, space):
-            dsym[d] = "_" + next((n for n, o in c.data.items() if o == d), "__d%04X" % d)
+        if not c.whole_data:                        # (a whole-data module keeps its literals, in place)
+            relabel_literals(c, space, w, names_lit)
+            for d in define_between_templates(c, space):
+                dsym[d] = "_" + next((n for n, o in c.data.items() if o == d), "__d%04X" % d)
         for o, lab in getattr(c, "labels", {}).items():
             if "_" + lab not in names_lit.setdefault(o, []):
                 names_lit[o].append("_" + lab)
@@ -1086,6 +1108,8 @@ def empty_segments(w: Path, space: "Space", copies: list) -> dict[int, list]:
     out: dict[int, list] = {}
     for k, sg in enumerate(x for x in space.segments if x["kind_name"] == "code" and x["size"] == 0):
         at = sg["start"]
+        if any(c.unit.get("kind") == "data" and lin(c.unit["start"]) == at for c in copies):
+            continue                                # a data-only module of src/ brings it
         i = next((i for i, c in enumerate(copies) if ":" in c.unit["start"] and not c.unit["start"].startswith("ovl")
                   and lin(c.unit["start"]) + c.unit["bytes"] == at), None)
         if i is None:                               # the overlay stubs' segment (_1STUB_) is TLINK's
@@ -1153,6 +1177,15 @@ def data_owners(oseq: list, copies: list, odg: int, lo: int, hi: int, idx: int, 
         if verbose:
             print("rebuild: data ds:%04X-%04X after %s, %d relocations" % (cuts[k], cuts[k + 1], copies[o].path.stem if o >= 0 else "C0", len(ds)))
     return out
+
+
+def data_spans(program: str) -> dict[str, int]:
+    """Where each module's data begins in the original (re/datamap.toml, EOB.EXE only), by the stem of
+    its file: a module whose file defines its whole data (/*@data */) is placed there."""
+    p = ROOT / "re" / "datamap.toml"
+    if program != "EOB.EXE" or not p.exists():
+        return {}
+    return {m["id"].upper(): int(m["start"][3:], 16) for m in tomllib.loads(p.read_text())["module"]}
 
 
 def by_template(c: "Copy", pdata: bytes, odata: bytes, o: int, l: int) -> int | None:
@@ -1445,10 +1478,12 @@ def main(argv=None) -> int:
     # module's anywhere (its code is not in the image, so only its data shows where it was linked)
     placed, cursor = {}, c0_end
     copy_of = {c.path.stem.upper(): c for c in copies}
+    spans = data_spans(program)
     for o, l, stem in mine:
         if stem in ovl:
             continue
-        at = by_template(copy_of[stem], pimg[pdg * 16:], odata, o, l)
+        at = spans.get(stem) if copy_of[stem].whole_data else None
+        at = by_template(copy_of[stem], pimg[pdg * 16:], odata, o, l) if at is None else at
         at = locate(pimg[pdg * 16:], odata, cursor, o, o + l) if at is None else at
         if at is None:
             print("rebuild: %s's data (%d bytes) is not in the original" % (stem, l))
@@ -1456,7 +1491,8 @@ def main(argv=None) -> int:
         placed[stem], cursor = (at, l), at + l
     for o, l, stem in mine:
         if stem in ovl:
-            at = by_template(copy_of[stem], pimg[pdg * 16:], odata, o, l)
+            at = spans.get(stem) if copy_of[stem].whole_data else None
+            at = by_template(copy_of[stem], pimg[pdg * 16:], odata, o, l) if at is None else at
             at = locate(pimg[pdg * 16:], odata, c0_end, o, o + l) if at is None else at
             if at is None:
                 print("rebuild: %s's data (%d bytes) is not in the original" % (stem, l))

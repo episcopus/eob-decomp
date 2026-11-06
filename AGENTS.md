@@ -57,6 +57,7 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 | `make rename OLD= NEW= WHY=`, `make readability [UNIT=]` | One name per address, everywhere, with its evidence; the naming and comment rules (`docs/process/READABILITY.md`) |
 | `make names [UNIT=] [SHARED=1]`, `make field STRUCT= AT= NEW= WHY=` | What is still named by its address and where files disagree; one struct field name in every file that declares the struct (playbook 65) |
 | `make packet UNIT=`, `make skeleton UNIT=` | Everything to start a unit (`build/packets/<id>.md`); its source file with every function a stub |
+| `make datamap [WRITE=1]`, `make data-skeleton UNIT=` | Each module's span of initialised data (`re/datamap.toml`); a draft of a module's data as definitions, proven by `make match` with `/*@data */` (playbook 80, step D) |
 | `make handoff AGENT= UNIT= STATE= NOTE=` | From your worktree: the branch is ready, or a question for the human (`STATE=escalate`) |
 | `make review-pass UNIT= AGENT=` | Record a passed review (playbook 70) |
 | `make handoffs`, `make integrate`, `make handoff-done`, `make locks`, `make unlock`, `make worker` | The human's side (playbook 90) |
