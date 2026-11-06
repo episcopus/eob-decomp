@@ -20,7 +20,8 @@ sound and state.
 | M1 tc2c for every C unit | done 2026-11-05 except the LLVM pin, which waits for the human's install: `make port` translates all 41 C units of `EOB.EXE` (609 functions) with none refused, compiles them with `-Werror` and links them; what is still a stub is 63 assembly routines (M3) and 23 library functions that need the machine (section "M1") |
 | M2 the per-function test | the machinery done 2026-11-05: `make port-hybrid` (section "M2"); on the five `EOB.EXE` goldens 129 of the 594 functions with an entry are reached, 118 are the same as the original on every call tested (635 calls), none differ, 11 are reached only where they wait for an interrupt (M3). The rest of the check, every function of `src/`, needs sessions that reach them |
 | M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), and the interrupt handlers' units `E1D8F`, `E1AAD`, `E1948`, `E_TEXT` with the retrace `E1DE4` (35 routines in all), each the same as the original on every call tested; the C-unit clock in the oracle and the five `.clock.json` recordings ("The interrupts and the C clock"); the machine boots to the oracle's memory byte for byte, and its DOS, INT 10h for MCGA, BIOS time, INT 33h driver and ports (PIC, PIT, 61h, 60h, retrace, DAC, AdLib) answer every one of the 335,055 service calls and port accesses of the five goldens as the oracle does. the machine's wait delivers the recorded interrupts to spinning routines (`port/runtime/irq.c`); 19 library functions on the machine (`port/runtime/tcdos.c`: the files, `int86`, `time`, `rand`; `tcheap.c`: the far heap), each the same as the original's on every call tested; every assembly routine the C calls is in C (63, section "The other units") |
-| M4 the MCGA driver | done 2026-11-05 (section "M4"): `MCGA.OVL` in C (`port/drivers/`, 40 exports), entered with its argument bytes, the same as the original on every direct call and every golden call tested. Next: step D, the program's data as C (it waits for the P6 review), then M5 |
+| M4 the MCGA driver | done 2026-11-05 (section "M4"): `MCGA.OVL` in C (`port/drivers/`, 40 exports), entered with its argument bytes, the same as the original on every direct call and every golden call tested. Next: step D, then M5 |
+| D the program's data as C | planned 2026-11-06 (section "Step D"): 33,460 bytes and 969 relocations of initialised data, four sub-steps (D0 the data map, D1 the tools, D2 per unit, D3 tc2c and the generated image); P6 signed off, so `src/` is open |
 | M5 to M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
@@ -337,6 +338,50 @@ Whatever the clock, the proof has two levels:
 The new recording artefacts (per golden: the clock positions of each interrupt and input) are files
 beside the goldens, `tests/sessions/golden/<name>.clock.json`; the human approved this change to the
 golden format (decision 5). The goldens themselves do not change.
+
+## Step D: the program's data as C (planned 2026-11-06)
+
+Question C's answer: before the port runs from its own image, the program's data becomes C
+definitions in `src/`, so the port program never loads `EOB.EXE`. P6 is signed off (2026-11-06), so
+`src/` is open for it.
+
+**What there is.** `EOB.EXE`'s own initialised data is ds:01FE to ds:84B2 (33,460 bytes, 969
+relocations: far pointers in tables), between the start-up code's data and the library's (`make
+rebuild V=1`). Its uninitialised data (_BSS, ds:8A6C up) is zero at start: those globals stay
+`extern` and `make rebuild` keeps reserving them; the port clears the arena. The rebuild fills the
+initialised data today with the original's bytes, in 18 fillers cut by the relocation runs; that cut
+is good enough for bytes but not for definitions. E0A72's far-pointer table at ds:3406 points at
+ds:337A to 33ED, below the cut the rebuild puts at ds:3406, and ds:36B0 to 36BB above its string pool
+is E0ACD's `gHandSplitY`, so a unit's data is not the rebuild's piece.
+
+**Where a unit's data is.** Turbo C writes a module's `_DATA` as its initialised globals in source
+order, then the templates of its initialised locals, then its string pool, word aligned, and TLINK
+lays the modules out in link order. So each unit's data ends with its pool (the matcher's literal map,
+`port/literals.json`: E08E6's ends at ds:3378, E0A72's runs ds:36A4 to 36AE) and starts after the
+previous unit's (and its pad byte). Units with no literal (E0CF7, the 12 KB from ds:01FE that the
+main module E07C8 seems to own) are bounded by the other anchors: the templates, the relocation
+runs, the alignment pads and the readers.
+
+| Sub-step | Deliverable | Check |
+|---|---|---|
+| D0 | the data map: each unit's exact range of initialised data, with the evidence for each boundary (pool, template, relocation run, pad, reader), written by a tool and kept in `re/` | it covers ds:01FE to 84B2 with no gap or overlap; every declared global falls in the range of a unit that declares it or reads it |
+| D1 | the tools: `make match` compiles a unit's definitions, places its `_DATA` at the map's address and compares every byte and relocation with the original (code's references to the unit's own data resolve by the annotation); `make rebuild` links a unit's own data where the unit defines it and a filler where it does not yet; `make data-skeleton UNIT=` drafts the definitions from the bytes, typed by the declarations, a far pointer by the name at its target | a negative fixture per kind of defect (a byte, a relocation, the order); `make match-gate`, `make rebuild` as before |
+| D2 | per unit: the externs of its range become definitions in address order, the unnamed bytes between them named from their readers (playbook 65's rules, `make rename`), the far-pointer tables written as tables of names; claimable and reviewed like a lift (playbooks 30, 70) | `make match` with the data; `make rebuild` identical but for the documented differences, with one filler fewer |
+| D3 | tc2c translates the definitions (each initialiser written at its annotated arena address before `main`), the runtime writes the library's data (C0's, the RTL's: `_streams`, the ctype table, the heap and overlay variables), and the port starts from its own image | the generated image equals `EOB.EXE`'s load module but for the library data listed |
+
+**D0, first cut (2026-11-06).** The pools alone settle eight units: in E08E6 (ds:31F0-3378), E0A72
+(ds:3378-36AE), E0ACD (ds:36AE-37B2), E0BD2 (ds:37B2-3A61), E0DE8 (ds:5534-55E4), E1547
+(ds:5D1A-5DDF), EOV2 (ds:64F8-683E) and EOV3 (ds:683E-6B80) every name declared before the pool is
+the unit's own. The other ranges hold data of modules with no strings. The segment table has the
+answer for four of them: EOB.EXE has four empty code segments among its resident code, at 07C8:0001,
+177D:000A, 1AAD:000C and 1B82:0009 (`build/re/eob.json`, segments 2, 19, 39 and 41), each the code
+segment of a **data-only module**, a source file with nothing but data, which `src/` has no file for
+yet. The first is linked right after E07A9, so the 12 KB from ds:01FE (448 relocations, names
+declared by every subsystem, none by E07C8, whose own data starts later) is most likely that module's
+[H until D0 bounds it]. D2 creates these four files.
+
+The four sub-steps go in this order; D2's units are independent once D1 is in. `INTRO.EXE` follows at
+M6.
 
 ## M4: the MCGA driver (2026-11-05)
 
