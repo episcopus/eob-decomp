@@ -1,0 +1,1 @@
+The 18 cells of the view for a party facing north. The number in each box is the slot (the index into `gViewCells`, `gViewCellIds` and the per-slot tables), the signed number its cell offset from `gPartyCell`, and "draw #" its place in `gViewDrawOrder`. The party stands in slot 16.

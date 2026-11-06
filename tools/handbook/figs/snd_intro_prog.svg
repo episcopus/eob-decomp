@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 428" width="760" height="428" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">INTRO.EXE: WHAT RUNS, AND WHERE THE CODE LIVES</text>
+<rect x="0.0" y="30.0" width="158.0" height="64.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="79.0" y="52.9" font-family="'DejaVu Sans Mono', monospace" font-size="12" font-weight="700" fill="#14504A" text-anchor="middle">Main</text>
+<text x="79.0" y="67.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">0892:0000</text>
+<text x="79.0" y="80.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">args, hooks, finds EOB.EXE</text>
+<rect x="196.0" y="30.0" width="158.0" height="64.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="275.0" y="46.4" font-family="'DejaVu Sans Mono', monospace" font-size="12" font-weight="700" fill="#14504A" text-anchor="middle">StartupGame</text>
+<text x="275.0" y="60.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">0892:0241</text>
+<text x="275.0" y="73.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">mode, MCGA.OVL, pages, font,</text>
+<text x="275.0" y="86.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">sound</text>
+<path d="M159.0,62.0 L195.0,62.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="392.0" y="30.0" width="158.0" height="64.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="471.0" y="52.9" font-family="'DejaVu Sans Mono', monospace" font-size="12" font-weight="700" fill="#2C386B" text-anchor="middle">RunIntro</text>
+<text x="471.0" y="67.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">ovl0:0000</text>
+<text x="471.0" y="80.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">stub entry 16 of overlay 0</text>
+<path d="M355.0,62.0 L391.0,62.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="588.0" y="30.0" width="158.0" height="64.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="667.0" y="46.4" font-family="'DejaVu Sans Mono', monospace" font-size="12" font-weight="700" fill="#2C386B" text-anchor="middle">PlayLogoSequence</text>
+<text x="667.0" y="60.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">ovl0:2A99</text>
+<text x="667.0" y="73.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">WESTWOOD, AND, SSI,</text>
+<text x="667.0" y="86.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">PRESENT, DAND</text>
+<path d="M551.0,62.0 L587.0,62.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="0.0" y="112.0" width="186.0" height="52.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="93.0" y="128.9" font-family="'DejaVu Sans Mono', monospace" font-size="12" font-weight="700" fill="#2C386B" text-anchor="middle">PlayIntroSequence</text>
+<text x="93.0" y="143.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">ovl0:003A: title card, TEXT, then 7</text>
+<text x="93.0" y="156.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">scenes</text>
+<path d="M667.0,94.0 L667.0,104.0 L93.0,104.0 L93.0,111.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="206.0" y="112.0" width="74.0" height="52.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="243.0" y="135.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#5C2D50" text-anchor="middle">TowerMage</text>
+<text x="243.0" y="148.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">scene</text>
+<path d="M186.0,138.0 L205.0,138.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="285.0" y="112.0" width="74.0" height="52.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="322.0" y="135.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#5C2D50" text-anchor="middle">Orb</text>
+<text x="322.0" y="148.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">scene</text>
+<path d="M280.0,138.0 L284.0,138.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="364.0" y="112.0" width="74.0" height="52.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="401.0" y="135.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#5C2D50" text-anchor="middle">Wtrdp</text>
+<text x="401.0" y="148.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">scene</text>
+<path d="M359.0,138.0 L363.0,138.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="443.0" y="112.0" width="74.0" height="52.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="480.0" y="135.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#5C2D50" text-anchor="middle">King</text>
+<text x="480.0" y="148.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">scene</text>
+<path d="M438.0,138.0 L442.0,138.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="522.0" y="112.0" width="74.0" height="52.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="559.0" y="135.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#5C2D50" text-anchor="middle">Hands</text>
+<text x="559.0" y="148.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">scene</text>
+<path d="M517.0,138.0 L521.0,138.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="601.0" y="112.0" width="74.0" height="52.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="638.0" y="135.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#5C2D50" text-anchor="middle">Tunnel</text>
+<text x="638.0" y="148.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">scene</text>
+<path d="M596.0,138.0 L600.0,138.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="680.0" y="112.0" width="74.0" height="52.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="717.0" y="135.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#5C2D50" text-anchor="middle">Avalanche</text>
+<text x="717.0" y="148.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">scene</text>
+<path d="M675.0,138.0 L679.0,138.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M717.0,164.0 L717.0,208.0 L331.0,208.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="0.0" y="184.0" width="330.0" height="48.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="165.0" y="205.4" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#14504A" text-anchor="middle">ShutdownGame, then execl(EOB.EXE ...)</text>
+<text x="165.0" y="219.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">0892:0835; argv[1] to argv[4] and two numbers; section 2.6</text>
+<rect x="0.0" y="252.0" width="242.0" height="168.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="9.0" y="270.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="start">overlay 0: IOV0.C, 11,741 bytes, 22</text>
+<text x="9.0" y="284.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="start">functions</text>
+<text x="9.0" y="300.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">- 3 entry points: RunIntro,</text>
+<text x="9.0" y="313.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">  PlayLogoSequence, PlayIntroSequence</text>
+<text x="9.0" y="329.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">- 7 scenes: Wtrdp, Orb, TowerMage, King,</text>
+<text x="9.0" y="342.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">  Hands, Tunnel, Avalanche</text>
+<text x="9.0" y="358.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">- 12 helpers: WaitFrameDelay, DelayFrames,</text>
+<text x="9.0" y="371.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">  LoadPackedImage, LoadPalette, Dissolve,</text>
+<text x="9.0" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">  DrawGrid, BlitImage, GrowFrame, SignOf,</text>
+<text x="9.0" y="397.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">  ClearBottomBar, PlaySound, RevealInStrips</text>
+<text x="9.0" y="410.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">  (no caller)</text>
+<rect x="258.0" y="252.0" width="242.0" height="168.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="267.0" y="270.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="start">INTRO.EXE&#x27;s own code in the root</text>
+<text x="267.0" y="286.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">- i0892: Main, StartupGame, ShutdownGame</text>
+<text x="267.0" y="299.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">  and two hooks (2,288 bytes)</text>
+<text x="267.0" y="315.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">- i_text: the AdLib driver, 20,980 bytes at</text>
+<text x="267.0" y="328.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">  0000:020C, the EOB driver in another</text>
+<text x="267.0" y="341.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">  version</text>
+<text x="267.0" y="357.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">- i0923 (memory chain), i0aed (loader), i0b10</text>
+<text x="267.0" y="370.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">  (far copy), i0cda (RandomByte)</text>
+<rect x="516.0" y="252.0" width="242.0" height="168.0" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="525.0" y="270.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#3C3A36" text-anchor="start">shared with EOB.EXE (section 2.6)</text>
+<text x="525.0" y="286.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">- 23 units are twins of EOB.EXE&#x27;s: sound</text>
+<text x="525.0" y="299.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">  (084A), memory (094F), page table (097F),</text>
+<text x="525.0" y="312.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">  CopyRegion (0986), shapes (0998), font</text>
+<text x="525.0" y="325.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">  (09B5), mouse (09E1), keyboard (0A19),</text>
+<text x="525.0" y="338.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">  files (0B5D), tick (0CDD), LCW (0CE9), text</text>
+<text x="525.0" y="351.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">  (0D35) and more</text>
+</svg>

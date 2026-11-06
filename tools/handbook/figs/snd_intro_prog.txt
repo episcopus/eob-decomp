@@ -1,0 +1,1 @@
+INTRO.EXE has little code of its own: a start-up unit, an overlay of 22 functions that is the whole show, the AdLib driver, and library units that are the same code as EOB.EXE's. The scene functions are called in a fixed order.

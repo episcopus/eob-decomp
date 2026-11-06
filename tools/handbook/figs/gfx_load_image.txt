@@ -1,0 +1,1 @@
+The path of a picture from disk to a page. Almost every screen, panel, sprite sheet and item icon of the game is a `.CPS` (VGA) or `.EGA` file read this way, then either shown (a copy to page 0 or page 2) or used as a sheet that `GetSpriteCell` cuts shapes from.

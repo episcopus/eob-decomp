@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 466" width="760" height="466" class="fig">
+<rect x="0.0" y="0.0" width="340.4" height="460.0" rx="0" fill="#FFFDF8" stroke="#8A8373" stroke-width="1.4"/>
+<rect x="133.4" y="266.8" width="36.8" height="36.8" rx="0" fill="#A9D0C8" stroke="#1F6F66" stroke-width="1.1" opacity="0.6"/>
+<text x="151.8" y="288.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#14504A" text-anchor="middle">0</text>
+<rect x="243.8" y="266.8" width="36.8" height="36.8" rx="0" fill="#A9D0C8" stroke="#1F6F66" stroke-width="1.1" opacity="0.6"/>
+<text x="262.2" y="288.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#14504A" text-anchor="middle">1</text>
+<rect x="20.7" y="92.0" width="36.8" height="36.8" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1.1" opacity="0.6"/>
+<text x="39.1" y="113.6" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#2C386B" text-anchor="middle">2</text>
+<rect x="62.1" y="92.0" width="36.8" height="36.8" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1.1" opacity="0.6"/>
+<text x="80.5" y="113.6" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#2C386B" text-anchor="middle">3</text>
+<rect x="20.7" y="133.4" width="36.8" height="36.8" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1.1" opacity="0.6"/>
+<text x="39.1" y="155.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#2C386B" text-anchor="middle">4</text>
+<rect x="62.1" y="133.4" width="36.8" height="36.8" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1.1" opacity="0.6"/>
+<text x="80.5" y="155.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#2C386B" text-anchor="middle">5</text>
+<rect x="20.7" y="174.8" width="36.8" height="36.8" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1.1" opacity="0.6"/>
+<text x="39.1" y="196.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#2C386B" text-anchor="middle">6</text>
+<rect x="62.1" y="174.8" width="36.8" height="36.8" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1.1" opacity="0.6"/>
+<text x="80.5" y="196.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#2C386B" text-anchor="middle">7</text>
+<rect x="20.7" y="216.2" width="36.8" height="36.8" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1.1" opacity="0.6"/>
+<text x="39.1" y="237.8" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#2C386B" text-anchor="middle">8</text>
+<rect x="62.1" y="216.2" width="36.8" height="36.8" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1.1" opacity="0.6"/>
+<text x="80.5" y="237.8" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#2C386B" text-anchor="middle">9</text>
+<rect x="20.7" y="257.6" width="36.8" height="36.8" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1.1" opacity="0.6"/>
+<text x="39.1" y="279.2" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#2C386B" text-anchor="middle">10</text>
+<rect x="62.1" y="257.6" width="36.8" height="36.8" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1.1" opacity="0.6"/>
+<text x="80.5" y="279.2" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#2C386B" text-anchor="middle">11</text>
+<rect x="20.7" y="299.0" width="36.8" height="36.8" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1.1" opacity="0.6"/>
+<text x="39.1" y="320.6" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#2C386B" text-anchor="middle">12</text>
+<rect x="62.1" y="299.0" width="36.8" height="36.8" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1.1" opacity="0.6"/>
+<text x="80.5" y="320.6" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#2C386B" text-anchor="middle">13</text>
+<rect x="20.7" y="340.4" width="36.8" height="36.8" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1.1" opacity="0.6"/>
+<text x="39.1" y="362.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#2C386B" text-anchor="middle">14</text>
+<rect x="62.1" y="340.4" width="36.8" height="36.8" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1.1" opacity="0.6"/>
+<text x="80.5" y="362.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#2C386B" text-anchor="middle">15</text>
+<rect x="121.9" y="126.5" width="36.8" height="36.8" rx="0" fill="#D5B8CC" stroke="#7A3E6B" stroke-width="1.1" opacity="0.6"/>
+<text x="140.3" y="148.1" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#5C2D50" text-anchor="middle">16</text>
+<rect x="119.6" y="174.8" width="36.8" height="36.8" rx="0" fill="#D5B8CC" stroke="#7A3E6B" stroke-width="1.1" opacity="0.6"/>
+<text x="138.0" y="196.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#5C2D50" text-anchor="middle">17</text>
+<rect x="121.9" y="220.8" width="36.8" height="36.8" rx="0" fill="#D5B8CC" stroke="#7A3E6B" stroke-width="1.1" opacity="0.6"/>
+<text x="140.3" y="242.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#5C2D50" text-anchor="middle">18</text>
+<rect x="289.8" y="126.5" width="36.8" height="36.8" rx="0" fill="#D5B8CC" stroke="#7A3E6B" stroke-width="1.1" opacity="0.6"/>
+<text x="308.2" y="148.1" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#5C2D50" text-anchor="middle">19</text>
+<rect x="264.5" y="172.5" width="36.8" height="36.8" rx="0" fill="#D5B8CC" stroke="#7A3E6B" stroke-width="1.1" opacity="0.6"/>
+<text x="282.9" y="194.1" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#5C2D50" text-anchor="middle">20</text>
+<rect x="241.5" y="315.1" width="36.8" height="36.8" rx="0" fill="#D5B8CC" stroke="#7A3E6B" stroke-width="1.1" opacity="0.6"/>
+<text x="259.9" y="336.7" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#5C2D50" text-anchor="middle">21</text>
+<rect x="294.4" y="216.2" width="36.8" height="36.8" rx="0" fill="#D5B8CC" stroke="#7A3E6B" stroke-width="1.1" opacity="0.6"/>
+<text x="312.8" y="237.8" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#5C2D50" text-anchor="middle">22</text>
+<rect x="294.4" y="257.6" width="36.8" height="36.8" rx="0" fill="#E3C98F" stroke="#A8741A" stroke-width="1.1" opacity="0.6"/>
+<text x="312.8" y="279.2" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#7A5412" text-anchor="middle">23</text>
+<rect x="294.4" y="299.0" width="36.8" height="36.8" rx="0" fill="#E3C98F" stroke="#A8741A" stroke-width="1.1" opacity="0.6"/>
+<text x="312.8" y="320.6" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#7A5412" text-anchor="middle">24</text>
+<rect x="126.5" y="310.5" width="23.0" height="23.0" rx="0" fill="#D9D2C3" stroke="#8A8373" stroke-width="1.1" opacity="0.6"/>
+<text x="138.0" y="325.2" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#3C3A36" text-anchor="middle">25</text>
+<rect x="154.1" y="310.5" width="23.0" height="23.0" rx="0" fill="#D9D2C3" stroke="#8A8373" stroke-width="1.1" opacity="0.6"/>
+<text x="165.6" y="325.2" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#3C3A36" text-anchor="middle">26</text>
+<rect x="20.7" y="6.9" width="73.6" height="73.6" rx="0" fill="#E3B2A5" stroke="#A8452F" stroke-width="1.1" opacity="0.6"/>
+<text x="57.5" y="46.9" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#80311F" text-anchor="middle">face</text>
+<rect x="234.6" y="80.5" width="46.0" height="34.5" rx="0" fill="#D9D2C3" stroke="#8A8373" stroke-width="1.1" opacity="0.6"/>
+<text x="257.6" y="101.0" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#3C3A36" text-anchor="middle">prev</text>
+<rect x="287.5" y="80.5" width="46.0" height="34.5" rx="0" fill="#D9D2C3" stroke="#8A8373" stroke-width="1.1" opacity="0.6"/>
+<text x="310.5" y="101.0" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="700" fill="#3C3A36" text-anchor="middle">next</text>
+<rect x="147.2" y="85.1" width="71.3" height="36.8" rx="0" fill="#E3C98F" stroke="#A8741A" stroke-width="1.1" opacity="0.6"/>
+<text x="182.8" y="106.7" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#7A5412" text-anchor="middle">food</text>
+<rect x="273.7" y="342.7" width="57.5" height="39.1" rx="0" fill="#E3B2A5" stroke="#A8452F" stroke-width="1.1" opacity="0.6"/>
+<text x="302.4" y="365.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#80311F" text-anchor="middle">P</text>
+<text x="364.4" y="16.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2B2A28" text-anchor="start">Inventory screen, node list 2b</text>
+<rect x="364.4" y="28.0" width="12.0" height="10.0" rx="1" fill="#A9D0C8" stroke="#1F6F66" stroke-width="1"/>
+<text x="382.4" y="37.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="700" fill="#2B2A28" text-anchor="start">slots 0, 1</text>
+<text x="382.4" y="50.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">the two hands: item mask 08h; the same items the map screen&#x27;s hand</text>
+<text x="382.4" y="61.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">boxes show</text>
+<rect x="364.4" y="75.0" width="12.0" height="10.0" rx="1" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1"/>
+<text x="382.4" y="84.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="700" fill="#2B2A28" text-anchor="start">slots 2 to 15</text>
+<text x="382.4" y="97.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">the pack: any item (mask FFFFh); 2 columns of 7 on an 18-pixel grid</text>
+<rect x="364.4" y="110.5" width="12.0" height="10.0" rx="1" fill="#D5B8CC" stroke="#7A3E6B" stroke-width="1"/>
+<text x="382.4" y="119.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="700" fill="#2B2A28" text-anchor="start">slots 16 to 22</text>
+<text x="382.4" y="132.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">one box per item class, by gSlotItemMask: 01h, 02h, 04h, 20h, 40h, 10h,</text>
+<text x="382.4" y="144.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">and slot 22 takes anything; slot 16 is also a list head</text>
+<rect x="364.4" y="157.5" width="12.0" height="10.0" rx="1" fill="#E3C98F" stroke="#A8741A" stroke-width="1"/>
+<text x="382.4" y="166.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="700" fill="#2B2A28" text-anchor="start">slots 23, 24</text>
+<text x="382.4" y="179.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">mask 80h: two boxes for one class [H: the rings]</text>
+<rect x="364.4" y="193.0" width="12.0" height="10.0" rx="1" fill="#D9D2C3" stroke="#8A8373" stroke-width="1"/>
+<text x="382.4" y="202.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="700" fill="#2B2A28" text-anchor="start">slots 25, 26</text>
+<text x="382.4" y="215.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">mask 100h, drawn 10 x 10 (gInvSlotKind 2) [H: ammunition]</text>
+<rect x="364.4" y="228.5" width="12.0" height="10.0" rx="1" fill="#E3C98F" stroke="#A8741A" stroke-width="1"/>
+<text x="382.4" y="237.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="700" fill="#2B2A28" text-anchor="start">food box</text>
+<text x="382.4" y="250.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">FeedInventoryMember: eat the item on the pointer</text>
+<rect x="364.4" y="264.0" width="12.0" height="10.0" rx="1" fill="#E3B2A5" stroke="#A8452F" stroke-width="1"/>
+<text x="382.4" y="273.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="700" fill="#2B2A28" text-anchor="start">face</text>
+<text x="382.4" y="286.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">RestorePortraitPanel: back to the map; Esc or I</text>
+<rect x="364.4" y="299.5" width="12.0" height="10.0" rx="1" fill="#D9D2C3" stroke="#8A8373" stroke-width="1"/>
+<text x="382.4" y="308.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="700" fill="#2B2A28" text-anchor="start">prev, next</text>
+<text x="382.4" y="321.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">click: the previous or next member; F1 to F6 jump to members 1 to 6</text>
+<text x="382.4" y="333.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">through the same callbacks (F5, F6 have no box)</text>
+<rect x="364.4" y="346.5" width="12.0" height="10.0" rx="1" fill="#E3B2A5" stroke="#A8452F" stroke-width="1"/>
+<text x="382.4" y="355.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="700" fill="#2B2A28" text-anchor="start">P</text>
+<text x="382.4" y="368.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">ToggleCharacterInfo: switch to the character sheet (node list 3) and</text>
+<text x="382.4" y="380.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">back</text>
+<text x="364.4" y="407.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">The rest of list 2b is the map screen&#x27;s: view click, floor,</text>
+<text x="364.4" y="419.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">camp, movement and throw nodes stay active.</text>
+</svg>

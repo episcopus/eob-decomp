@@ -1,0 +1,1 @@
+An award is divided twice, by the living party members and by the receiving character's number of classes, and each class slot then compares its own total with its own table. The ladder shows the thresholds in gExpTables; the dashed line is the 5000 points every new character starts with, which is why creation gives level 3 to most single classes.

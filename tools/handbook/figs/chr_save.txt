@@ -1,0 +1,1 @@
+A saving throw is one byte looked up in a per-class matrix: the column comes from the level (every `step` levels), the row from the kind of danger. Paladins and rangers use the fighter matrix, and for every multi-class character only the first class slot is used.

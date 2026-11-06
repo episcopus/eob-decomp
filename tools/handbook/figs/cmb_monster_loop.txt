@@ -1,0 +1,1 @@
+Monsters act on the four group timers, not on the player's actions. A monster hunts until it stands in front of the party, then swings on every second update; the swing resolves at once, one `DamageCharacter` call for all of its attacks.

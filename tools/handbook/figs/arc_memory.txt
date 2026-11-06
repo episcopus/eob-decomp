@@ -1,0 +1,1 @@
+Memory, to scale. A: what DOS loads. B: the fixed far-heap blocks the game holds once it is running in VGA mode; the three page buffers are over 70 percent of them. C: the two header forms `MemAlloc` writes; the 20h form returns a block at offset 0 of a paragraph.

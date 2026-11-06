@@ -1,0 +1,1 @@
+Durations in game ticks, converted at 18.2 ticks a second. Most spells last between one and six half-minutes; Slow Poison alone is measured in hours. Four effects have no clock and end by an event.

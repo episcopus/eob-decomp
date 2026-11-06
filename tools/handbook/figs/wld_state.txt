@@ -1,0 +1,1 @@
+Where a level's changed state lives. A slot holds only the four wall bytes of every cell (so doors, levers and changed walls survive) and the 30 monster records; items and flags are saved elsewhere. `LEVELS.TMP` is the game's scratch copy of the 12 slots and is the fourth block of `EOBDATA.SAV`.

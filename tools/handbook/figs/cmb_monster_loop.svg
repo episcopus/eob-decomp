@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 507" width="760" height="507" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">ONE MONSTER UPDATE, AND WHAT A MELEE ATTACK DOES</text>
+<rect x="0.0" y="24.0" width="244.0" height="89.6" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="9.0" y="45.4" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#80311F" text-anchor="start">UpdateMonsters(group)  08E6:0CC8</text>
+<text x="9.0" y="60.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">run by the timer of group 0 to 3 (effects</text>
+<text x="9.0" y="73.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">2 to 5), every 15 to 35 ticks; for each of</text>
+<text x="9.0" y="87.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">the 30 records of that group with hp</text>
+<text x="9.0" y="100.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">above 0:</text>
+<rect x="0.0" y="125.6" width="244.0" height="89.6" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="9.0" y="147.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="start">1  AlertMonsterToParty</text>
+<text x="9.0" y="161.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">not in mode 7 to 10; party within 3 cells</text>
+<text x="9.0" y="175.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(Distance &lt; 4), and not behind the monster</text>
+<text x="9.0" y="188.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">unless within 1 cell: mode 0, target =</text>
+<text x="9.0" y="202.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">party cell</text>
+<rect x="0.0" y="227.2" width="244.0" height="62.3" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="9.0" y="248.6" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="start">2  ChasePartyIfAttacked</text>
+<text x="9.0" y="263.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">flag 1 (hit by the party): mode 0; a sleeper</text>
+<text x="9.0" y="276.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(mode 8) wakes its whole group</text>
+<rect x="0.0" y="301.5" width="244.0" height="89.6" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="9.0" y="322.9" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="start">3  switch (mode)</text>
+<text x="9.0" y="337.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">0 hunt;  1, 2, 3 walk ahead, turn when</text>
+<text x="9.0" y="351.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">blocked;  5, 6 follow a wall;  4 stand still; </text>
+<text x="9.0" y="364.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">7, 10 count the timer down, then mode 0; </text>
+<text x="9.0" y="378.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">8 asleep;  9 never alerted</text>
+<rect x="0.0" y="403.1" width="244.0" height="76.0" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="9.0" y="424.5" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="start">4  flip the walk frame; UpdateDDEffects</text>
+<text x="9.0" y="439.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">modes 4 and 7 keep their frame;</text>
+<text x="9.0" y="452.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">projectiles are tested again against the</text>
+<text x="9.0" y="466.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">new positions</text>
+<rect x="270.0" y="24.0" width="236.0" height="62.3" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="279.0" y="45.4" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#80311F" text-anchor="start">Mode 0 hunting  08E6:0AB8</text>
+<text x="279.0" y="60.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">each update, in this order, the first</text>
+<text x="279.0" y="73.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">that acts ends it:</text>
+<rect x="270.0" y="96.3" width="236.0" height="116.9" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="279.0" y="117.7" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#7A5412" text-anchor="start">a  TryMonsterRangedAttack</text>
+<text x="279.0" y="132.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">type flag 64, actions left, and the</text>
+<text x="279.0" y="145.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">5-update delay over; within 3 cells</text>
+<text x="279.0" y="159.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">straight ahead with nothing between;</text>
+<text x="279.0" y="173.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">then a spell or throw chosen by type</text>
+<text x="279.0" y="186.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(spell table, figure on spells); sets</text>
+<text x="279.0" y="200.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">actionDelay 5</text>
+<rect x="270.0" y="223.2" width="236.0" height="116.9" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="279.0" y="244.6" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#7A5412" text-anchor="start">b  TryMonsterMelee</text>
+<text x="279.0" y="259.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">the cell ahead is the party&#x27;s; the</text>
+<text x="279.0" y="272.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">monster stands in the near half or the</text>
+<text x="279.0" y="286.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">centre (else it picks a new quarter); it</text>
+<text x="279.0" y="300.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">swings on every second update (flag 4</text>
+<text x="279.0" y="313.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">flips); swing frames 0FEh and 0FFh</text>
+<text x="279.0" y="327.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">drawn, the view clock paused</text>
+<rect x="270.0" y="350.1" width="236.0" height="89.6" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="279.0" y="371.5" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#7A5412" text-anchor="start">c  StepMonsterToward(target cell)</text>
+<text x="279.0" y="386.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">else it takes one step along the</text>
+<text x="279.0" y="399.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">direction to the target, turning round</text>
+<text x="279.0" y="413.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">obstacles; with type flag 8 it may swing</text>
+<text x="279.0" y="427.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">after the step</text>
+<rect x="532.0" y="24.0" width="228.0" height="157.9" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="541.0" y="45.4" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#5C2D50" text-anchor="start">ResolveMonsterMelee  08E6:10F3</text>
+<text x="541.0" y="60.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">target: first member of the list for</text>
+<text x="541.0" y="73.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">this side and quarter (figure on</text>
+<text x="541.0" y="87.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">targets)</text>
+<text x="541.0" y="100.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">for each of the type&#x27;s 1 to 3 attacks:</text>
+<text x="541.0" y="114.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">RollMonsterToHit; a hit adds</text>
+<text x="541.0" y="128.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">RollDice(N, S, B)</text>
+<text x="541.0" y="141.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Stoneskin counter above 0: it drops by</text>
+<text x="541.0" y="155.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">1 and the running total becomes 0</text>
+<text x="541.0" y="169.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">total above 0: DamageCharacter once</text>
+<rect x="532.0" y="191.9" width="228.0" height="103.2" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="541.0" y="213.3" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#5C2D50" text-anchor="start">Then, by the type&#x27;s flags</text>
+<text x="541.0" y="227.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">128: a metal item of the target is lost</text>
+<text x="541.0" y="241.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(random slot from a random start)</text>
+<text x="541.0" y="255.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">16: poisoned (save kind 0, no skip if</text>
+<text x="541.0" y="268.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">already poisoned); 32: paralysed (save</text>
+<text x="541.0" y="282.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">kind 2)</text>
+<path d="M244.0,90.0 L270.0,60.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M506.0,120.0 L532.0,120.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M506.0,330.0 L520.0,330.0 L520.0,221.9 L532.0,221.9" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="270.0" y="459.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">Timing: a monster swings once per two updates, so every 30 to 70 ticks (1.6 to 3.8 s) by its</text>
+<text x="270.0" y="473.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">group.</text>
+</svg>

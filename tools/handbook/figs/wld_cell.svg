@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 394" width="760" height="394" class="fig">
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">ONE MAZE CELL: 4 BYTES IN THE FILE, 9 IN MEMORY (GMAZE, DS:B894, 1,024 CELLS = 9,216 BYTES)</text>
+<path d="M20,52 L20,46 L340,46 L340,52" fill="none" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="180.0" y="40.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#14504A" text-anchor="middle">LEVELn.MAZ: 4 bytes a cell, copied in by LoadMaze</text>
+<rect x="20.0" y="62.0" width="80.0" height="40.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.3"/>
+<text x="60.0" y="87.0" font-family="Inter, 'Inter Display', sans-serif" font-size="16" font-weight="700" fill="#14504A" text-anchor="middle">N</text>
+<rect x="100.0" y="62.0" width="80.0" height="40.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.3"/>
+<text x="140.0" y="87.0" font-family="Inter, 'Inter Display', sans-serif" font-size="16" font-weight="700" fill="#14504A" text-anchor="middle">E</text>
+<rect x="180.0" y="62.0" width="80.0" height="40.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.3"/>
+<text x="220.0" y="87.0" font-family="Inter, 'Inter Display', sans-serif" font-size="16" font-weight="700" fill="#14504A" text-anchor="middle">S</text>
+<rect x="260.0" y="62.0" width="80.0" height="40.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.3"/>
+<text x="300.0" y="87.0" font-family="Inter, 'Inter Display', sans-serif" font-size="16" font-weight="700" fill="#14504A" text-anchor="middle">W</text>
+<rect x="340.0" y="62.0" width="80.0" height="40.0" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.3"/>
+<text x="380.0" y="86.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="middle">count | mask</text>
+<rect x="420.0" y="62.0" width="160.0" height="40.0" rx="0" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.3"/>
+<text x="500.0" y="86.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">item list head (word)</text>
+<rect x="580.0" y="62.0" width="160.0" height="40.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.3"/>
+<text x="660.0" y="86.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">script offset (word)</text>
+<text x="60.0" y="117.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">+0</text>
+<text x="140.0" y="117.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">+1</text>
+<text x="220.0" y="117.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">+2</text>
+<text x="300.0" y="117.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">+3</text>
+<text x="380.0" y="117.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">+4</text>
+<text x="460.0" y="117.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">+5</text>
+<text x="540.0" y="117.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">+6</text>
+<text x="620.0" y="117.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">+7</text>
+<text x="700.0" y="117.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">+8</text>
+<line x1="22.0" y1="124.0" x2="22.0" y2="130.0" stroke="#1F6F66" stroke-width="0.8"/>
+<text x="26.0" y="144.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="start">Four wall types</text>
+<text x="26.0" y="160.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">One byte per side, in direction order: 0 north, 1 east, 2 south,</text>
+<text x="26.0" y="173.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">3 west. The value indexes the four per-kind tables of the level</text>
+<text x="26.0" y="187.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(flags, picture, handler, decoration chain). 0 is open space.</text>
+<line x1="342.0" y1="124.0" x2="342.0" y2="130.0" stroke="#7A3E6B" stroke-width="0.8"/>
+<text x="346.0" y="144.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="start">+4</text>
+<text x="346.0" y="160.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">See below.</text>
+<line x1="422.0" y1="124.0" x2="422.0" y2="130.0" stroke="#A8741A" stroke-width="0.8"/>
+<text x="426.0" y="144.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="start">Items</text>
+<text x="426.0" y="160.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Head of a circular list of the</text>
+<text x="426.0" y="173.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">items lying in the cell (an index</text>
+<text x="426.0" y="187.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">into gItems, 0 = none).</text>
+<line x1="582.0" y1="124.0" x2="582.0" y2="130.0" stroke="#3B4A8A" stroke-width="0.8"/>
+<text x="586.0" y="144.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="start">Script</text>
+<text x="586.0" y="160.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Offset of the cell&#x27;s script in</text>
+<text x="586.0" y="173.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">the level file (0 = none).</text>
+<line x1="0.0" y1="224.0" x2="760.0" y2="224.0" stroke="#D9D2C3" stroke-width="1"/>
+<text x="0.0" y="240.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">BYTE +4 BIT BY BIT, AND THE EVENTS THE MASK SWITCHES ON</text>
+<rect x="20.0" y="252.0" width="64.0" height="30.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="52.0" y="265.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">bit 7</text>
+<text x="52.0" y="278.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2C386B" text-anchor="middle">mode 0x10</text>
+<rect x="84.0" y="252.0" width="64.0" height="30.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="116.0" y="265.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">bit 6</text>
+<text x="116.0" y="278.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2C386B" text-anchor="middle">mode 8</text>
+<rect x="148.0" y="252.0" width="64.0" height="30.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="180.0" y="265.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">bit 5</text>
+<text x="180.0" y="278.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2C386B" text-anchor="middle">mode 4</text>
+<rect x="212.0" y="252.0" width="64.0" height="30.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="244.0" y="265.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">bit 4</text>
+<text x="244.0" y="278.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2C386B" text-anchor="middle">mode 2</text>
+<rect x="276.0" y="252.0" width="64.0" height="30.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="308.0" y="265.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">bit 3</text>
+<text x="308.0" y="278.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2C386B" text-anchor="middle">mode 1</text>
+<rect x="340.0" y="252.0" width="64.0" height="30.0" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="372.0" y="265.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">bit 2</text>
+<rect x="404.0" y="252.0" width="64.0" height="30.0" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="436.0" y="265.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">bit 1</text>
+<rect x="468.0" y="252.0" width="64.0" height="30.0" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="500.0" y="265.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">bit 0</text>
+<text x="180.0" y="302.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#2C386B" text-anchor="middle">trigger mask: a set bit enables the event</text>
+<text x="436.0" y="302.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#5C2D50" text-anchor="middle">monster count, 0 to 4 in practice</text>
+<text x="548.0" y="264.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="600" fill="#6E695F" text-anchor="start">mode</text>
+<text x="598.0" y="264.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="600" fill="#6E695F" text-anchor="start">event (RunCellScript)</text>
+<text x="548.0" y="280.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#2C386B" text-anchor="start">1</text>
+<text x="598.0" y="280.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">the party enters the cell</text>
+<text x="548.0" y="295.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#2C386B" text-anchor="start">2</text>
+<text x="598.0" y="295.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">the party leaves it</text>
+<text x="548.0" y="310.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#2C386B" text-anchor="start">4</text>
+<text x="598.0" y="310.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">an item is put into it</text>
+<text x="548.0" y="325.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#2C386B" text-anchor="start">8</text>
+<text x="598.0" y="325.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">an item is taken from it</text>
+<text x="548.0" y="340.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#2C386B" text-anchor="start">0x10</text>
+<text x="598.0" y="340.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">a thrown item flies into it</text>
+<text x="0.0" y="362.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">Enabled whatever the mask: 0x20 (the level timer, cell 0 only), 0x40 (a mouse click on the wall) and 0x80 (nothing raises it). The key &#x27;activate&#x27; uses</text>
+<text x="0.0" y="375.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">0xFF. LoadLevel ORs the file&#x27;s flag byte into +4 and stores the script offset at +7 for each entry of the level file&#x27;s trigger table.</text>
+</svg>

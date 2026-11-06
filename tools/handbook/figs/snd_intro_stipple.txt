@@ -1,0 +1,1 @@
+Two of the intro's effects are plain loops. BlitImage builds sparse copies of a picture (a stipple fade-in with no palette change); DrawGrid paints the whole screen in colour 12 with 16 lines in an interleaved order, so a grid appears and then fills in.

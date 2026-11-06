@@ -1,0 +1,1 @@
+How the 62 units of `EOB.EXE` divide by role, to scale. More than a quarter of the code is overlaid; the monster, script and spell units are the largest resident group.

@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 380" width="760" height="380" class="fig">
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">ONE SHORT SOUND, BYTE BY BYTE: DRIVER SOUND 139, VOICE 3 (SLOTS 08H, 0BH)</text>
+<rect x="0.0" y="25.0" width="758.0" height="22.0" rx="3" fill="#F4F0E6" stroke="none" stroke-width="1"/>
+<text x="6.0" y="40.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2C386B" text-anchor="start">script</text>
+<text x="118.0" y="40.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2C386B" text-anchor="start">what the driver does</text>
+<text x="356.0" y="40.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2C386B" text-anchor="start">register writes (register value)</text>
+<text x="686.0" y="40.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#2C386B" text-anchor="start">ms</text>
+<rect x="0.0" y="54.0" width="758.0" height="44.0" rx="4" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="10.0" y="74.0" font-family="'DejaVu Sans Mono', monospace" font-size="12.5" font-weight="700" fill="#14504A" text-anchor="start">03 00</text>
+<text x="118.0" y="74.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">queued; the next driver tick calls</text>
+<text x="118.0" y="89.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">ClearVoice, then VoiceSilence</text>
+<text x="356.0" y="74.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="400" fill="#2B2A28" text-anchor="start">68 FF  6B FF  88 FF  8B FF</text>
+<text x="356.0" y="89.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="400" fill="#2B2A28" text-anchor="start">B3 00  B3 20</text>
+<text x="686.0" y="74.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">0 to 2.7</text>
+<rect x="0.0" y="104.0" width="758.0" height="44.0" rx="4" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="10.0" y="124.0" font-family="'DejaVu Sans Mono', monospace" font-size="12.5" font-weight="700" fill="#3C3A36" text-anchor="start">AB 14</text>
+<text x="118.0" y="124.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">LEVEL2: level offset 14h (the attenuation</text>
+<text x="118.0" y="139.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">patched it to 26h in this play)</text>
+<text x="356.0" y="124.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="400" fill="#2B2A28" text-anchor="start">no write</text>
+<text x="686.0" y="124.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start"></text>
+<rect x="0.0" y="154.0" width="758.0" height="59.0" rx="4" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1"/>
+<text x="10.0" y="174.0" font-family="'DejaVu Sans Mono', monospace" font-size="12.5" font-weight="700" fill="#5C2D50" text-anchor="start">90 76</text>
+<text x="118.0" y="174.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">PATCH 76h: LoadVoicePatch, the carrier</text>
+<text x="118.0" y="189.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">level is 00h + 26h</text>
+<text x="356.0" y="174.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="400" fill="#2B2A28" text-anchor="start">28 00  2B 00  C3 0E  E8 00  EB 00</text>
+<text x="356.0" y="189.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="400" fill="#2B2A28" text-anchor="start">48 00  4B 26  68 80  6B 2A</text>
+<text x="356.0" y="204.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="400" fill="#2B2A28" text-anchor="start">88 00  8B 06</text>
+<text x="686.0" y="174.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">3.2 to 10.3</text>
+<rect x="0.0" y="219.0" width="758.0" height="44.0" rx="4" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="10.0" y="239.0" font-family="'DejaVu Sans Mono', monospace" font-size="12.5" font-weight="700" fill="#7A5412" text-anchor="start">12 18</text>
+<text x="118.0" y="239.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">note, octave 1, semitone 2: F-number 15Ah,</text>
+<text x="118.0" y="254.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">block 1, key on; wait 24 units</text>
+<text x="356.0" y="239.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="400" fill="#2B2A28" text-anchor="start">A3 5A  B3 05  B3 25</text>
+<text x="686.0" y="239.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">10.9 to 12.2</text>
+<rect x="0.0" y="269.0" width="758.0" height="44.0" rx="4" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="10.0" y="289.0" font-family="'DejaVu Sans Mono', monospace" font-size="12.5" font-weight="700" fill="#80311F" text-anchor="start">88</text>
+<text x="118.0" y="289.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">END, 24 units later: VoiceKeyOff</text>
+<text x="118.0" y="304.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(speed FFh: one unit a driver tick)</text>
+<text x="356.0" y="289.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="400" fill="#2B2A28" text-anchor="start">B3 05</text>
+<text x="686.0" y="289.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">315.5</text>
+<text x="0.0" y="333.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">Write times are the oracle&#x27;s: it charges 20 us for each status-port read, so a write costs 540 to 640 us there. On a real card the 4 plus 23 reads are</text>
+<text x="0.0" y="346.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">about 30 us. The wait itself is counted in driver ticks, not in time spent writing. The B3 05 at the end is the same register as the key-on write, with bit</text>
+<text x="0.0" y="360.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">5 cleared.</text>
+</svg>

@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 470" width="760" height="470" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<text x="0.0" y="18.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="start">Leaving a level (a stairs or teleport script: LoadLevelOp, 122E:1AAB)</text>
+<rect x="0.0" y="26.0" width="179.5" height="82.0" rx="6" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="89.8" y="57.8" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2C386B" text-anchor="middle">ResetLevel</text>
+<text x="89.8" y="71.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">finish a moving door, clear</text>
+<text x="89.8" y="84.2" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">projectiles and attack frames</text>
+<path d="M180.5,67.0 L192.5,67.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="193.5" y="26.0" width="179.5" height="82.0" rx="6" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="283.2" y="45.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2C386B" text-anchor="middle">SaveLevelState</text>
+<text x="283.2" y="58.7" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">pack: copy the 4 wall bytes of the</text>
+<text x="283.2" y="71.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">1,024 cells, LCW-compress to a</text>
+<text x="283.2" y="84.2" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">stream of at most 1,200 bytes,</text>
+<text x="283.2" y="96.9" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">append the 30 monsters</text>
+<path d="M374.0,67.0 L386.0,67.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="387.0" y="26.0" width="179.5" height="82.0" rx="6" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="476.8" y="51.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2C386B" text-anchor="middle">write a slot</text>
+<text x="476.8" y="65.1" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">LEVELS.TMP at (level - 1) x 2,040,</text>
+<text x="476.8" y="77.8" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">2,040 bytes; set bit level - 1 of</text>
+<text x="476.8" y="90.6" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">gSavedLevels</text>
+<path d="M567.5,67.0 L579.5,67.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="580.5" y="26.0" width="179.5" height="82.0" rx="6" fill="#FFFDF8" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="670.2" y="64.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2C386B" text-anchor="middle">LoadLevel(new)</text>
+<text x="670.2" y="77.8" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">next section</text>
+<text x="0.0" y="138.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="start">Entering a level (LoadLevel, ovl3:0A7C)</text>
+<rect x="0.0" y="146.0" width="179.5" height="92.0" rx="6" fill="#FFFDF8" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="89.8" y="176.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">INF and maze</text>
+<text x="89.8" y="190.1" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">LEVELn.INF is unpacked: wall sets,</text>
+<text x="89.8" y="202.8" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">timers, monster list. LEVELn.MAZ</text>
+<text x="89.8" y="215.6" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">gives the pristine wall bytes</text>
+<path d="M180.5,192.0 L192.5,192.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="193.5" y="146.0" width="179.5" height="92.0" rx="6" fill="#FFFDF8" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="283.2" y="170.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">visited?</text>
+<text x="283.2" y="183.7" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">bit level - 1 of gSavedLevels: the</text>
+<text x="283.2" y="196.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">slot is read from LEVELS.TMP,</text>
+<text x="283.2" y="209.2" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">unpacked over the walls, monsters</text>
+<text x="283.2" y="221.9" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">copied back</text>
+<path d="M374.0,192.0 L386.0,192.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="387.0" y="146.0" width="179.5" height="92.0" rx="6" fill="#FFFDF8" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="476.8" y="176.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">first visit</text>
+<text x="476.8" y="190.1" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">monsters are created from the</text>
+<text x="476.8" y="202.8" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">INF list (InitMonster) and the walls</text>
+<text x="476.8" y="215.6" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">stay as in the MAZ file</text>
+<path d="M567.5,192.0 L579.5,192.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="580.5" y="146.0" width="179.5" height="92.0" rx="6" fill="#FFFDF8" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="670.2" y="176.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">items</text>
+<text x="670.2" y="190.1" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">RebuildItemList: every item whose</text>
+<text x="670.2" y="202.8" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">level byte is this level goes into its</text>
+<text x="670.2" y="215.6" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">cell&#x27;s list</text>
+<text x="0.0" y="264.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="start">Save game (SaveGame, ovl3:1368; the camp menu asks first)</text>
+<rect x="0.0" y="272.0" width="179.5" height="92.0" rx="6" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="89.8" y="315.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#5C2D50" text-anchor="middle">ResetLevel</text>
+<text x="89.8" y="328.8" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">settle doors and projectiles</text>
+<path d="M180.5,318.0 L192.5,318.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="193.5" y="272.0" width="179.5" height="92.0" rx="6" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="283.2" y="302.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#5C2D50" text-anchor="middle">merge</text>
+<text x="283.2" y="316.1" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">read all of LEVELS.TMP (24,480)</text>
+<text x="283.2" y="328.8" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">into gArtPage, pack the current</text>
+<text x="283.2" y="341.6" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">level over its own slot there</text>
+<path d="M374.0,318.0 L386.0,318.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="387.0" y="272.0" width="179.5" height="92.0" rx="6" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="476.8" y="296.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#5C2D50" text-anchor="middle">write</text>
+<text x="476.8" y="309.7" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">recreate EOBDATA.SAV:</text>
+<text x="476.8" y="322.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">characters (timers aged), 64-byte</text>
+<text x="476.8" y="335.2" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">header, items, the level image, 3</text>
+<text x="476.8" y="347.9" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">option bytes, 96 bytes</text>
+<path d="M567.5,318.0 L579.5,318.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="580.5" y="272.0" width="179.5" height="92.0" rx="6" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="670.2" y="296.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#5C2D50" text-anchor="middle">check</text>
+<text x="670.2" y="309.7" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">each write must return its full</text>
+<text x="670.2" y="322.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">length; the result picks the</text>
+<text x="670.2" y="335.2" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">message &quot;Game saved.&quot; or &quot;Save</text>
+<text x="670.2" y="347.9" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">game failure!&quot;</text>
+<text x="0.0" y="390.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="start">Load game (LoadGame, ovl3:15B9; from the title menu or the camp menu)</text>
+<rect x="0.0" y="398.0" width="179.5" height="62.0" rx="6" fill="#FFFDF8" stroke="#A8741A" stroke-width="1.2"/>
+<text x="89.8" y="413.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">read</text>
+<text x="89.8" y="427.1" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">six blocks, sizes from ds:6A8C,</text>
+<text x="89.8" y="439.8" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">back to back into gArtPage; any</text>
+<text x="89.8" y="452.6" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">short read = failure</text>
+<path d="M180.5,429.0 L192.5,429.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="193.5" y="398.0" width="179.5" height="62.0" rx="6" fill="#FFFDF8" stroke="#A8741A" stroke-width="1.2"/>
+<text x="283.2" y="413.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">restore</text>
+<text x="283.2" y="427.1" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">characters (keeping their portrait</text>
+<text x="283.2" y="439.8" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">pointers), header, items; options;</text>
+<text x="283.2" y="452.6" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">the 96 bytes</text>
+<path d="M374.0,429.0 L386.0,429.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="387.0" y="398.0" width="179.5" height="62.0" rx="6" fill="#FFFDF8" stroke="#A8741A" stroke-width="1.2"/>
+<text x="476.8" y="419.8" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">LEVELS.TMP</text>
+<text x="476.8" y="433.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">recreated from block 4: the file is</text>
+<text x="476.8" y="446.2" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">the save&#x27;s level image</text>
+<path d="M567.5,429.0 L579.5,429.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="580.5" y="398.0" width="179.5" height="62.0" rx="6" fill="#FFFDF8" stroke="#A8741A" stroke-width="1.2"/>
+<text x="670.2" y="413.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">portraits</text>
+<text x="670.2" y="427.1" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">re-cut from CHARGENA or</text>
+<text x="670.2" y="439.8" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">OUTTAKE sheets; then LoadLevel</text>
+<text x="670.2" y="452.6" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">and redraw</text>
+</svg>

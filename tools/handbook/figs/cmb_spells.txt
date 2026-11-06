@@ -1,0 +1,1 @@
+The spell lists, from the name tables (ds:1278, ds:12E0), the level maps (ds:62AF, ds:62C9) and the `gSpells` callbacks. The number is the value stored in a spell slot; the `gSpells` index is that number, plus 25 for a cleric spell. Three spells have an empty handler and two have no record at all.

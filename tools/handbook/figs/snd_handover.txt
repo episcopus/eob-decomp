@@ -1,0 +1,1 @@
+INTRO.EXE passes its own four arguments to EOB.EXE and adds the video mode to restore and a memory number, then loads EOB.EXE over itself; the mechanism is in section 2.6.

@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 470" width="760" height="470" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<rect x="308.0" y="149.0" width="144.0" height="112.0" rx="0" fill="#8FB0A7" stroke="#1F6F66" stroke-width="1.2"/>
+<path d="M0,-125 L90,-39 L90,449 L0,535 Z" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M760,-125 L670,-39 L670,449 L760,535 Z" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M0,-125 L90,-39 L670,-39 L760,-125 Z" fill="#E8F1EE" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M0,535 L90,449 L670,449 L760,535 Z" fill="#D3E4DF" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M90,-39 L168,31 L168,379 L90,449 Z" fill="#CFE3DE" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M670,-39 L592,31 L592,379 L670,449 Z" fill="#CFE3DE" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M90,-39 L168,31 L592,31 L670,-39 Z" fill="#DCE9E5" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M90,449 L168,379 L592,379 L670,449 Z" fill="#C8DCD6" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M168,31 L228,83 L228,327 L168,379 Z" fill="#C0D9D2" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M592,31 L532,83 L532,327 L592,379 Z" fill="#C0D9D2" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M168,31 L228,83 L532,83 L592,31 Z" fill="#E8F1EE" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M168,379 L228,327 L532,327 L592,379 Z" fill="#D3E4DF" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M228,83 L274,121 L274,289 L228,327 Z" fill="#B2CEC6" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M532,83 L486,121 L486,289 L532,327 Z" fill="#B2CEC6" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M228,83 L274,121 L486,121 L532,83 Z" fill="#DCE9E5" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M228,327 L274,289 L486,289 L532,327 Z" fill="#C8DCD6" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M274,121 L308,149 L308,261 L274,289 Z" fill="#A5C4BC" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M486,121 L452,149 L452,261 L486,289 Z" fill="#A5C4BC" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M274,121 L308,149 L452,149 L486,121 Z" fill="#E8F1EE" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M274,289 L308,261 L452,261 L486,289 Z" fill="#D3E4DF" stroke="#1F6F66" stroke-width="1.1"/>
+<path d="M168,379 L168,109.3 L228,137.89999999999998 L228,327 Z" fill="#8A7B5A" stroke="#A8741A" stroke-width="1.2"/>
+<path d="M354,203 Q380,181 406,203 Q380,225 354,203 Z" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="1.6"/>
+<circle cx="380.0" cy="203.0" r="9.0" fill="#7A3E6B" stroke="none" stroke-width="1"/>
+<circle cx="380.0" cy="203.0" r="3.6" fill="#2B2A28" stroke="none" stroke-width="1"/>
+<circle cx="382.5" cy="200.0" r="1.6" fill="#FFFFFF" stroke="none" stroke-width="1"/>
+<line x1="358.0" y1="187.0" x2="350.0" y2="173.0" stroke="#7A3E6B" stroke-width="1.4"/>
+<circle cx="350.0" cy="172.0" r="3.0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<line x1="369.0" y1="185.0" x2="365.0" y2="170.0" stroke="#7A3E6B" stroke-width="1.4"/>
+<circle cx="365.0" cy="169.0" r="3.0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<line x1="380.0" y1="183.0" x2="380.0" y2="167.0" stroke="#7A3E6B" stroke-width="1.4"/>
+<circle cx="380.0" cy="166.0" r="3.0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<line x1="391.0" y1="185.0" x2="395.0" y2="170.0" stroke="#7A3E6B" stroke-width="1.4"/>
+<circle cx="395.0" cy="169.0" r="3.0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<line x1="402.0" y1="187.0" x2="410.0" y2="173.0" stroke="#7A3E6B" stroke-width="1.4"/>
+<circle cx="410.0" cy="172.0" r="3.0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="0.0" y="40.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="start">4D CA 18 25 30 BB 1D</text>
+<text x="0.0" y="70.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="start">6D 13 2C DE D6 23 7B 2E</text>
+<text x="0.0" y="100.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="start">D9 1E 3F 72 1F CB 19 71</text>
+<text x="0.0" y="130.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="start">44 94 D6 49 3C 9D</text>
+<text x="0.0" y="160.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="start">5C 34 60 BE 31 20 1E 69</text>
+<text x="0.0" y="190.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="start">DA A0 EE E8 B9 99 7F</text>
+<text x="0.0" y="220.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="start">7C 29 99 FD AF E5</text>
+<text x="0.0" y="250.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="start">25 3C D6 54 AF 4D FA</text>
+<text x="0.0" y="280.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="start">14 27 A0 AE B3 FE E9</text>
+<text x="0.0" y="310.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="start">2F 8A F2 21 1F 9E</text>
+<text x="0.0" y="340.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="start">E4 91 C5 B1 0B EC B5 56</text>
+<text x="0.0" y="370.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="start">3B FC 1E 6F 93 42 7E CB</text>
+<text x="760.0" y="40.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="end">FE 29 55 E5 CD 8E 46</text>
+<text x="760.0" y="70.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="end">8E D4 B7 C2 76 4D 2A</text>
+<text x="760.0" y="100.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="end">4D 76 77 06 F8 5D</text>
+<text x="760.0" y="130.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="end">90 02 4A D6 BD A3 40</text>
+<text x="760.0" y="160.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="end">1B E9 C8 CB CC C9 35 F6</text>
+<text x="760.0" y="190.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="end">CD 1F 61 22 6A E1 53 38</text>
+<text x="760.0" y="220.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="end">1A 34 00 4D 33 BA 0D</text>
+<text x="760.0" y="250.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="end">6A C0 4C 81 B1 BA</text>
+<text x="760.0" y="280.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="end">3E 3B F9 EE F5 F7 9F</text>
+<text x="760.0" y="310.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="end">49 34 AF 87 F5 52</text>
+<text x="760.0" y="340.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="end">0B 69 B9 4B 0D 98 2E 85</text>
+<text x="760.0" y="370.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#B9B1A0" text-anchor="end">BB 55 B6 72 A8 72 63 7A</text>
+<rect x="190.0" y="428.0" width="128.0" height="24.0" rx="12" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="254.0" y="444.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">START1.EXE</text>
+<path d="M320.0,440.0 L328.0,440.0" fill="none" stroke="#8A8373" stroke-width="1.2" marker-end="url(#a8A8373)"/>
+<rect x="330.0" y="428.0" width="128.0" height="24.0" rx="12" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="394.0" y="444.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">INTRO.EXE</text>
+<path d="M460.0,440.0 L468.0,440.0" fill="none" stroke="#8A8373" stroke-width="1.2" marker-end="url(#a8A8373)"/>
+<rect x="470.0" y="428.0" width="128.0" height="24.0" rx="12" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="534.0" y="444.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">EOB.EXE</text>
+</svg>

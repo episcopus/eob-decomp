@@ -1,0 +1,1 @@
+The play screen with the rectangles the code draws and tests (pixels on page 0). The 3D view fills the top left; the six party blocks the right; the arrows, compass and message window the bottom. While the inventory or the character sheet is up, the area outlined in red is redrawn from page 2 instead of the party blocks.

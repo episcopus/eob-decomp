@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 486" width="760" height="486" class="fig"><defs><marker id="a1F6F66" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#1F6F66"/></marker><marker id="aA8452F" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#A8452F"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">A DOOR IS A CELL WHOSE TWO OPPOSITE SIDES CARRY THE SAME DOOR KIND; ANIMATING IT ADDS 1 TO BOTH</text>
+<rect x="28.0" y="38.0" width="98.0" height="70.0" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.3"/>
+<text x="77.0" y="58.0" font-family="Inter, 'Inter Display', sans-serif" font-size="13" font-weight="700" fill="#80311F" text-anchor="middle">closed</text>
+<text x="77.0" y="75.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">kind k, flags A8</text>
+<text x="77.0" y="92.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">0x20 closed</text>
+<path d="M128.0,62.0 L165.0,62.0" fill="none" stroke="#1F6F66" stroke-width="1.6" marker-end="url(#a1F6F66)"/>
+<path d="M165.0,88.0 L128.0,88.0" fill="none" stroke="#A8452F" stroke-width="1.6" marker-end="url(#aA8452F)"/>
+<rect x="167.0" y="38.0" width="98.0" height="70.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.3"/>
+<text x="216.0" y="58.0" font-family="Inter, 'Inter Display', sans-serif" font-size="13" font-weight="700" fill="#7A5412" text-anchor="middle">frame 1</text>
+<text x="216.0" y="75.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">k + 1, flags 88</text>
+<path d="M267.0,62.0 L304.0,62.0" fill="none" stroke="#1F6F66" stroke-width="1.6" marker-end="url(#a1F6F66)"/>
+<path d="M304.0,88.0 L267.0,88.0" fill="none" stroke="#A8452F" stroke-width="1.6" marker-end="url(#aA8452F)"/>
+<rect x="306.0" y="38.0" width="98.0" height="70.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.3"/>
+<text x="355.0" y="58.0" font-family="Inter, 'Inter Display', sans-serif" font-size="13" font-weight="700" fill="#7A5412" text-anchor="middle">frame 2</text>
+<text x="355.0" y="75.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">k + 2, flags 88</text>
+<path d="M406.0,62.0 L443.0,62.0" fill="none" stroke="#1F6F66" stroke-width="1.6" marker-end="url(#a1F6F66)"/>
+<path d="M443.0,88.0 L406.0,88.0" fill="none" stroke="#A8452F" stroke-width="1.6" marker-end="url(#aA8452F)"/>
+<rect x="445.0" y="38.0" width="98.0" height="70.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.3"/>
+<text x="494.0" y="58.0" font-family="Inter, 'Inter Display', sans-serif" font-size="13" font-weight="700" fill="#7A5412" text-anchor="middle">frame 3</text>
+<text x="494.0" y="75.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">k + 3, flags 88</text>
+<path d="M545.0,62.0 L582.0,62.0" fill="none" stroke="#1F6F66" stroke-width="1.6" marker-end="url(#a1F6F66)"/>
+<path d="M582.0,88.0 L545.0,88.0" fill="none" stroke="#A8452F" stroke-width="1.6" marker-end="url(#aA8452F)"/>
+<rect x="584.0" y="38.0" width="98.0" height="70.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.3"/>
+<text x="633.0" y="58.0" font-family="Inter, 'Inter Display', sans-serif" font-size="13" font-weight="700" fill="#14504A" text-anchor="middle">open</text>
+<text x="633.0" y="75.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">k + 4, flags 9F</text>
+<text x="633.0" y="92.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">0x10 open</text>
+<text x="28.0" y="128.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#14504A" text-anchor="start">opening: +1 on side s and side s + 2 every 5 ticks, sound 3 each step</text>
+<text x="28.0" y="144.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#80311F" text-anchor="start">closing: -1 the same way, sound 4 each step, sound 5 on reaching &#x27;closed&#x27;</text>
+<text x="760.0" y="128.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="end">kinds k = 3, 8, 13, 18</text>
+<line x1="0.0" y1="174.0" x2="760.0" y2="174.0" stroke="#D9D2C3" stroke-width="1"/>
+<text x="0.0" y="188.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">WHO ASKS, AND THE ONE ANIMATION SLOT</text>
+<rect x="0.0" y="200.0" width="232.0" height="86.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<text x="9.0" y="218.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2C386B" text-anchor="start">door button</text>
+<text x="9.0" y="234.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">DoorButtonAction: a click on the button</text>
+<text x="9.0" y="247.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">picture, ToggleDoor, sound 6</text>
+<rect x="244.0" y="200.0" width="232.0" height="86.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<text x="253.0" y="218.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2C386B" text-anchor="start">cell script</text>
+<text x="253.0" y="234.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">OpenDoorOp, CloseDoorOp,</text>
+<text x="253.0" y="247.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">ToggleWallTypeOp (sub EA)</text>
+<rect x="488.0" y="200.0" width="232.0" height="86.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.1"/>
+<text x="497.0" y="218.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#7A5412" text-anchor="start">stuck door</text>
+<text x="497.0" y="234.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">kinds 30, 31: ForceDoorAction rolls 1d20</text>
+<text x="497.0" y="247.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">against the strongest member, then the</text>
+<text x="497.0" y="260.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">kind becomes 8 or 0x12 and OpenDoor runs</text>
+<rect x="0.0" y="306.0" width="760.0" height="78.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="10.0" y="326.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#5C2D50" text-anchor="start">gEffects[12]  (period 5 ticks; arg = the door&#x27;s cell, sub = +1 or -1, active)</text>
+<text x="10.0" y="342.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">OpenDoor / CloseDoor / ToggleDoor arm it twice around a first StepDoor call, so the first frame shows at once. Each later tick runs StepDoor(arg).</text>
+<text x="10.0" y="355.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">It stops itself (ArmEffect(12, 0)) when the kind has bit 0x10 while opening or 0x20 while closing. There is only one slot: a call for the same cell sets</text>
+<text x="10.0" y="368.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">or reverses the direction, a call for another cell is ignored while a door moves.</text>
+<line x1="0.0" y1="394.0" x2="760.0" y2="394.0" stroke="#D9D2C3" stroke-width="1"/>
+<text x="0.0" y="408.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">QUIRKS AND RULES READ FROM THE CODE</text>
+<text x="0.0" y="426.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">CloseDoor does nothing while the cell holds any monster (count &amp; 7); ToggleDoor tests only bit 0 of the count, so it still closes on a door with 2 or 4</text>
+<text x="0.0" y="439.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">monsters in it.</text>
+<text x="0.0" y="455.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">ResetLevel (before a save or a level change) adds the step to both sides in a loop until the kind has bit 0x30, finishing a door that is still moving.</text>
+</svg>

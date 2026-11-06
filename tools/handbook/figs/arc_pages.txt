@@ -1,0 +1,1 @@
+The eight-word page table `StartupGame` fills for each graphics choice (07C8:0199). Page kinds 0, 2, 4 and 6 are the screen and three work pages; an odd slot is the memory copy that `GetPageBuffer` returns, an even slot the segment the driver draws to.

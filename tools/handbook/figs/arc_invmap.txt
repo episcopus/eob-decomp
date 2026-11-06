@@ -1,0 +1,1 @@
+The inventory screen's regions (node list 2b, `ds:51D2`), drawn to scale on the right strip of the screen. The 27 item boxes are the 27 `items` slots of a character record; the movement and floor nodes of the map screen stay in the list, so the party can still walk.

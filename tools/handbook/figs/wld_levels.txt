@@ -1,0 +1,1 @@
+The twelve level files side by side (wall set, sprite sheets, number of monsters, items and scripted cells, level timer) and the graph of the level changes their scripts make. Level 7 is a hub; falls always go down one level.

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 448" width="760" height="448" class="fig">
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">ONE PASS OF RUNMAPLOOP (0ACD:0E8A)</text>
+<rect x="0.0" y="24.0" width="372.0" height="54.0" rx="5" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<circle cx="14.0" cy="39.0" r="8.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="14.0" y="42.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+<text x="30.0" y="42.0" font-family="'DejaVu Sans Mono', monospace" font-size="12.5" font-weight="700" fill="#2C386B" text-anchor="start">PollMapInput</text>
+<text x="30.0" y="57.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">one key or mouse event if one waits (never blocks); node walk</text>
+<text x="30.0" y="70.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">and callback; HandleMapKey when the mouse is off</text>
+<rect x="0.0" y="85.0" width="372.0" height="54.0" rx="5" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.1"/>
+<circle cx="14.0" cy="100.0" r="8.0" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="14.0" y="103.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="30.0" y="103.0" font-family="'DejaVu Sans Mono', monospace" font-size="12.5" font-weight="700" fill="#14504A" text-anchor="start">RunEffects</text>
+<text x="30.0" y="118.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">each due entry of the 16-entry timer table runs its handler;</text>
+<text x="30.0" y="131.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">then TickLevelScriptTimer</text>
+<rect x="0.0" y="146.0" width="372.0" height="40.5" rx="5" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.1"/>
+<circle cx="14.0" cy="161.0" r="8.0" fill="#7A3E6B" stroke="none" stroke-width="1"/>
+<text x="14.0" y="164.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+<text x="30.0" y="164.0" font-family="'DejaVu Sans Mono', monospace" font-size="12.5" font-weight="700" fill="#5C2D50" text-anchor="start">DrawViewFrame(1)</text>
+<text x="30.0" y="179.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">only when an action set gViewDirty</text>
+<rect x="0.0" y="193.5" width="372.0" height="54.0" rx="5" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.1"/>
+<circle cx="14.0" cy="208.5" r="8.0" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="14.0" y="212.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">4</text>
+<text x="30.0" y="211.5" font-family="'DejaVu Sans Mono', monospace" font-size="12.5" font-weight="700" fill="#7A5412" text-anchor="start">ambient sound</text>
+<text x="30.0" y="226.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">levels 1 to 3 only: (1d10+3) x 18 ticks apart, sound 1Eh at a cell</text>
+<text x="30.0" y="240.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">0 to 11 from the party</text>
+<rect x="0.0" y="254.5" width="372.0" height="40.5" rx="5" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.1"/>
+<circle cx="14.0" cy="269.5" r="8.0" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="14.0" y="273.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">5</text>
+<text x="30.0" y="272.5" font-family="'DejaVu Sans Mono', monospace" font-size="12.5" font-weight="700" fill="#7A5412" text-anchor="start">PlaySoundDefault(0)</text>
+<text x="30.0" y="287.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">plays the sound recorded by the previous call (one behind)</text>
+<rect x="0.0" y="302.0" width="372.0" height="40.5" rx="5" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.1"/>
+<circle cx="14.0" cy="317.0" r="8.0" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="14.0" y="320.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">6</text>
+<text x="30.0" y="320.0" font-family="'DejaVu Sans Mono', monospace" font-size="12.5" font-weight="700" fill="#80311F" text-anchor="start">TurnUndead</text>
+<text x="30.0" y="335.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">levels 2 and 7 only: a cleric or paladin may turn the undead ahead</text>
+<text x="0.0" y="357.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#6E695F" text-anchor="start">Then the loop starts again at once: there is no wait, no HLT; the</text>
+<text x="0.0" y="371.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#6E695F" text-anchor="start">pace comes from the tick counter, not from the loop.</text>
+<text x="410.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">THE 16 TIMED EFFECTS (DS:5BA8)</text>
+<text x="410.0" y="42.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#2B2A28" text-anchor="start">MoveDDEffects</text>
+<rect x="414.0" y="47.0" width="23.5" height="8.0" rx="2" fill="#3B4A8A" stroke="#3B4A8A" stroke-width="1"/>
+<text x="443.5" y="55.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">3 (0.2 s)</text>
+<text x="410.0" y="69.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">thrown items and spells in flight</text>
+<text x="410.0" y="91.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#2B2A28" text-anchor="start">StepDoor</text>
+<rect x="414.0" y="96.0" width="34.5" height="8.0" rx="2" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1"/>
+<text x="454.5" y="104.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">5 (0.3 s)</text>
+<text x="410.0" y="118.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">a door that is opening or closing</text>
+<text x="410.0" y="140.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#2B2A28" text-anchor="start">BlinkSelected</text>
+<rect x="414.0" y="145.0" width="47.1" height="8.0" rx="2" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1"/>
+<text x="467.1" y="153.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">9 (0.5 s)</text>
+<text x="410.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">frame of the member being moved</text>
+<text x="410.0" y="189.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#2B2A28" text-anchor="start">CheckFarTable</text>
+<rect x="414.0" y="194.0" width="49.3" height="8.0" rx="2" fill="#3B4A8A" stroke="#3B4A8A" stroke-width="1"/>
+<text x="469.3" y="202.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">10 (0.5 s)</text>
+<text x="410.0" y="216.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">animated walls (teleporter) flip</text>
+<text x="410.0" y="238.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#2B2A28" text-anchor="start">UpdateMonsterGroup x4</text>
+<rect x="414.0" y="243.0" width="64.2" height="8.0" rx="2" fill="#A8452F" stroke="#A8452F" stroke-width="1"/>
+<text x="484.2" y="251.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">20 (1.1 s)</text>
+<text x="410.0" y="265.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">monster groups 0 to 3</text>
+<text x="410.0" y="287.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#2B2A28" text-anchor="start">RandomiseMonsterOffsets</text>
+<rect x="414.0" y="292.0" width="68.9" height="8.0" rx="2" fill="#A8452F" stroke="#A8452F" stroke-width="1"/>
+<text x="488.9" y="300.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">25 (1.4 s)</text>
+<text x="410.0" y="314.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">jitter of drawn monsters</text>
+<text x="410.0" y="336.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#2B2A28" text-anchor="start">RunCharEffects x6</text>
+<rect x="414.0" y="341.0" width="83.8" height="8.0" rx="2" fill="#A9D0C8" stroke="#1F6F66" stroke-width="1"/>
+<text x="503.8" y="349.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">50 (2.7 s)</text>
+<text x="410.0" y="363.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">poison, spells, timers of each member</text>
+<text x="410.0" y="385.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#2B2A28" text-anchor="start">DecayMemberState</text>
+<rect x="414.0" y="390.0" width="149.6" height="8.0" rx="2" fill="#1F6F66" stroke="#1F6F66" stroke-width="1"/>
+<text x="569.6" y="398.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">1080 (59.3 s)</text>
+<text x="410.0" y="412.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">food of each member</text>
+<text x="410.0" y="426.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">Pale bars start disarmed and are armed on demand. Period in ticks</text>
+<text x="410.0" y="439.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">(1 tick = 1/18.2 s), log scale; LoadLevel resets the monster periods.</text>
+</svg>

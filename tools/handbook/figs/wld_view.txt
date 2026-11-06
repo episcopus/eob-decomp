@@ -1,0 +1,1 @@
+The 18 cells around the party that the view code keeps pointers to, drawn for facing north with their slot numbers and offsets from the party cell. Dashed slots are the three in the party's own row, which `IsCellInView` does not search.

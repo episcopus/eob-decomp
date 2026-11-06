@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 410" width="760" height="410" class="fig">
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">THE PARTY: SIX RECORD SLOTS, FOUR MADE BY THE PLAYER, NINE READY-MADE NPCS</text>
+<text x="0.0" y="34.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#6E695F" text-anchor="start">gChars[0..5] as the party panel draws them</text>
+<rect x="0.0" y="44.0" width="92.0" height="58.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="46.0" y="64.1" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#14504A" text-anchor="middle">slot 0</text>
+<text x="46.0" y="78.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">made in the</text>
+<text x="46.0" y="91.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">panel</text>
+<rect x="100.0" y="44.0" width="92.0" height="58.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="146.0" y="64.1" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#14504A" text-anchor="middle">slot 1</text>
+<text x="146.0" y="78.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">made in the</text>
+<text x="146.0" y="91.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">panel</text>
+<text x="204.0" y="78.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">front rank</text>
+<rect x="0.0" y="114.0" width="92.0" height="58.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="46.0" y="134.1" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#14504A" text-anchor="middle">slot 2</text>
+<text x="46.0" y="148.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">made in the</text>
+<text x="46.0" y="161.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">panel</text>
+<rect x="100.0" y="114.0" width="92.0" height="58.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="146.0" y="134.1" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#14504A" text-anchor="middle">slot 3</text>
+<text x="146.0" y="148.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">made in the</text>
+<text x="146.0" y="161.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">panel</text>
+<text x="204.0" y="148.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">middle rank</text>
+<rect x="0.0" y="184.0" width="92.0" height="58.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="46.0" y="210.6" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#7A5412" text-anchor="middle">slot 4</text>
+<text x="46.0" y="224.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">NPC or reserve</text>
+<rect x="100.0" y="184.0" width="92.0" height="58.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="146.0" y="210.6" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#7A5412" text-anchor="middle">slot 5</text>
+<text x="146.0" y="224.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">NPC or reserve</text>
+<text x="204.0" y="218.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">back rank</text>
+<text x="0.0" y="266.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">A monster coming from the front scans the slots front rank</text>
+<text x="0.0" y="279.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">first (gAttackTargetOrder, ds:325B). Cell positions: slots 0 to</text>
+<text x="0.0" y="292.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">3 take the four quarters of the cell; 4 and 5 use the quarters</text>
+<text x="0.0" y="305.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">of 2 and 3. Screen: x = slot &amp; 1, y = slot &gt;&gt; 1.</text>
+<rect x="330.0" y="26.0" width="205.0" height="62.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="432.5" y="47.9" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#14504A" text-anchor="middle">create</text>
+<text x="432.5" y="62.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">RunCharacterPanel fills slots 0 to 3</text>
+<text x="432.5" y="75.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">and sets status to 1, food to 100.</text>
+<rect x="330.0" y="96.0" width="205.0" height="92.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="432.5" y="119.9" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2C386B" text-anchor="middle">join</text>
+<text x="432.5" y="134.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">AddPartyMember copies a pool record</text>
+<text x="432.5" y="147.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">into the first slot whose status bit 0 is</text>
+<text x="432.5" y="160.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">clear; with six present ChooseChar asks</text>
+<text x="432.5" y="173.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">whom to remove.</text>
+<rect x="330.0" y="196.0" width="205.0" height="80.0" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="432.5" y="220.4" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#80311F" text-anchor="middle">drop</text>
+<text x="432.5" y="234.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">DropCharacter, only with 5 or more</text>
+<text x="432.5" y="247.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">present: items go to the floor, and for</text>
+<text x="432.5" y="260.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">slots 0 to 3 slot 5 (else 4) moves in.</text>
+<rect x="330.0" y="284.0" width="205.0" height="50.0" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="432.5" y="299.9" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="middle">reorder</text>
+<text x="432.5" y="314.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">PickOrSwapMember swaps two whole</text>
+<text x="432.5" y="327.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">243-byte records.</text>
+<text x="548.0" y="34.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#6E695F" text-anchor="start">gCharPool, ds:7298: 9 records</text>
+<text x="548.0" y="52.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#14504A" text-anchor="start">name</text>
+<text x="614.0" y="52.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#14504A" text-anchor="start">race, class</text>
+<text x="698.0" y="52.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#14504A" text-anchor="start">L</text>
+<text x="716.0" y="52.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#14504A" text-anchor="start">maxHp</text>
+<text x="548.0" y="70.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Anya</text>
+<text x="614.0" y="70.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">human, fighter</text>
+<text x="700.0" y="70.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">4</text>
+<text x="718.0" y="70.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">45</text>
+<text x="548.0" y="86.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Beohram</text>
+<text x="614.0" y="86.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">human, paladin</text>
+<text x="700.0" y="86.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">8</text>
+<text x="718.0" y="86.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">95</text>
+<text x="548.0" y="102.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Kirath</text>
+<text x="614.0" y="102.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">elf, mage</text>
+<text x="700.0" y="102.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">11</text>
+<text x="718.0" y="102.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">32</text>
+<text x="548.0" y="118.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Ileria</text>
+<text x="614.0" y="118.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">human, cleric</text>
+<text x="700.0" y="118.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">6</text>
+<text x="718.0" y="118.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">52</text>
+<text x="548.0" y="134.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Tyrra</text>
+<text x="614.0" y="134.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">elf, ranger</text>
+<text x="700.0" y="134.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">10</text>
+<text x="718.0" y="134.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">98</text>
+<text x="548.0" y="150.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Tod Uphill</text>
+<text x="614.0" y="150.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">halfling, thief</text>
+<text x="700.0" y="150.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">4</text>
+<text x="718.0" y="150.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">30</text>
+<text x="548.0" y="166.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Taghor</text>
+<text x="614.0" y="166.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">dwarf, fighter</text>
+<text x="700.0" y="166.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">5</text>
+<text x="718.0" y="166.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">58</text>
+<text x="548.0" y="182.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Dohrum</text>
+<text x="614.0" y="182.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">dwarf, fighter</text>
+<text x="700.0" y="182.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">3</text>
+<text x="718.0" y="182.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">28</text>
+<text x="548.0" y="198.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Keirgar</text>
+<text x="614.0" y="198.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">dwarf, fighter</text>
+<text x="700.0" y="198.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">5</text>
+<text x="718.0" y="198.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">72</text>
+<text x="548.0" y="220.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">Taghor and Keirgar are stored</text>
+<text x="548.0" y="233.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">wounded (hp 3 and 10).</text>
+<text x="0.0" y="372.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">A pool character joins through a panel of overlay 5 (AddCharPanel); the matching &#x27;bones&#x27; item (type 21h, value = pool index + 1) is first removed from</text>
+<text x="0.0" y="385.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">the party.</text>
+</svg>

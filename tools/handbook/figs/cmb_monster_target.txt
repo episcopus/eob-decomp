@@ -1,0 +1,1 @@
+A monster hits the first member in a fixed list, chosen by the side it attacks from and the end of its cell it stands in. Rank by rank from the near side, so the front rank shields the others; invisible members are skipped four times in five.

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 404" width="760" height="404" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">LOADING A PICTURE: LOADSCREENIMAGE (082C:051B) AND LOADPACKED (1B82:0041)</text>
+<rect x="0.0" y="36.0" width="150.0" height="96.0" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="75.0" y="74.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#3C3A36" text-anchor="middle">name + suffix</text>
+<text x="75.0" y="88.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">sprintf &quot;%s.%s&quot;: CPS if the</text>
+<text x="75.0" y="101.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">choice is 3 (VGA), else EGA</text>
+<rect x="158.0" y="36.0" width="190.0" height="96.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="253.0" y="74.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">FileOpen, FileRead</text>
+<text x="253.0" y="88.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">u16 length, then the packed block</text>
+<text x="253.0" y="101.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">into page buffer srcKind (5, staging)</text>
+<path d="M150.0,84.0 L158.0,84.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="356.0" y="36.0" width="210.0" height="96.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="461.0" y="68.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">Unpack</text>
+<text x="461.0" y="82.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">by the format byte (4 LCW: all 47 .CPS,</text>
+<text x="461.0" y="95.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">42 of 48 .EGA; 1 LZW: 5 .EGA; 0 stored:</text>
+<text x="461.0" y="108.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">1 .EGA), into page buffer dstKind (3, art)</text>
+<path d="M348.0,84.0 L356.0,84.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="574.0" y="36.0" width="180.0" height="96.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="664.0" y="68.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">CopyPage(dst, mode, map)</text>
+<text x="664.0" y="82.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">unless mode is -1; map is the</text>
+<text x="664.0" y="95.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">32-byte CGA colour map, read by</text>
+<text x="664.0" y="108.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">CGA.OVL only</text>
+<path d="M566.0,84.0 L574.0,84.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="0.0" y="150.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">THE CALLS THE GAME MAKES</text>
+<rect x="0.0" y="166.0" width="756.0" height="40.0" rx="4" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="8.0" y="182.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#14504A" text-anchor="start">LoadScreenImage(&quot;PLAYFLD&quot;, map, 5, 3, 0)</text>
+<text x="8.0" y="197.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">picture to the art page, then page 3 to page 0: the play screen is on the display (EnterMapScreen)</text>
+<rect x="0.0" y="212.0" width="756.0" height="40.0" rx="4" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="8.0" y="228.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#14504A" text-anchor="start">LoadScreenImage(&quot;INVENT&quot;, map, 5, 3, 2)</text>
+<text x="8.0" y="243.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">picture to the art page, copied to page 2 (VGA: one segment, so no copy): the inventory panel waits there</text>
+<rect x="0.0" y="258.0" width="756.0" height="40.0" rx="4" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="8.0" y="274.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#7A5412" text-anchor="start">LoadOverlayScreen(name, 5, 3)</text>
+<text x="8.0" y="289.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">mode -1, so nothing is copied; gDrawPage = 2. The art page now holds a sheet GetSpriteCell cuts shapes from</text>
+<rect x="0.0" y="304.0" width="756.0" height="40.0" rx="4" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1"/>
+<text x="8.0" y="320.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#2C386B" text-anchor="start">LoadPacked(file, 7, 3) + 3 x Unpack0</text>
+<text x="8.0" y="335.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">wall textures: the .VCN goes to the art page, then the two colour tables and the 0xCB20 bytes of blocks are copied out of it into slot 7</text>
+<text x="0.0" y="362.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">Two special cases inside LoadScreenImage: CGA and Tandy with mode 2 copy the art to page 4 and then page 4 to page 2 (CopyRegion 40 x 200);</text>
+<text x="0.0" y="376.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">EGA with mode 0 copies the art to page 2 (video RAM, A200) and then page 2 to page 0 with CopyRegion, inside the video memory.</text>
+<text x="0.0" y="394.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">The pictures are 320 x 200 with one byte a pixel; their palettes come from the .PAL and .COL files: the palette field of all 137 packed files read here is 0.</text>
+</svg>

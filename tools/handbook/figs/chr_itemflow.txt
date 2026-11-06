@@ -1,0 +1,1 @@
+An item id is always in exactly one of three places: on the pointer, in a character's slot or in a cell's list, and each move is one of a few functions that swap ids rather than copy data. Thrown items stay on the cell's list while the projectile record flies.

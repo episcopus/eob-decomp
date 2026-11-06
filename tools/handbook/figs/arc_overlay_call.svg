@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 496" width="760" height="496" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">A CALL THAT CROSSES INTO AN OVERLAY (EXAMPLE: STARTUPALLOC CALLS LOADITEMDATA)</text>
+<rect x="0.0" y="26.0" width="176.0" height="128.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<circle cx="14.0" cy="42.0" r="8.0" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="14.0" y="45.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+<text x="29.0" y="46.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#14504A" text-anchor="start">caller</text>
+<text x="9.0" y="64.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">a far call to the stub entry:</text>
+<text x="9.0" y="78.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">9A 2A 00 06 21</text>
+<text x="9.0" y="92.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">= call 2106:002A</text>
+<text x="9.0" y="106.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">the return address is the</text>
+<text x="9.0" y="120.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">caller&#x27;s</text>
+<rect x="194.0" y="26.0" width="176.0" height="128.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<circle cx="208.0" cy="42.0" r="8.0" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="208.0" y="45.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="223.0" y="46.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#7A5412" text-anchor="start">stub, segment 2106</text>
+<text x="203.0" y="64.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">overlay 2&#x27;s entry table; each</text>
+<text x="203.0" y="78.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">entry is 5 bytes:</text>
+<text x="203.0" y="92.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">CD 3F CC 09 00</text>
+<text x="203.0" y="106.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">INT 3Fh, then the code offset</text>
+<text x="203.0" y="120.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">09CC</text>
+<rect x="388.0" y="26.0" width="176.0" height="128.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<circle cx="402.0" cy="42.0" r="8.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="402.0" y="45.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+<text x="417.0" y="46.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#2C386B" text-anchor="start">INT 3Fh</text>
+<text x="397.0" y="64.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">the game&#x27;s hook 1A72:0006</text>
+<text x="397.0" y="78.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">checks EOB.EXE can be</text>
+<text x="397.0" y="92.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">opened, then chains to the</text>
+<text x="397.0" y="106.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">manager, 1E8B:04D0, which</text>
+<text x="397.0" y="120.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">reads the word after the INT</text>
+<text x="397.0" y="134.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">and finds the record</text>
+<rect x="582.0" y="26.0" width="176.0" height="128.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<circle cx="596.0" cy="42.0" r="8.0" fill="#7A3E6B" stroke="none" stroke-width="1"/>
+<text x="596.0" y="45.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">4</text>
+<text x="611.0" y="46.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#5C2D50" text-anchor="start">overlay code</text>
+<text x="591.0" y="64.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">runs at pool:09CC</text>
+<text x="591.0" y="78.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">(LoadItemData, ovl2:09CC);</text>
+<text x="591.0" y="92.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">its RETF goes back to the</text>
+<text x="591.0" y="106.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">caller</text>
+<path d="M179.0,90.0 L193.0,90.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M373.0,90.0 L387.0,90.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M567.0,90.0 L581.0,90.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="0.0" y="182.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">WHEN OVERLAY 2 IS NOT IN MEMORY (1E8B:0580, LOADOVERLAYRECORD)</text>
+<rect x="0.0" y="192.0" width="176.0" height="78.0" rx="6" fill="#FFFDF8" stroke="#8A8373" stroke-width="1.2"/>
+<text x="88.0" y="220.9" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="middle">age the pool</text>
+<text x="88.0" y="235.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="400" fill="#3C3A36" text-anchor="middle">1E8B:0536 drops or moves</text>
+<text x="88.0" y="249.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="400" fill="#3C3A36" text-anchor="middle">other overlays to make room</text>
+<path d="M177.0,231.0 L193.0,231.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="194.0" y="192.0" width="176.0" height="78.0" rx="6" fill="#FFFDF8" stroke="#8A8373" stroke-width="1.2"/>
+<text x="282.0" y="213.8" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="middle">read the image</text>
+<text x="282.0" y="228.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="400" fill="#3C3A36" text-anchor="middle">from EOB.EXE: FBOV data base</text>
+<text x="282.0" y="242.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="400" fill="#3C3A36" text-anchor="middle">+ the record&#x27;s offset (section</text>
+<text x="282.0" y="256.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="400" fill="#3C3A36" text-anchor="middle">2.3)</text>
+<path d="M371.0,231.0 L387.0,231.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="388.0" y="192.0" width="176.0" height="78.0" rx="6" fill="#FFFDF8" stroke="#8A8373" stroke-width="1.2"/>
+<text x="476.0" y="206.8" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="middle">fix it up</text>
+<text x="476.0" y="221.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="400" fill="#3C3A36" text-anchor="middle">1E8B:03FD adds the pool</text>
+<text x="476.0" y="235.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="400" fill="#3C3A36" text-anchor="middle">segment to every fixup;</text>
+<text x="476.0" y="249.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="400" fill="#3C3A36" text-anchor="middle">segment-table indexes become</text>
+<text x="476.0" y="263.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="400" fill="#3C3A36" text-anchor="middle">paragraphs</text>
+<path d="M565.0,231.0 L581.0,231.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="582.0" y="192.0" width="176.0" height="78.0" rx="6" fill="#FFFDF8" stroke="#8A8373" stroke-width="1.2"/>
+<text x="670.0" y="213.8" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#3C3A36" text-anchor="middle">patch the stack</text>
+<text x="670.0" y="228.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="400" fill="#3C3A36" text-anchor="middle">1E8B:073B: return addresses</text>
+<text x="670.0" y="242.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="400" fill="#3C3A36" text-anchor="middle">into a moved overlay are</text>
+<text x="670.0" y="256.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="400" fill="#3C3A36" text-anchor="middle">rewritten</text>
+<text x="0.0" y="296.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">THE OVERLAY POOL AND THE SEVEN OVERLAYS, TO SCALE (BYTES OF CODE)</text>
+<text x="0.0" y="318.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2B2A28" text-anchor="start">pool: 716 paragraphs</text>
+<rect x="150.0" y="306.0" width="534.6" height="16.0" rx="2" fill="#F4F0E6" stroke="#8A8373" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="690.6" y="318.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">11,456</text>
+<text x="0.0" y="345.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">ovl0 character panel</text>
+<rect x="150.0" y="336.0" width="507.4" height="12.0" rx="2" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="663.4" y="346.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">10,873</text>
+<text x="0.0" y="363.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">ovl1 camp, spells</text>
+<rect x="150.0" y="354.0" width="460.3" height="12.0" rx="2" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="616.3" y="364.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">9,864</text>
+<text x="0.0" y="381.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">ovl4 first-person view</text>
+<rect x="150.0" y="372.0" width="385.4" height="12.0" rx="2" fill="#7A3E6B" stroke="none" stroke-width="1"/>
+<text x="541.4" y="382.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">8,259</text>
+<text x="0.0" y="399.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">ovl5 NPCs, ending</text>
+<rect x="150.0" y="390.0" width="377.7" height="12.0" rx="2" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="533.7" y="400.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">8,094</text>
+<text x="0.0" y="417.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">ovl3 level load, save</text>
+<rect x="150.0" y="408.0" width="324.8" height="12.0" rx="2" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="480.8" y="418.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">6,961</text>
+<text x="0.0" y="435.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">ovl2 data, title menu</text>
+<rect x="150.0" y="426.0" width="155.5" height="12.0" rx="2" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="311.5" y="436.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">3,332</text>
+<text x="0.0" y="453.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">ovl6 rest</text>
+<rect x="150.0" y="444.0" width="152.0" height="12.0" rx="2" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="308.0" y="454.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">3,258</text>
+<text x="0.0" y="472.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">Pool = DGROUP:3088 (715 paragraphs) + 1, doubled instead only if the biggest record (code + fixups, plus 2) reaches 715.</text>
+<text x="0.0" y="486.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">Overlay 0 is the biggest record: 705 paragraphs + 2. It nearly fills the pool by itself.</text>
+</svg>

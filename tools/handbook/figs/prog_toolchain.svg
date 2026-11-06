@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 378" width="760" height="378" class="fig"><defs><marker id="a1F6F66" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#1F6F66"/></marker><marker id="a3B4A8A" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#3B4A8A"/></marker><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">HOW THE PROGRAMS WERE BUILT (EVERY BOX PROVED BY MATCHING THE BYTES)</text>
+<path d="M0,30 L140,30 L150,40 L150,100 L0,100 Z" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<path d="M140,30 L140,40 L150,40" fill="none" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="75.0" y="52.0" font-family="'DejaVu Sans Mono', monospace" font-size="12.5" font-weight="700" fill="#14504A" text-anchor="middle">*.C</text>
+<text x="75.0" y="70.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">Westwood&#x27;s C</text>
+<text x="75.0" y="83.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">30 resident + 7 overlay units</text>
+<path d="M0,120 L140,120 L150,130 L150,190 L0,190 Z" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<path d="M140,120 L140,130 L150,130" fill="none" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="75.0" y="142.0" font-family="'DejaVu Sans Mono', monospace" font-size="12.5" font-weight="700" fill="#5C2D50" text-anchor="middle">*.ASM</text>
+<text x="75.0" y="160.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">25 assembly units, 4 drivers</text>
+<text x="75.0" y="173.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">sound, input, video, files</text>
+<rect x="190.0" y="30.0" width="170.0" height="70.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="275.0" y="48.8" font-family="'DejaVu Sans Mono', monospace" font-size="13" font-weight="700" fill="#2C386B" text-anchor="middle">TCC 1.00</text>
+<text x="275.0" y="63.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">-ml -O -Z</text>
+<text x="275.0" y="77.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">-v for the game&#x27;s modules</text>
+<text x="275.0" y="90.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">-G for 5 library units</text>
+<rect x="190.0" y="120.0" width="170.0" height="70.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="275.0" y="145.6" font-family="'DejaVu Sans Mono', monospace" font-size="13" font-weight="700" fill="#2C386B" text-anchor="middle">TASM 2.0</text>
+<text x="275.0" y="160.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">/mx, SMART off</text>
+<text x="275.0" y="174.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">jmp short written out</text>
+<path d="M152.0,65.0 L188.0,65.0" fill="none" stroke="#3B4A8A" stroke-width="1.3" marker-end="url(#a3B4A8A)"/>
+<path d="M152.0,155.0 L188.0,155.0" fill="none" stroke="#3B4A8A" stroke-width="1.3" marker-end="url(#a3B4A8A)"/>
+<text x="275.0" y="207.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">OBJ files, in the original&#x27;s order</text>
+<path d="M360.0,65.0 L388.0,65.0 L388.0,226.0 L418.0,226.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M360.0,155.0 L388.0,155.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="190.0" y="232.0" width="170.0" height="36.0" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="275.0" y="255.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="600" fill="#3C3A36" text-anchor="middle">C0L.OBJ + CL.LIB + OVERLAY.LIB</text>
+<path d="M360.0,262.0 L418.0,262.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="420.0" y="200.0" width="150.0" height="100.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="495.0" y="226.9" font-family="'DejaVu Sans Mono', monospace" font-size="13" font-weight="700" fill="#14504A" text-anchor="middle">TLINK 3.0</text>
+<text x="495.0" y="241.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">segment table</text>
+<text x="495.0" y="255.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">overlay stubs</text>
+<text x="495.0" y="269.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">relocations</text>
+<text x="495.0" y="282.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">FBOV records</text>
+<path d="M572.0,250.0 L610.0,250.0" fill="none" stroke="#1F6F66" stroke-width="1.3" marker-end="url(#a1F6F66)"/>
+<path d="M612,200 L750,200 L760,210 L760,300 L612,300 Z" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<path d="M750,200 L750,210 L760,210" fill="none" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="686.0" y="222.0" font-family="'DejaVu Sans Mono', monospace" font-size="12.5" font-weight="700" fill="#14504A" text-anchor="middle">EOB.EXE</text>
+<text x="686.0" y="240.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">INTRO.EXE</text>
+<text x="686.0" y="253.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">START1.EXE (small)</text>
+<text x="686.0" y="266.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">= the originals</text>
+<rect x="420.0" y="30.0" width="340.0" height="150.0" rx="8" fill="#F4F0E6" stroke="none" stroke-width="1"/>
+<text x="432.0" y="50.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#7A5412" text-anchor="start" letter-spacing="1.6">HOW EACH FACT WAS FOUND</text>
+<text x="432.0" y="68.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Release: 66 runtime modules found as 1.00&#x27;s, 59 as 1.01&#x27;s</text>
+<text x="432.0" y="81.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(make rtl-compare)</text>
+<text x="432.0" y="98.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Switches: eliminated by matching whole modules (section 2.1.1)</text>
+<text x="432.0" y="114.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Debug info: -v keeps code tails apart, as the original does</text>
+<text x="432.0" y="131.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Assembler: TASM 2.0 SMART off, one pass for the drivers</text>
+<text x="432.0" y="147.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Linker: TLINK 3.0, signature FB 30 at 1Eh in the header</text>
+<text x="0.0" y="322.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#6E695F" text-anchor="start">Not in the picture: the Borland runtime library is linked, never decompiled (CL.LIB, found module by module in the originals).</text>
+<text x="0.0" y="339.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#6E695F" text-anchor="start">Differences left in the rebuilds: the link date written into the overlay data, and the order of the overlay stub entries.</text>
+<text x="0.0" y="357.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#6E695F" text-anchor="start">Only TCC -c (internal assembler) merges identical tails; the originals were built with debug information, which stops that.</text>
+</svg>

@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 318" width="760" height="318" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">WHAT MAKE MATCH DOES FOR ONE UNIT</text>
+<path d="M0,26 L120,26 L130,36 L130,92 L0,92 Z" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<path d="M120,26 L120,36 L130,36" fill="none" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="65.0" y="48.0" font-family="'DejaVu Sans Mono', monospace" font-size="12.5" font-weight="700" fill="#14504A" text-anchor="middle">src/E1B82.C</text>
+<text x="65.0" y="66.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">our unit</text>
+<rect x="170.0" y="26.0" width="150.0" height="28.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="245.0" y="43.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">link at base A</text>
+<rect x="170.0" y="64.0" width="150.0" height="28.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="245.0" y="81.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">link at base B</text>
+<text x="245.0" y="106.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">B: data +111h, code +113h</text>
+<path d="M132.0,50.0 L168.0,40.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M132.0,68.0 L168.0,78.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M0,124 L120,124 L130,134 L130,190 L0,190 Z" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<path d="M120,124 L120,134 L130,134" fill="none" stroke="#8A8373" stroke-width="1.2"/>
+<text x="65.0" y="146.0" font-family="'DejaVu Sans Mono', monospace" font-size="12.5" font-weight="700" fill="#3C3A36" text-anchor="middle">EOB.EXE</text>
+<text x="65.0" y="164.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">the original</text>
+<text x="65.0" y="177.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">(unit&#x27;s bytes)</text>
+<path d="M132.0,157.0 L350.0,157.0 L350.0,130.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="350.0" y="26.0" width="410.0" height="164.0" rx="8" fill="#F4F0E6" stroke="none" stroke-width="1"/>
+<text x="362.0" y="46.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#7A5412" text-anchor="start" letter-spacing="1.6">THE COMPARISON, BYTE BY BYTE</text>
+<rect x="362.0" y="55.0" width="5.0" height="26.0" rx="1" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="374.0" y="66.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#3C3A36" text-anchor="start">bytes that did not move between A and B</text>
+<text x="374.0" y="80.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">must equal the original&#x27;s</text>
+<rect x="362.0" y="89.0" width="5.0" height="26.0" rx="1" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="374.0" y="100.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#3C3A36" text-anchor="start">fields that moved</text>
+<text x="374.0" y="114.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">must name the same thing as the original&#x27;s field:</text>
+<rect x="362.0" y="123.0" width="5.0" height="26.0" rx="1" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="374.0" y="134.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#3C3A36" text-anchor="start">   a global, a string, a function, a segment</text>
+<text x="374.0" y="148.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">(by annotation, or by the runtime library&#x27;s module)</text>
+<rect x="362.0" y="157.0" width="5.0" height="26.0" rx="1" fill="#7A3E6B" stroke="none" stroke-width="1"/>
+<text x="374.0" y="168.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#3C3A36" text-anchor="start">jump and call distances</text>
+<text x="374.0" y="182.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">must equal the original&#x27;s, or the same offset in the function</text>
+<path d="M322.0,40.0 L348.0,40.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M322.0,78.0 L348.0,78.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="0.0" y="212.0" width="760.0" height="92.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="14.0" y="234.0" font-family="Inter, 'Inter Display', sans-serif" font-size="13" font-weight="700" fill="#14504A" text-anchor="start">L2 matched</text>
+<text x="14.0" y="252.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">recorded in re/symbols.toml only by make match WRITE=1; make match-gate proves every recorded function again and rejects 11</text>
+<text x="14.0" y="266.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">negative fixtures</text>
+<text x="14.0" y="284.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">each negative fixture is a unit changed to be wrong (a bound 52 to 53, the wrong table, an extra store) and must fail, so a pass means</text>
+<text x="14.0" y="298.6" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">something</text>
+</svg>

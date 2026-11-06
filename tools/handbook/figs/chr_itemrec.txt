@@ -1,0 +1,1 @@
+`ITEM.DAT` holds 432 item records and 98 item names; `ITEMTYPE.DAT` holds 57 type records that the items point to by index. An item is one 14-byte record (its place in the world, its list links and its enchantment); what kind of thing it is, which slots take it and how it fights lives in the 16-byte type.

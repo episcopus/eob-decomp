@@ -1,0 +1,1 @@
+Left: the operator slots of the ten voices (nine have OPL2 channels). Right: an 11-byte patch and the 11 register writes LoadVoicePatch makes for it, then the two pitch writes that follow, as the oracle recorded them for voice 8 in the intro.

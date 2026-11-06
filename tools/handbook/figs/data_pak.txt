@@ -1,0 +1,1 @@
+The PAK layout (section 4.1) and what the six archives hold. Directory offsets are those of `BRICK1.CPS` to `BRICK3.CPS` in `EOBDATA3.PAK` (`tools/re/pak.py list`); the real directory is 600 bytes. Which levels an archive serves is read from the order of its files [I].

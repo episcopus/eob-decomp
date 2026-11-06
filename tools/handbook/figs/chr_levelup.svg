@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 470" width="760" height="470" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">EXPERIENCE: FROM A KILL TO A NEW LEVEL</text>
+<rect x="0.0" y="26.0" width="132.0" height="104.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="66.0" y="54.4" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">award</text>
+<text x="66.0" y="68.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">a dead monster gives</text>
+<text x="66.0" y="82.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">its type&#x27;s word at +13</text>
+<text x="66.0" y="96.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">(m13); a script opcode</text>
+<text x="66.0" y="109.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">gives a word</text>
+<rect x="152.0" y="26.0" width="132.0" height="104.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="218.0" y="61.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">AddPartyExperience</text>
+<text x="218.0" y="75.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">0DE8:0C2B. Divide by</text>
+<text x="218.0" y="89.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">the members with hp</text>
+<text x="218.0" y="103.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">above -10 (MemberIs 3)</text>
+<path d="M132.0,78.0 L152.0,78.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="304.0" y="26.0" width="132.0" height="104.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="370.0" y="61.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">AddExperience</text>
+<text x="370.0" y="75.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">0DE8:0B45. Divide by</text>
+<text x="370.0" y="89.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">gClassSlotCount[class]:</text>
+<text x="370.0" y="103.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">1, 2 or 3</text>
+<path d="M284.0,78.0 L304.0,78.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="456.0" y="26.0" width="132.0" height="104.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="522.0" y="61.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">each slot with a class</text>
+<text x="522.0" y="75.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">experience[slot] +=</text>
+<text x="522.0" y="89.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">share; test it against</text>
+<text x="522.0" y="103.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">the table</text>
+<path d="M436.0,78.0 L456.0,78.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="608.0" y="26.0" width="132.0" height="104.0" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="674.0" y="61.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">LevelUpSlot</text>
+<text x="674.0" y="75.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">levels[slot]++, one hit</text>
+<text x="674.0" y="89.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">die of that slot added</text>
+<text x="674.0" y="103.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">to hp and maxHp</text>
+<path d="M588.0,78.0 L608.0,78.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="0.0" y="150.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">The test is experience[slot] &gt; table[levels[slot]]: strictly greater, and only one level per award. A table entry of FFFFFFFF ends advancement.</text>
+<text x="0.0" y="190.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">GEXPTABLES: EXPERIENCE NEEDED FOR EACH LEVEL (LOG SCALE), ONE TABLE PER BASE CLASS</text>
+<line x1="150.0" y1="216.0" x2="150.0" y2="410.0" stroke="#D9D2C3" stroke-width="1"/>
+<text x="150.0" y="212.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">1,000</text>
+<line x1="330.0" y1="216.0" x2="330.0" y2="410.0" stroke="#D9D2C3" stroke-width="1"/>
+<text x="330.0" y="212.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">10,000</text>
+<line x1="510.0" y1="216.0" x2="510.0" y2="410.0" stroke="#D9D2C3" stroke-width="1"/>
+<text x="510.0" y="212.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">100,000</text>
+<line x1="690.0" y1="216.0" x2="690.0" y2="410.0" stroke="#D9D2C3" stroke-width="1"/>
+<text x="690.0" y="212.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">1,000,000</text>
+<line x1="275.8" y1="216.0" x2="275.8" y2="410.0" stroke="#A8452F" stroke-width="1.2" stroke-dasharray="4 3"/>
+<text x="0.0" y="242.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="start">FIGHTER</text>
+<line x1="150.0" y1="238.0" x2="690.0" y2="238.0" stroke="#1F6F66" stroke-width="1.4"/>
+<circle cx="204.2" cy="238.0" r="3.2" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="204.2" y="253.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#14504A" text-anchor="middle">2</text>
+<circle cx="258.4" cy="238.0" r="3.2" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="258.4" y="253.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#14504A" text-anchor="middle">3</text>
+<circle cx="312.6" cy="238.0" r="3.2" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="312.6" y="253.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#14504A" text-anchor="middle">4</text>
+<circle cx="366.7" cy="238.0" r="3.2" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="366.7" y="253.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#14504A" text-anchor="middle">5</text>
+<circle cx="420.9" cy="238.0" r="3.2" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="420.9" y="253.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#14504A" text-anchor="middle">6</text>
+<circle cx="475.1" cy="238.0" r="3.2" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="475.1" y="253.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#14504A" text-anchor="middle">7</text>
+<circle cx="527.4" cy="238.0" r="3.2" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="527.4" y="253.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#14504A" text-anchor="middle">8</text>
+<circle cx="581.6" cy="238.0" r="3.2" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="581.6" y="253.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#14504A" text-anchor="middle">9</text>
+<circle cx="635.8" cy="238.0" r="3.2" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="635.8" y="253.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#14504A" text-anchor="middle">10</text>
+<circle cx="667.5" cy="238.0" r="3.2" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<text x="667.5" y="253.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#14504A" text-anchor="middle">11</text>
+<text x="675.5" y="233.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">max 11</text>
+<text x="0.0" y="280.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="start">MAGE</text>
+<line x1="150.0" y1="276.0" x2="690.0" y2="276.0" stroke="#3B4A8A" stroke-width="1.4"/>
+<circle cx="221.6" cy="276.0" r="3.2" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="221.6" y="291.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#2C386B" text-anchor="middle">2</text>
+<circle cx="275.8" cy="276.0" r="3.2" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="275.8" y="291.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#2C386B" text-anchor="middle">3</text>
+<circle cx="330.0" cy="276.0" r="3.2" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="330.0" y="291.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#2C386B" text-anchor="middle">4</text>
+<circle cx="384.2" cy="276.0" r="3.2" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="384.2" y="291.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#2C386B" text-anchor="middle">5</text>
+<circle cx="438.4" cy="276.0" r="3.2" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="438.4" y="291.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#2C386B" text-anchor="middle">6</text>
+<circle cx="470.1" cy="276.0" r="3.2" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="470.1" y="291.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#2C386B" text-anchor="middle">7</text>
+<circle cx="501.8" cy="276.0" r="3.2" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="501.8" y="291.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#2C386B" text-anchor="middle">8</text>
+<circle cx="533.5" cy="276.0" r="3.2" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="533.5" y="291.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#2C386B" text-anchor="middle">9</text>
+<circle cx="581.6" cy="276.0" r="3.2" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="581.6" y="291.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#2C386B" text-anchor="middle">10</text>
+<circle cx="613.3" cy="276.0" r="3.2" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="613.3" y="291.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#2C386B" text-anchor="middle">11</text>
+<text x="621.3" y="271.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">max 11</text>
+<text x="0.0" y="318.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="start">CLERIC</text>
+<line x1="150.0" y1="314.0" x2="690.0" y2="314.0" stroke="#A8741A" stroke-width="1.4"/>
+<circle cx="181.7" cy="314.0" r="3.2" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="181.7" y="329.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#7A5412" text-anchor="middle">2</text>
+<circle cx="235.9" cy="314.0" r="3.2" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="235.9" y="329.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#7A5412" text-anchor="middle">3</text>
+<circle cx="290.1" cy="314.0" r="3.2" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="290.1" y="329.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#7A5412" text-anchor="middle">4</text>
+<circle cx="350.5" cy="314.0" r="3.2" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="350.5" y="329.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#7A5412" text-anchor="middle">5</text>
+<circle cx="409.1" cy="314.0" r="3.2" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="409.1" y="329.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#7A5412" text-anchor="middle">6</text>
+<circle cx="463.3" cy="314.0" r="3.2" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="463.3" y="329.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#7A5412" text-anchor="middle">7</text>
+<circle cx="517.5" cy="314.0" r="3.2" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="517.5" y="329.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#7A5412" text-anchor="middle">8</text>
+<circle cx="573.4" cy="314.0" r="3.2" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="573.4" y="329.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#7A5412" text-anchor="middle">9</text>
+<circle cx="627.6" cy="314.0" r="3.2" fill="#A8741A" stroke="none" stroke-width="1"/>
+<text x="627.6" y="329.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#7A5412" text-anchor="middle">10</text>
+<text x="635.6" y="309.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">max 10</text>
+<text x="0.0" y="356.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="start">THIEF</text>
+<line x1="150.0" y1="352.0" x2="690.0" y2="352.0" stroke="#7A3E6B" stroke-width="1.4"/>
+<circle cx="167.4" cy="352.0" r="3.2" fill="#7A3E6B" stroke="none" stroke-width="1"/>
+<text x="167.4" y="367.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#5C2D50" text-anchor="middle">2</text>
+<circle cx="221.6" cy="352.0" r="3.2" fill="#7A3E6B" stroke="none" stroke-width="1"/>
+<text x="221.6" y="367.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#5C2D50" text-anchor="middle">3</text>
+<circle cx="275.8" cy="352.0" r="3.2" fill="#7A3E6B" stroke="none" stroke-width="1"/>
+<text x="275.8" y="367.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#5C2D50" text-anchor="middle">4</text>
+<circle cx="330.0" cy="352.0" r="3.2" fill="#7A3E6B" stroke="none" stroke-width="1"/>
+<text x="330.0" y="367.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#5C2D50" text-anchor="middle">5</text>
+<circle cx="384.2" cy="352.0" r="3.2" fill="#7A3E6B" stroke="none" stroke-width="1"/>
+<text x="384.2" y="367.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#5C2D50" text-anchor="middle">6</text>
+<circle cx="438.4" cy="352.0" r="3.2" fill="#7A3E6B" stroke="none" stroke-width="1"/>
+<text x="438.4" y="367.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#5C2D50" text-anchor="middle">7</text>
+<circle cx="482.1" cy="352.0" r="3.2" fill="#7A3E6B" stroke="none" stroke-width="1"/>
+<text x="482.1" y="367.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#5C2D50" text-anchor="middle">8</text>
+<circle cx="517.5" cy="352.0" r="3.2" fill="#7A3E6B" stroke="none" stroke-width="1"/>
+<text x="517.5" y="367.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#5C2D50" text-anchor="middle">9</text>
+<circle cx="546.7" cy="352.0" r="3.2" fill="#7A3E6B" stroke="none" stroke-width="1"/>
+<text x="546.7" y="367.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#5C2D50" text-anchor="middle">10</text>
+<circle cx="571.6" cy="352.0" r="3.2" fill="#7A3E6B" stroke="none" stroke-width="1"/>
+<text x="571.6" y="367.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#5C2D50" text-anchor="middle">11</text>
+<text x="579.6" y="347.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">max 11</text>
+<text x="0.0" y="394.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="start">PALADIN, RANGER</text>
+<line x1="150.0" y1="390.0" x2="690.0" y2="390.0" stroke="#A8452F" stroke-width="1.4"/>
+<circle cx="213.4" cy="390.0" r="3.2" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="213.4" y="405.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#80311F" text-anchor="middle">2</text>
+<circle cx="267.6" cy="390.0" r="3.2" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="267.6" y="405.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#80311F" text-anchor="middle">3</text>
+<circle cx="321.8" cy="390.0" r="3.2" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="321.8" y="405.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#80311F" text-anchor="middle">4</text>
+<circle cx="375.9" cy="390.0" r="3.2" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="375.9" y="405.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#80311F" text-anchor="middle">5</text>
+<circle cx="430.1" cy="390.0" r="3.2" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="430.1" y="405.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#80311F" text-anchor="middle">6</text>
+<circle cx="487.5" cy="390.0" r="3.2" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="487.5" y="405.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#80311F" text-anchor="middle">7</text>
+<circle cx="541.7" cy="390.0" r="3.2" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="541.7" y="405.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#80311F" text-anchor="middle">8</text>
+<circle cx="595.9" cy="390.0" r="3.2" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="595.9" y="405.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#80311F" text-anchor="middle">9</text>
+<circle cx="650.1" cy="390.0" r="3.2" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="650.1" y="405.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#80311F" text-anchor="middle">10</text>
+<circle cx="681.8" cy="390.0" r="3.2" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="681.8" y="405.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#80311F" text-anchor="middle">11</text>
+<text x="689.8" y="385.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">max 11</text>
+<text x="280.8" y="422.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#80311F" text-anchor="start">5000 XP at creation, divided by the number of classes</text>
+<text x="0.0" y="422.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">dots: the level reached when the total passes the mark</text>
+</svg>

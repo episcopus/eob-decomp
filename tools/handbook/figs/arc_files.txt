@@ -1,0 +1,1 @@
+The file layer of `E1C0E.C`. A: the 19-byte table record. B: what opening a data file does. C: what the table holds; the memory-cache half of the design is switched off in this copy because no record carries a flag.

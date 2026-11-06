@@ -1,0 +1,1 @@
+The intro's 13 scenes, its three music pieces, its sound effects and the OPL2 write rate on the clock the intro itself waits on (INT 1Ch ticks, 18.2 a second), from an oracle run with AdLib on. The scenes wait on tick counts; the music runs on its own timer interrupt and is only started at three fixed points.

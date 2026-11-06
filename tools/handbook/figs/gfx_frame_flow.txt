@@ -1,0 +1,1 @@
+What `DrawViewFrame` does for one frame, and what step 3 does for each of the 18 view slots. The walls are built as a block map first and drawn in one pass; sprites are then added slot by slot, farthest first, so a nearer cell can cover a farther one. Everything is composed on page 2 and reaches the screen in one rectangle copy.

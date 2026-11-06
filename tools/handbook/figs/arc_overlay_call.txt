@@ -1,0 +1,1 @@
+How a far call reaches overlaid code: through a 5-byte stub entry, an INT 3Fh and the overlay manager (segment 1E8B), which loads the overlay into a pool if it is not there. Below, the pool and the seven overlays to the same scale (code bytes).
