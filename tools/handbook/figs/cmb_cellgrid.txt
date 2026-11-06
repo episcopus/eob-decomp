@@ -1,0 +1,1 @@
+A map cell holds up to four creatures in its quarters and one in the centre. The two front members of the party stand in the quarters nearest the cell ahead, and a blow tries the centre first, then the near half of the target cell on the swinging member's own side, then the far half.

@@ -1,0 +1,1 @@
+The flash drawn over the view when a monster is hit by a wand, a turn-undead or a similar effect (`FlashViewDamage`). Three explosion shapes are placed on 16 fixed cells; a table of 2-bit codes (rows in the right-hand picture) says which shape each cell shows in each of 11 passes, so a wave runs through the view.

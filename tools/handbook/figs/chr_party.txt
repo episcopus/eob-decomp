@@ -1,0 +1,1 @@
+The party is an array of six 243-byte records; the creation panel makes the first four, and the other two slots take ready-made characters from a pool of nine. The panel shows the slots as three rows of two, and monsters scan them in fixed orders that put the front rank first.

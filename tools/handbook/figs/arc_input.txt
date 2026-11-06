@@ -1,0 +1,1 @@
+From finger to command, with the forward arrow of the map screen as the example. Keys and mouse clicks are the same kind of event in the same ring; one dispatcher routine matches them against the nodes of the current screen and runs the node's callback.

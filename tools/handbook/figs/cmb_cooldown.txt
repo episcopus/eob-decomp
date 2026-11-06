@@ -1,0 +1,1 @@
+There are no rounds: each hand has its own cooldown, built from timed effects of types 0 to 5. A normal attack keeps the hand shaded for 18 + 36 = 54 ticks (about 3 s), 36 ticks when hasted; a refused attack only for 18.

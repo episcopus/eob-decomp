@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 410" width="760" height="410" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">A WORKED SCRIPT: LEVEL 1, CELL 754 (X 18, Y 23), THE STAIRS DOWN, FLAGS 0XA8 = MODES 1, 4 AND 0X10</text>
+<rect x="0.0" y="30.0" width="252.0" height="40.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="8.0" y="46.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">719</text>
+<text x="40.0" y="46.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="start">if mode == 1</text>
+<rect x="0.0" y="100.0" width="252.0" height="40.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="8.0" y="116.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">726</text>
+<text x="40.0" y="116.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="start">if dir == 1  (facing east)</text>
+<rect x="0.0" y="170.0" width="252.0" height="66.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="8.0" y="186.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">733</text>
+<text x="40.0" y="186.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="start">if level flag 31 is clear</text>
+<text x="8.0" y="201.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">OVERLAY 10 (the find-word panel), then set</text>
+<text x="8.0" y="213.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">flag 31: the first descent only</text>
+<rect x="0.0" y="266.0" width="252.0" height="92.0" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="8.0" y="282.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">746</text>
+<text x="40.0" y="282.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="start">going down</text>
+<text x="8.0" y="297.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">TEXT &#x27;going down...&#x27;, SOUND 79,</text>
+<text x="8.0" y="309.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">LOAD LEVEL 2, cell 755, facing east,</text>
+<text x="8.0" y="322.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">JUMP 858 (the script stops in LOAD LEVEL)</text>
+<rect x="290.0" y="100.0" width="240.0" height="118.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="298.0" y="116.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">776</text>
+<text x="330.0" y="116.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="start">the wrong way</text>
+<text x="298.0" y="131.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">TEXT &#x27;you can&#x27;t go that way.&#x27;, SOUND 29,</text>
+<text x="298.0" y="143.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">then four tests 1 == 0, 1 == 1, 1 == 2, 1 ==</text>
+<text x="298.0" y="156.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">3, each with a MOVE of the party to a</text>
+<text x="298.0" y="168.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">neighbour: only the second is true, so the</text>
+<text x="298.0" y="181.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">party goes to 753, west</text>
+<rect x="560.0" y="130.0" width="200.0" height="100.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="568.0" y="146.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">858</text>
+<text x="600.0" y="146.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="start">if mode == 4</text>
+<text x="568.0" y="161.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">an item dropped here: the same four</text>
+<text x="568.0" y="173.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">tests, so the item moves to 753</text>
+<rect x="560.0" y="270.0" width="200.0" height="40.0" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="568.0" y="286.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">917</text>
+<text x="600.0" y="286.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#3C3A36" text-anchor="start">END</text>
+<path d="M126.0,71.0 L126.0,99.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="140.0" y="88.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">yes</text>
+<path d="M126.0,141.0 L126.0,169.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="140.0" y="158.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">yes</text>
+<path d="M126.0,237.0 L126.0,265.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="140.0" y="254.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">yes</text>
+<path d="M253.0,120.0 L289.0,120.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="271.0" y="115.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">no</text>
+<path d="M253.0,50.0 L660.0,50.0 L660.0,129.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="350.2" y="45.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">no</text>
+<path d="M531.0,175.0 L559.0,175.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M660.0,231.0 L660.0,269.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M253.0,312.0 L559.0,296.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="0.0" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">Entering facing east goes down; entering any other way is bounced back out. 432 tests in the 12 level files have the &#x27;literal == literal&#x27; shape: 108 groups</text>
+<text x="0.0" y="398.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">of four in 54 scripts, each followed by a MOVE. The first operand is a constant where the design seems to call for the party&#x27;s facing.</text>
+</svg>

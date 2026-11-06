@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 520" width="760" height="520" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">HOW ARMOUR CLASS AND THE TO-HIT NUMBERS MEET (BOTH ARE &#x27;ROLL A D20, REACH A NUMBER&#x27;)</text>
+<rect x="0.0" y="28.0" width="372.0" height="228.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="10.0" y="46.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#2C386B" text-anchor="start">Character hits monster: RollToHit (0DE8:0007)</text>
+<text x="10.0" y="66.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="600" fill="#3C3A36" text-anchor="start">need = GetHitTarget - bonus</text>
+<text x="18.0" y="83.4" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">GetHitTarget = 20</text>
+<text x="18.0" y="98.1" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">  - (levels[0] - 1) / levelsPerStep * gainPerStep</text>
+<text x="18.0" y="112.1" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">  - the monster&#x27;s armour byte (type +0)</text>
+<text x="18.0" y="128.1" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">bonus = item enchantment (item types 1 to 3)</text>
+<text x="18.0" y="142.1" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">      + STR to-hit (melee) or DEX missile (thrown, shot)</text>
+<text x="10.0" y="164.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">roll = d20, +1 if Bless or Prayer is active (once), +1 if Aid,</text>
+<text x="10.0" y="178.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">clamped to 1..20; the hit lands when roll &gt;= need.</text>
+<text x="10.0" y="201.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">Fighter group improves 2 points per 3 levels (levelsPerStep 3,</text>
+<text x="10.0" y="215.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">gainPerStep 2); mage 1 per 2, cleric 1 per level, thief 1 per 3.</text>
+<text x="10.0" y="229.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">Only the level of class slot 0 counts, also for multi-classes.</text>
+<rect x="388.0" y="28.0" width="372.0" height="228.0" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="398.0" y="46.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#80311F" text-anchor="start">Monster hits character: RollMonsterToHit (08E6:106B)</text>
+<text x="398.0" y="66.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="600" fill="#3C3A36" text-anchor="start">need = monster to-hit (type +1) - armorClass</text>
+<text x="398.0" y="87.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">roll = d20. Unless the roll is 20:</text>
+<text x="406.0" y="102.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">-2 if the target has Protection from Evil (effect flag 200h)</text>
+<text x="406.0" y="116.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">-1 if Prayer is active (party flag 20h)</text>
+<text x="398.0" y="133.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">hit when roll &gt;= need, and a 20 always hits.</text>
+<text x="398.0" y="156.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">damage per hit = RollDice of one of the type&#x27;s up to three</text>
+<text x="398.0" y="170.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">attack routines {count, sides, bonus} (type +4).</text>
+<text x="398.0" y="193.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">Because need falls as armorClass rises, a low armorClass is</text>
+<text x="398.0" y="207.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">good: armorClass 10 is unarmoured, and each armour point</text>
+<text x="398.0" y="221.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">lowers it by one.</text>
+<text x="0.0" y="270.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">COMPUTEARMOURCLASS (0DE8:0D5E) BUILDS ARMORCLASS, THEN THREE SPELLS CAP IT</text>
+<rect x="0.0" y="282.0" width="138.0" height="76.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="69.0" y="310.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">start</text>
+<text x="69.0" y="324.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">gDexArmourAdjust[DEX]</text>
+<text x="69.0" y="337.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">+ 10</text>
+<rect x="155.0" y="282.0" width="138.0" height="76.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="224.0" y="304.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">slot 17</text>
+<text x="224.0" y="318.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">body armour: type m04</text>
+<text x="224.0" y="331.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">(-2 to -7) minus</text>
+<text x="224.0" y="344.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">enchantment</text>
+<path d="M138.0,320.0 L155.0,320.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="310.0" y="282.0" width="138.0" height="76.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="379.0" y="304.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">slots 0, 1</text>
+<text x="379.0" y="318.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">only a shield (type 27):</text>
+<text x="379.0" y="331.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">m04 -1, minus</text>
+<text x="379.0" y="344.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">enchantment</text>
+<path d="M293.0,320.0 L310.0,320.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="465.0" y="282.0" width="138.0" height="76.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="534.0" y="310.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">slot 18</text>
+<text x="534.0" y="324.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">bracers: m04 0, minus</text>
+<text x="534.0" y="337.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">enchantment</text>
+<path d="M448.0,320.0 L465.0,320.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="620.0" y="282.0" width="138.0" height="76.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="689.0" y="304.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">rings 25, 26</text>
+<text x="689.0" y="318.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">if slot 17&#x27;s enchantment</text>
+<text x="689.0" y="331.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">is 0: minus the better</text>
+<text x="689.0" y="344.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">ring of protection</text>
+<path d="M603.0,320.0 L620.0,320.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="0.0" y="380.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#14504A" text-anchor="start">then, in this order:</text>
+<rect x="0.0" y="388.0" width="240.0" height="52.0" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="120.0" y="404.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">Armor (mDF &gt; 0)</text>
+<text x="120.0" y="418.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">armorClass cut to base + 6 if higher; base =</text>
+<text x="120.0" y="431.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">gDexArmourAdjust[DEX]</text>
+<rect x="252.0" y="388.0" width="240.0" height="52.0" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="372.0" y="411.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">Shield (flag 2)</text>
+<text x="372.0" y="425.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">armorClass cut to 4 if higher</text>
+<rect x="504.0" y="388.0" width="240.0" height="52.0" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="624.0" y="404.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">Magical Vestment (flag 100h)</text>
+<text x="624.0" y="418.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">cut to 5, or 5 + (level - 5) / 3 for a cleric above</text>
+<text x="624.0" y="431.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">level 5, if higher</text>
+<text x="0.0" y="462.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#80311F" text-anchor="start">A helmet (slot 19) is not counted: the loop walks four slots, 17, 0, 1 and 18, although the table after them also holds 19.</text>
+</svg>

@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 410" width="760" height="410" class="fig">
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">THE PAGE TABLE GPAGESEGS (DS:FC0C): EIGHT SEGMENT WORDS, FOUR PAIRS, FILLED PER GRAPHICS CHOICE</text>
+<text x="247.0" y="40.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2B2A28" text-anchor="middle">0  CGA</text>
+<text x="393.0" y="40.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2B2A28" text-anchor="middle">1  Tandy</text>
+<text x="539.0" y="40.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2B2A28" text-anchor="middle">2  EGA</text>
+<text x="685.0" y="40.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2B2A28" text-anchor="middle">3  VGA / MCGA</text>
+<text x="0.0" y="71.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2B2A28" text-anchor="start">slot 0</text>
+<text x="42.0" y="71.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">screen</text>
+<text x="0.0" y="105.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2B2A28" text-anchor="start">slot 1</text>
+<text x="42.0" y="105.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">screen twin</text>
+<text x="0.0" y="139.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2B2A28" text-anchor="start">slot 2</text>
+<text x="42.0" y="139.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">page 2, draw target</text>
+<text x="0.0" y="173.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2B2A28" text-anchor="start">slot 3</text>
+<text x="42.0" y="173.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">art page</text>
+<text x="0.0" y="207.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2B2A28" text-anchor="start">slot 4</text>
+<text x="42.0" y="207.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">page 4</text>
+<text x="0.0" y="241.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2B2A28" text-anchor="start">slot 5</text>
+<text x="42.0" y="241.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">staging page</text>
+<text x="0.0" y="275.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2B2A28" text-anchor="start">slot 6</text>
+<text x="42.0" y="275.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">page 6</text>
+<text x="0.0" y="309.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2B2A28" text-anchor="start">slot 7</text>
+<text x="42.0" y="309.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">wall blocks</text>
+<rect x="177.0" y="51.0" width="144.0" height="66.0" rx="3" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.1"/>
+<text x="249.0" y="83.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">B800</text>
+<text x="249.0" y="96.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">screen, 16 KB lines</text>
+<rect x="177.0" y="119.0" width="144.0" height="66.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.1"/>
+<text x="249.0" y="151.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">64,000 bytes</text>
+<text x="249.0" y="164.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">one segment</text>
+<rect x="177.0" y="187.0" width="144.0" height="66.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.1"/>
+<text x="249.0" y="219.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">32,000 bytes</text>
+<text x="249.0" y="232.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">one segment</text>
+<rect x="177.0" y="255.0" width="144.0" height="66.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.1"/>
+<text x="249.0" y="287.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">52,000 bytes</text>
+<text x="249.0" y="300.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">one segment</text>
+<rect x="323.0" y="51.0" width="144.0" height="66.0" rx="3" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.1"/>
+<text x="395.0" y="83.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">B800</text>
+<text x="395.0" y="96.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">screen, banked</text>
+<rect x="323.0" y="119.0" width="144.0" height="66.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.1"/>
+<text x="395.0" y="151.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">memtop</text>
+<text x="395.0" y="164.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">below video [H]</text>
+<rect x="323.0" y="187.0" width="144.0" height="66.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.1"/>
+<text x="395.0" y="219.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">32,576 bytes</text>
+<text x="395.0" y="232.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">one segment</text>
+<rect x="323.0" y="255.0" width="144.0" height="66.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.1"/>
+<text x="395.0" y="287.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">52,000 bytes</text>
+<text x="395.0" y="300.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">one segment</text>
+<rect x="469.0" y="51.0" width="144.0" height="32.0" rx="3" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.1"/>
+<text x="541.0" y="66.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">A000</text>
+<text x="541.0" y="79.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">page 0, visible</text>
+<rect x="469.0" y="85.0" width="144.0" height="32.0" rx="3" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.1"/>
+<text x="541.0" y="100.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#3C3A36" text-anchor="middle">not set</text>
+<text x="541.0" y="113.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">stays 0</text>
+<rect x="469.0" y="119.0" width="144.0" height="32.0" rx="3" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.1"/>
+<text x="541.0" y="134.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">A200</text>
+<text x="541.0" y="147.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">video RAM page</text>
+<rect x="469.0" y="153.0" width="144.0" height="32.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.1"/>
+<text x="541.0" y="173.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">64,000 bytes</text>
+<rect x="469.0" y="187.0" width="144.0" height="32.0" rx="3" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.1"/>
+<text x="541.0" y="207.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">A200</text>
+<rect x="469.0" y="221.0" width="144.0" height="32.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.1"/>
+<text x="541.0" y="241.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">32,000 bytes</text>
+<rect x="469.0" y="255.0" width="144.0" height="32.0" rx="3" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.1"/>
+<text x="541.0" y="275.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">A200</text>
+<rect x="469.0" y="289.0" width="144.0" height="32.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.1"/>
+<text x="541.0" y="309.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">52,000 bytes</text>
+<rect x="615.0" y="51.0" width="144.0" height="66.0" rx="3" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.1"/>
+<text x="687.0" y="83.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">A000</text>
+<text x="687.0" y="96.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">64,000 bytes, mode 13h</text>
+<rect x="615.0" y="119.0" width="144.0" height="66.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.1"/>
+<text x="687.0" y="151.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">65,000 bytes</text>
+<text x="687.0" y="164.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">one segment</text>
+<rect x="615.0" y="187.0" width="144.0" height="66.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.1"/>
+<text x="687.0" y="219.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">32,000 bytes</text>
+<text x="687.0" y="232.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">one segment</text>
+<rect x="615.0" y="255.0" width="144.0" height="66.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.1"/>
+<text x="687.0" y="287.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">52,000 bytes</text>
+<text x="687.0" y="300.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">one segment</text>
+<rect x="176.0" y="332.0" width="12.0" height="10.0" rx="2" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="192.0" y="340.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">video memory (even slot)</text>
+<rect x="329.0" y="332.0" width="12.0" height="10.0" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="345.0" y="340.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">main memory from MemAlloc (odd slot)</text>
+<text x="0.0" y="362.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">GetPageBuffer(k) is the far pointer to offset 0 of gPageSegs[k | 1]; the drivers turn a page number n into gPageSegs[n and 1Fh].</text>
+<text x="0.0" y="378.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">In the CGA, Tandy and VGA tables the two slots of a pair name the same segment, so copying page 3 to page 2 is skipped (CopyPage tests that the</text>
+<text x="0.0" y="392.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">segments differ). EGA is the only mode where page 2 (A200, planar video RAM) and the buffer in slot 3 are different memory.</text>
+</svg>

@@ -1,0 +1,1 @@
+Left: the six steps of one pass of `RunMapLoop`, in code order. Right: the timer table that `RunEffects` walks in step 2, with each entry's period in ticks (initial values; the level loader rewrites the four monster periods).

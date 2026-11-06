@@ -1,0 +1,1 @@
+A step is a key handler, a test and `MoveParty`; time (monsters, doors, flying objects, the level timer) advances in `RunEffects`, once per pass of the map loop. The table lists the 16 timed effects that make up that time.

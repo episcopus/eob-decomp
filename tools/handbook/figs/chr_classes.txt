@@ -1,0 +1,1 @@
+Each class names up to three base classes, one per class slot; the slot decides which level, which experience total, which experience table and which hit die belong together. "Class bits" is gClassBaseBits (F = bit 0, M = bit 1, C = bit 2, T = bit 3), the mask an item's class byte is ANDed with; the start levels are what 5000 experience points divided by the XP split buys.

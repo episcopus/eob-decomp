@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 462" width="760" height="462" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">TIMER: EVERYTHING THE GAME CALLS TIME COMES FROM IRQ0</text>
+<rect x="0.0" y="24.0" width="120.0" height="78.0" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="60.0" y="47.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#3C3A36" text-anchor="middle">PIT channel 0</text>
+<text x="60.0" y="61.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">IRQ0 at 18.2 Hz, or</text>
+<text x="60.0" y="74.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">faster while a sound</text>
+<text x="60.0" y="87.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">driver runs</text>
+<rect x="150.0" y="24.0" width="190.0" height="78.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="245.0" y="41.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">INT 08h, driver ISR</text>
+<text x="245.0" y="55.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">AdLib: divisor 555h, 874 Hz, every</text>
+<text x="245.0" y="67.8" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">48th pass chains on;</text>
+<text x="245.0" y="80.5" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">speaker, Tandy: 1000h, 291 Hz,</text>
+<text x="245.0" y="93.2" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">every 16th</text>
+<rect x="370.0" y="24.0" width="100.0" height="78.0" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="420.0" y="53.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#3C3A36" text-anchor="middle">BIOS INT 08h</text>
+<text x="420.0" y="67.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">18.2 Hz, then INT</text>
+<text x="420.0" y="80.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">1Ch</text>
+<rect x="500.0" y="24.0" width="254.0" height="78.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="627.0" y="53.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">INT 1Ch: 1D8F:0055</text>
+<text x="627.0" y="67.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">adds 1 to each counter below, counts a countdown</text>
+<text x="627.0" y="80.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">down, chains to the old handler</text>
+<path d="M121.0,63.0 L149.0,63.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M341.0,63.0 L369.0,63.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M471.0,63.0 L499.0,63.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="0.0" y="126.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#2C386B" text-anchor="start">What the handler writes</text>
+<rect x="0.0" y="134.0" width="760.0" height="18.0" rx="3" fill="#F4F0E6" stroke="none" stroke-width="1"/>
+<text x="8.0" y="147.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="start">address</text>
+<text x="92.0" y="147.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="start">name</text>
+<text x="240.0" y="147.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="start">kind</text>
+<text x="440.0" y="147.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="start">read by</text>
+<text x="8.0" y="167.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="start">ds:8488</text>
+<text x="92.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="600" fill="#2B2A28" text-anchor="start">gTicksSinceEvent</text>
+<text x="240.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="start">16-bit, always</text>
+<text x="440.0" y="167.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="start">stamps recorded input events</text>
+<text x="8.0" y="186.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="start">ds:848A</text>
+<text x="92.0" y="186.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="600" fill="#2B2A28" text-anchor="start">gTicks</text>
+<text x="240.0" y="186.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="start">32-bit, always</text>
+<text x="440.0" y="186.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="start">WaitTicks, cursor blink, delays, selection frame</text>
+<text x="8.0" y="205.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="start">ds:8492</text>
+<text x="92.0" y="205.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="600" fill="#2B2A28" text-anchor="start">gGameTicks</text>
+<text x="240.0" y="205.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="start">32-bit, only while ds:849E bit 1</text>
+<text x="440.0" y="205.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="start">timed effects, level script timer, member effect timers</text>
+<text x="8.0" y="224.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="start">ds:849A</text>
+<text x="92.0" y="224.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="600" fill="#2B2A28" text-anchor="start">gFrameWaitTicks</text>
+<text x="240.0" y="224.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="start">32-bit countdown to 0</text>
+<text x="440.0" y="224.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="start">DrawViewFrame waits for it: holds attack and hit frames</text>
+<text x="8.0" y="243.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="start">ds:848E, 8496</text>
+<text x="92.0" y="243.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.8" font-weight="600" fill="#2B2A28" text-anchor="start">(no reader)</text>
+<text x="240.0" y="243.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="start">32-bit each; 848E only while bit 0</text>
+<text x="440.0" y="243.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="start">the counters nothing in src/ reads</text>
+<text x="0.0" y="261.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">Bit 1 of ds:849E is cleared around the camp menu, level loads, wand and spell animations, hit flashes: game time stops while the player waits.</text>
+<text x="0.0" y="280.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">KEYBOARD AND MOUSE: INTERRUPTS FILL ONE 128-WORD RING</text>
+<rect x="0.0" y="290.0" width="120.0" height="70.0" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="60.0" y="322.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#3C3A36" text-anchor="middle">IRQ1</text>
+<text x="60.0" y="336.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">scancode on port 60h</text>
+<rect x="150.0" y="290.0" width="190.0" height="70.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="245.0" y="316.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">INT 9: 1AAD:07C0</text>
+<text x="245.0" y="329.8" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">scancode to key code, held-key</text>
+<text x="245.0" y="342.5" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">bitmap, Alt-S and Alt-M toggle sound</text>
+<rect x="370.0" y="290.0" width="170.0" height="70.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="455.0" y="316.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">ring, 1AAD:007C</text>
+<text x="455.0" y="329.8" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">256 bytes of events: 1 word, or</text>
+<text x="455.0" y="342.5" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">3 for a mouse click (code, x, y)</text>
+<rect x="570.0" y="290.0" width="184.0" height="70.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="662.0" y="309.6" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="middle">readers</text>
+<text x="662.0" y="323.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">IsKeyPending, ReadKey,</text>
+<text x="662.0" y="336.1" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">WaitKeyEvent, WaitGameKey,</text>
+<text x="662.0" y="348.9" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">GetKeyState, FlushKeyBuffer</text>
+<path d="M121.0,325.0 L149.0,325.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M341.0,325.0 L369.0,325.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M541.0,325.0 L569.0,325.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="0.0" y="380.0" width="120.0" height="70.0" rx="6" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="60.0" y="405.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#3C3A36" text-anchor="middle">mouse driver</text>
+<text x="60.0" y="419.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">INT 33h function 0Ch</text>
+<text x="60.0" y="432.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">callback</text>
+<rect x="150.0" y="380.0" width="190.0" height="70.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="245.0" y="399.6" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">1A72:017A</text>
+<text x="245.0" y="413.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">clamp x, publish gCursorX/Y, redraw</text>
+<text x="245.0" y="426.1" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">the game&#x27;s own pointer, report</text>
+<text x="245.0" y="438.9" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">buttons</text>
+<rect x="370.0" y="380.0" width="170.0" height="70.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="455.0" y="399.6" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">1AAD:0B0E</text>
+<text x="455.0" y="413.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">a button change becomes code</text>
+<text x="455.0" y="426.1" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">41h (left) or 42h (right), release</text>
+<text x="455.0" y="438.9" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="middle">marked by AH bit 8</text>
+<path d="M121.0,415.0 L149.0,415.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M341.0,415.0 L369.0,415.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M455.0,380.0 L455.0,362.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="570.0" y="398.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="start">Waiting for the screen is not an</text>
+<text x="570.0" y="411.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="start">interrupt: WaitFrames polls port</text>
+<text x="570.0" y="425.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.3" font-weight="400" fill="#3C3A36" text-anchor="start">3DAh bit 3 (vertical retrace).</text>
+</svg>

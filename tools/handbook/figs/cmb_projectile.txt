@@ -1,0 +1,1 @@
+Thrown weapons, arrows and spell missiles share one pool of ten records. Each moves half a cell per step and is tested against the monsters of the quarter it enters; an item that stops is left on the floor of the cell, so ammunition is never used up by a hit.

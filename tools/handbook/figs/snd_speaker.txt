@@ -1,0 +1,1 @@
+The speaker and Tandy driver reads a song as note and duration byte pairs plus a few commands. On a Tandy the same stream is started on three voices 35 and 70 passes apart, at volumes 15, 10 and 5, which makes an echo; on the PC speaker only voice 0 plays.

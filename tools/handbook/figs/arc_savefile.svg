@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 418" width="760" height="418" class="fig">
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">EOBDATA.SAV, 33,101 BYTES, TO SCALE (1 PIXEL = 44.5 BYTES)</text>
+<rect x="8.0" y="26.0" width="32.8" height="40.0" rx="0" fill="#A9D0C8" stroke="#1F6F66" stroke-width="1.1"/>
+<rect x="40.8" y="26.0" width="1.6" height="40.0" rx="0" fill="#E3B2A5" stroke="#A8452F" stroke-width="1.1"/>
+<rect x="42.4" y="26.0" width="157.3" height="40.0" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1.1"/>
+<text x="121.0" y="43.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2C386B" text-anchor="middle">items</text>
+<text x="121.0" y="58.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">500 x 14</text>
+<rect x="199.7" y="26.0" width="550.2" height="40.0" rx="0" fill="#D5B8CC" stroke="#7A3E6B" stroke-width="1.1"/>
+<text x="474.8" y="43.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#5C2D50" text-anchor="middle">level states</text>
+<text x="474.8" y="58.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">12 x 2,040 = LEVELS.TMP</text>
+<rect x="749.9" y="26.0" width="1.6" height="40.0" rx="0" fill="#E3C98F" stroke="#A8741A" stroke-width="1.1"/>
+<rect x="751.5" y="26.0" width="2.2" height="40.0" rx="0" fill="#E3C98F" stroke="#A8741A" stroke-width="1.1"/>
+<text x="24.5" y="82.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">characters 1,458</text>
+<line x1="24.0" y1="66.0" x2="24.0" y2="74.0" stroke="#8A8373" stroke-width="1"/>
+<line x1="41.8" y1="66.0" x2="41.8" y2="92.0" stroke="#8A8373" stroke-width="0.9"/>
+<text x="45.8" y="100.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="start">header 64 (at offset 1,458)</text>
+<line x1="750.0" y1="66.0" x2="750.0" y2="84.0" stroke="#8A8373" stroke-width="0.9"/>
+<text x="746.0" y="92.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="end">3 option bytes, then 96 bytes of item types</text>
+<text x="8.0" y="118.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">offsets: 0000 characters | 05B2 header | 05F2 items | 214A level states | 80EA options | 80ED item types | 814D end</text>
+<text x="0.0" y="150.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">THE 64-BYTE HEADER: A COPY OF DS:FBC8 TO FC07</text>
+<rect x="8.0" y="164.0" width="22.2" height="38.0" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1"/>
+<text x="19.1" y="181.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#3C3A36" text-anchor="middle">00</text>
+<rect x="31.2" y="164.0" width="22.2" height="38.0" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1"/>
+<text x="42.4" y="181.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#3C3A36" text-anchor="middle">02</text>
+<rect x="54.5" y="164.0" width="22.2" height="38.0" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1"/>
+<text x="65.6" y="181.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#3C3A36" text-anchor="middle">04</text>
+<rect x="77.8" y="164.0" width="22.2" height="38.0" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1"/>
+<text x="88.9" y="181.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#3C3A36" text-anchor="middle">06</text>
+<rect x="101.0" y="164.0" width="22.2" height="38.0" rx="0" fill="#A9D0C8" stroke="#1F6F66" stroke-width="1"/>
+<text x="112.1" y="181.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#3C3A36" text-anchor="middle">08</text>
+<rect x="124.2" y="164.0" width="22.2" height="38.0" rx="0" fill="#E3C98F" stroke="#A8741A" stroke-width="1"/>
+<text x="135.4" y="181.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#3C3A36" text-anchor="middle">0A</text>
+<rect x="147.5" y="164.0" width="45.5" height="38.0" rx="0" fill="#D9D2C3" stroke="#8A8373" stroke-width="1"/>
+<text x="170.2" y="181.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#3C3A36" text-anchor="middle">0C</text>
+<rect x="194.0" y="164.0" width="510.5" height="38.0" rx="0" fill="#D5B8CC" stroke="#7A3E6B" stroke-width="1"/>
+<text x="449.2" y="181.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#3C3A36" text-anchor="middle">10</text>
+<rect x="705.5" y="164.0" width="45.5" height="38.0" rx="0" fill="#E3B2A5" stroke="#A8452F" stroke-width="1"/>
+<text x="728.2" y="181.0" font-family="'DejaVu Sans Mono', monospace" font-size="9" font-weight="400" fill="#3C3A36" text-anchor="middle">3C</text>
+<text x="8.0" y="218.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">+00</text>
+<text x="40.0" y="218.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.8" font-weight="400" fill="#6E695F" text-anchor="start">FBC8</text>
+<text x="76.0" y="218.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#2B2A28" text-anchor="start">gCurLevel</text>
+<text x="133.3" y="218.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">the dungeon level, 1 to 12</text>
+<text x="8.0" y="232.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">+02</text>
+<text x="40.0" y="232.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.8" font-weight="400" fill="#6E695F" text-anchor="start">FBCA</text>
+<text x="76.0" y="232.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#2B2A28" text-anchor="start">gPartyCell</text>
+<text x="136.2" y="232.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">the party&#x27;s cell, y x 32 + x [I]</text>
+<text x="8.0" y="246.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">+04</text>
+<text x="40.0" y="246.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.8" font-weight="400" fill="#6E695F" text-anchor="start">FBCC</text>
+<text x="76.0" y="246.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#2B2A28" text-anchor="start">gPartyDir</text>
+<text x="133.3" y="246.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">0 north, 1 east, 2 south, 3 west</text>
+<text x="8.0" y="260.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">+06</text>
+<text x="40.0" y="260.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.8" font-weight="400" fill="#6E695F" text-anchor="start">FBCE</text>
+<text x="76.0" y="260.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#2B2A28" text-anchor="start">gMouseItem</text>
+<text x="142.6" y="260.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">the item on the pointer</text>
+<text x="8.0" y="274.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">+08</text>
+<text x="40.0" y="274.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.8" font-weight="400" fill="#6E695F" text-anchor="start">FBD0</text>
+<text x="76.0" y="274.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#2B2A28" text-anchor="start">gSavedLevels</text>
+<text x="149.8" y="274.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">bit n set: level n + 1 is in LEVELS.TMP</text>
+<text x="380.0" y="218.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">+0A</text>
+<text x="412.0" y="218.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.8" font-weight="400" fill="#6E695F" text-anchor="start">FBD2</text>
+<text x="448.0" y="218.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#2B2A28" text-anchor="start">gPartySpellFlags</text>
+<text x="539.8" y="218.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">bless, prayer, detect magic</text>
+<text x="380.0" y="232.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">+0C</text>
+<text x="412.0" y="232.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.8" font-weight="400" fill="#6E695F" text-anchor="start">FBD4</text>
+<text x="448.0" y="232.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#2B2A28" text-anchor="start">gLevelFlags[0]</text>
+<text x="526.2" y="232.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">never used</text>
+<text x="380.0" y="246.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">+10</text>
+<text x="412.0" y="246.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.8" font-weight="400" fill="#6E695F" text-anchor="start">FBD8</text>
+<text x="448.0" y="246.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#2B2A28" text-anchor="start">gLevelFlags[1..11]</text>
+<text x="545.3" y="246.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">32-bit script flags, one word per level</text>
+<text x="380.0" y="260.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">+3C</text>
+<text x="412.0" y="260.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.8" font-weight="400" fill="#6E695F" text-anchor="start">FC04</text>
+<text x="448.0" y="260.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#2B2A28" text-anchor="start">gGameFlags</text>
+<text x="513.8" y="260.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.8" font-weight="400" fill="#3C3A36" text-anchor="start">32-bit script flags of the whole game</text>
+<text x="8.0" y="296.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">Words are 16-bit. gLevelFlags is indexed by gCurLevel (1 to 12), so index 0 is never used and level 12 writes into gGameFlags: the two share the last 4 bytes.</text>
+<text x="0.0" y="322.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">ONE LEVEL STATE, 2,040 BYTES (7F8H), THE UNIT OF LEVELS.TMP AND OF THE 12 SLOTS</text>
+<rect x="8.0" y="336.0" width="436.6" height="36.0" rx="0" fill="#B9C2E0" stroke="#3B4A8A" stroke-width="1"/>
+<text x="14.0" y="351.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="600" fill="#2C386B" text-anchor="start">LCW stream of the 4,096 wall bytes (1,024 cells x 4); at most 1,200 bytes (4B0h), the</text>
+<text x="14.0" y="362.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#2C386B" text-anchor="start">rest of the area unused</text>
+<rect x="445.6" y="336.0" width="305.4" height="36.0" rx="0" fill="#E3B2A5" stroke="#A8452F" stroke-width="1"/>
+<text x="451.6" y="351.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="600" fill="#80311F" text-anchor="start">30 monster records, 28 bytes each: 840 bytes (348h)</text>
+<text x="8.0" y="394.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">The walls of a cell can change (doors, switches), and the monsters move, so a level is saved as its changed walls and its monsters. The pristine walls</text>
+<text x="8.0" y="407.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">are in LEVELn.MAZ; items are not here (they live in the 500-item block, with a level number each).</text>
+</svg>

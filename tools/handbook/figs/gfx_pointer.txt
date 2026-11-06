@@ -1,0 +1,1 @@
+The pointer is a shape the game itself draws on the screen. Left: what the mouse handler does when the mouse moves. Right: how any other drawing is bracketed so the pointer's saved background is never copied over or drawn into. The shared words are the hide depth, the zone flags and the busy flag.

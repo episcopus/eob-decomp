@@ -1,0 +1,1 @@
+The clickable regions of the map screen, drawn to scale on the 320 by 200 screen from the 38 node records of table 1b (`ds:506A`). Boxes overlap on purpose: the dispatcher offers an event to every node under the pointer, in list order, until a callback returns nonzero.

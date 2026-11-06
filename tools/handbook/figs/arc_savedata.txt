@@ -1,0 +1,1 @@
+How levels are kept between visits and how the save and load routines use `LEVELS.TMP`. Levels are saved when the party leaves them; a save merges the current level into the file's image and copies the image into `EOBDATA.SAV`, and a load copies it back out.

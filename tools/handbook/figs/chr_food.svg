@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 296" width="760" height="296" class="fig">
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">FOOD: ONE BYTE PER CHARACTER, 0 TO 100</text>
+<rect x="20.0" y="44.0" width="4.0" height="32.0" rx="0" fill="#A8452F" stroke="#A8452F" stroke-width="1.2"/>
+<rect x="27.2" y="44.0" width="136.8" height="32.0" rx="0" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="95.6" y="64.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="600" fill="#80311F" text-anchor="middle">bar state 2 (below 20)</text>
+<rect x="164.0" y="44.0" width="93.6" height="32.0" rx="0" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="210.8" y="64.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="600" fill="#7A5412" text-anchor="middle">state 1</text>
+<rect x="257.6" y="44.0" width="489.6" height="32.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="502.4" y="64.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="600" fill="#14504A" text-anchor="middle">state 0 (33 and up): normal</text>
+<line x1="22.0" y1="76.0" x2="22.0" y2="82.0" stroke="#8A8373" stroke-width="1"/>
+<text x="22.0" y="94.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">0</text>
+<line x1="164.0" y1="76.0" x2="164.0" y2="82.0" stroke="#8A8373" stroke-width="1"/>
+<text x="164.0" y="94.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">20</text>
+<line x1="257.6" y1="76.0" x2="257.6" y2="82.0" stroke="#8A8373" stroke-width="1"/>
+<text x="257.6" y="94.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">33</text>
+<line x1="740.0" y1="76.0" x2="740.0" y2="82.0" stroke="#8A8373" stroke-width="1"/>
+<text x="740.0" y="94.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">100</text>
+<text x="0.0" y="126.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="start">down: one per minute of play</text>
+<text x="0.0" y="142.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Effect 14 (DecayMemberState, 1414:0C82) runs every 1080 ticks, about 59 s at 18.2 ticks a second,</text>
+<text x="0.0" y="156.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">and takes 1 from every present member who has food and hp above -10: 100 lasts about 99 minutes.</text>
+<text x="0.0" y="170.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">A rest advances the clock without running the effect, so a whole rest costs one decrement at most.</text>
+<text x="0.0" y="202.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="start">up</text>
+<rect x="0.0" y="210.0" width="140.0" height="42.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="70.0" y="228.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">Rations</text>
+<text x="70.0" y="241.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">+25</text>
+<rect x="150.0" y="210.0" width="140.0" height="42.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="220.0" y="228.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">Iron Rations</text>
+<text x="220.0" y="241.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">+50 (one stack +100)</text>
+<rect x="300.0" y="210.0" width="140.0" height="42.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="370.0" y="228.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">Kenku Egg</text>
+<text x="370.0" y="241.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">+10 to +40</text>
+<rect x="450.0" y="210.0" width="140.0" height="42.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="520.0" y="228.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">Potion of Vitality</text>
+<text x="520.0" y="241.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">set to 100</text>
+<rect x="600.0" y="210.0" width="140.0" height="42.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="670.0" y="228.1" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">Create Food</text>
+<text x="670.0" y="241.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">all six set to 100</text>
+<text x="0.0" y="264.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">EatFood (0ACD:07E0) takes a ration or egg from the pointer (item types 31 and 49), adds its value and clamps at 100.</text>
+<text x="0.0" y="292.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="start">at 0</text>
+<text x="0.0" y="308.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">No spells are memorised or prayed for in a rest, the member cannot be picked for Memorize or Pray, no hit point is regained,</text>
+<text x="0.0" y="322.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">and in a rest of 24 hours the member loses 1 hit point. Walking around at food 0 has no effect at all.</text>
+</svg>

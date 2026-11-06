@@ -1,0 +1,1 @@
+The flow of pixels between the pages in a VGA session. Pictures are unpacked into the art page (3), shapes are cut from it, and the 3D view and the party blocks are composed on page 2 before one rectangle copy puts them on the screen. There is no page flip: every refresh is a rectangle copy to the page the display reads.

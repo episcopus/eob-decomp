@@ -1,0 +1,1 @@
+The unpacked level file, shown to scale for level 2, and its fields in order. Everything between the monster records and the trigger table is bytecode (section 5.5); the table at the end maps a cell to the script that listens to it.

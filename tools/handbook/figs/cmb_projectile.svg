@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 466" width="760" height="466" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker><marker id="aA8452F" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#A8452F"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">A FLYING OBJECT: THE 18-BYTE RECORD (GPROJECTILES, DS:DD2C, TEN OF THEM) AND ITS STEP</text>
+<rect x="0.0" y="24.0" width="40.0" height="30.0" rx="3" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="20.0" y="44.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">active</text>
+<text x="2.0" y="66.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">00</text>
+<rect x="42.0" y="24.0" width="40.0" height="30.0" rx="3" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="44.0" y="66.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">01</text>
+<rect x="84.0" y="24.0" width="82.0" height="30.0" rx="3" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="125.0" y="44.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#3C3A36" text-anchor="middle">m02</text>
+<text x="86.0" y="66.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">02</text>
+<rect x="168.0" y="24.0" width="82.0" height="30.0" rx="3" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="209.0" y="44.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">cell</text>
+<text x="170.0" y="66.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">04</text>
+<rect x="252.0" y="24.0" width="40.0" height="30.0" rx="3" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="272.0" y="44.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">m06</text>
+<text x="254.0" y="66.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">06</text>
+<rect x="294.0" y="24.0" width="40.0" height="30.0" rx="3" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="314.0" y="44.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">dir</text>
+<text x="296.0" y="66.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">07</text>
+<rect x="336.0" y="24.0" width="82.0" height="30.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="377.0" y="44.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">item</text>
+<text x="338.0" y="66.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">08</text>
+<rect x="420.0" y="24.0" width="40.0" height="30.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="440.0" y="44.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">m0A</text>
+<text x="422.0" y="66.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">0A</text>
+<rect x="462.0" y="24.0" width="40.0" height="30.0" rx="3" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="482.0" y="44.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="middle">m0B</text>
+<text x="464.0" y="66.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">0B</text>
+<rect x="504.0" y="24.0" width="40.0" height="30.0" rx="3" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="524.0" y="44.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">m0C</text>
+<text x="506.0" y="66.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">0C</text>
+<rect x="546.0" y="24.0" width="40.0" height="30.0" rx="3" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="566.0" y="44.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">m0D</text>
+<text x="548.0" y="66.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">0D</text>
+<rect x="588.0" y="24.0" width="166.0" height="30.0" rx="3" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="671.0" y="44.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="middle">fn</text>
+<text x="590.0" y="66.0" font-family="'DejaVu Sans Mono', monospace" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">0E</text>
+<rect x="0.0" y="81.0" width="10.0" height="10.0" rx="2" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1"/>
+<text x="16.0" y="90.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#2C386B" text-anchor="start">active</text>
+<text x="63.7" y="90.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">0 free; 1 a flying item; 2 a spell missile</text>
+<rect x="380.0" y="81.0" width="10.0" height="10.0" rx="2" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="396.0" y="90.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#3C3A36" text-anchor="start">m02</text>
+<text x="423.9" y="90.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">1 until the object leaves its first cell: no hit test meanwhile</text>
+<rect x="0.0" y="98.0" width="10.0" height="10.0" rx="2" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="16.0" y="107.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#14504A" text-anchor="start">cell, m06, dir</text>
+<text x="116.7" y="107.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">map cell, quarter in it (low 2 bits), facing</text>
+<rect x="380.0" y="98.0" width="10.0" height="10.0" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="396.0" y="107.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#7A5412" text-anchor="start">item</text>
+<text x="430.5" y="107.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">gItems index of the object (spell: the effect mode)</text>
+<rect x="0.0" y="115.0" width="10.0" height="10.0" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="16.0" y="124.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#7A5412" text-anchor="start">m0A</text>
+<text x="43.9" y="124.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">item type of the weapon or launcher</text>
+<rect x="380.0" y="115.0" width="10.0" height="10.0" rx="2" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1"/>
+<text x="396.0" y="124.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#5C2D50" text-anchor="start">m0B</text>
+<text x="423.9" y="124.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">who threw or cast it; -1 for monsters and scripts</text>
+<rect x="0.0" y="132.0" width="10.0" height="10.0" rx="2" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="16.0" y="141.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#80311F" text-anchor="start">m0C, m0D</text>
+<text x="77.0" y="141.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">flags of the mode; steps left (255: unlimited)</text>
+<rect x="380.0" y="132.0" width="10.0" height="10.0" rx="2" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1"/>
+<text x="396.0" y="141.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#2C386B" text-anchor="start">fn</text>
+<text x="417.2" y="141.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">hit callback of the spell, used in state 2</text>
+<text x="0.0" y="178.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2B2A28" text-anchor="start">One step, every 3 ticks: half a cell</text>
+<rect x="20.0" y="192.0" width="110.0" height="68.2" rx="0" fill="#E1E5F2" stroke="#8A8373" stroke-width="1"/>
+<line x1="75.0" y1="192.0" x2="75.0" y2="260.2" stroke="#D9D2C3" stroke-width="1" stroke-dasharray="2 3"/>
+<line x1="20.0" y1="226.1" x2="130.0" y2="226.1" stroke="#D9D2C3" stroke-width="1" stroke-dasharray="2 3"/>
+<text x="75.0" y="273.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">party cell</text>
+<rect x="144.0" y="192.0" width="110.0" height="68.2" rx="0" fill="#F5E0D9" stroke="#8A8373" stroke-width="1"/>
+<line x1="199.0" y1="192.0" x2="199.0" y2="260.2" stroke="#D9D2C3" stroke-width="1" stroke-dasharray="2 3"/>
+<line x1="144.0" y1="226.1" x2="254.0" y2="226.1" stroke="#D9D2C3" stroke-width="1" stroke-dasharray="2 3"/>
+<text x="199.0" y="273.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">cell 1 ahead</text>
+<rect x="268.0" y="192.0" width="110.0" height="68.2" rx="0" fill="#F5E0D9" stroke="#8A8373" stroke-width="1"/>
+<line x1="323.0" y1="192.0" x2="323.0" y2="260.2" stroke="#D9D2C3" stroke-width="1" stroke-dasharray="2 3"/>
+<line x1="268.0" y1="226.1" x2="378.0" y2="226.1" stroke="#D9D2C3" stroke-width="1" stroke-dasharray="2 3"/>
+<text x="323.0" y="273.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">cell 2 ahead</text>
+<rect x="392.0" y="192.0" width="110.0" height="68.2" rx="0" fill="#F5E0D9" stroke="#8A8373" stroke-width="1"/>
+<line x1="447.0" y1="192.0" x2="447.0" y2="260.2" stroke="#D9D2C3" stroke-width="1" stroke-dasharray="2 3"/>
+<line x1="392.0" y1="226.1" x2="502.0" y2="226.1" stroke="#D9D2C3" stroke-width="1" stroke-dasharray="2 3"/>
+<text x="447.0" y="273.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="middle">cell 3 ahead</text>
+<circle cx="102.5" cy="243.7" r="4.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="102.5" y="235.7" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#2C386B" text-anchor="middle">start</text>
+<circle cx="171.5" cy="243.7" r="4.0" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="171.5" y="235.7" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#80311F" text-anchor="middle">1</text>
+<circle cx="226.5" cy="243.7" r="4.0" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="226.5" y="235.7" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#80311F" text-anchor="middle">2</text>
+<circle cx="295.5" cy="243.7" r="4.0" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="295.5" y="235.7" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#80311F" text-anchor="middle">3</text>
+<circle cx="350.5" cy="243.7" r="4.0" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="350.5" y="235.7" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#80311F" text-anchor="middle">4</text>
+<circle cx="419.5" cy="243.7" r="4.0" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="419.5" y="235.7" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#80311F" text-anchor="middle">5</text>
+<circle cx="474.5" cy="243.7" r="4.0" fill="#A8452F" stroke="none" stroke-width="1"/>
+<text x="474.5" y="235.7" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#80311F" text-anchor="middle">6</text>
+<path d="M108.5,254.7 L468.5,254.7" fill="none" stroke="#A8452F" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#aA8452F)"/>
+<text x="520.0" y="218.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">The first step crosses into the next cell; each</text>
+<text x="520.0" y="231.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">cell then takes two steps (near half, far half).</text>
+<text x="520.0" y="245.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">Flying items get 13 steps (about 6 cells);</text>
+<text x="520.0" y="259.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">Lightning Bolt and Ice Storm 7 (about 3); other</text>
+<text x="520.0" y="273.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">missiles never run out and end at a wall or a hit.</text>
+<text x="0.0" y="330.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2B2A28" text-anchor="start">What MoveDDEffects does to each live record (1414:0285)</text>
+<rect x="0.0" y="340.0" width="176.0" height="112.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="9.0" y="386.2" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2C386B" text-anchor="start">next quarter</text>
+<text x="9.0" y="400.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">ds:5CAB gNextPosByDir; bit 7</text>
+<text x="9.0" y="414.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">set: into the next cell</text>
+<rect x="194.0" y="340.0" width="176.0" height="112.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="203.0" y="386.2" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#7A5412" text-anchor="start">StepDDEffect</text>
+<text x="203.0" y="400.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">wall in the way? item: stops,</text>
+<text x="203.0" y="414.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">wall handler runs; missile: gone</text>
+<path d="M176.0,396.0 L194.0,396.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="388.0" y="340.0" width="176.0" height="112.0" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="397.0" y="365.8" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#80311F" text-anchor="start">TestDDEffect</text>
+<text x="397.0" y="380.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">item: monsters in that quarter</text>
+<text x="397.0" y="394.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">or the centre get</text>
+<text x="397.0" y="407.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">TryRecordAttack; party cell:</text>
+<text x="397.0" y="421.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">RunRecordAttack. Missile: its</text>
+<text x="397.0" y="434.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">fn</text>
+<path d="M370.0,396.0 L388.0,396.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<rect x="582.0" y="340.0" width="176.0" height="112.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="591.0" y="379.4" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#14504A" text-anchor="start">ClearDDEffect</text>
+<text x="591.0" y="394.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">on a hit, a stop or the last step:</text>
+<text x="591.0" y="407.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">the item stays on that cell&#x27;s</text>
+<text x="591.0" y="421.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">floor</text>
+<path d="M564.0,396.0 L582.0,396.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+</svg>

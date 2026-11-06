@@ -1,0 +1,1 @@
+The two attack rolls use the same idea, a d20 against a target number, but each side subtracts a different thing from its own base: the character's number falls with level, the weapon and the ability bonus, the monster's falls as the character's armorClass falls. Armour class is built from the dexterity adjustment and four item slots and is then capped by up to three spells.

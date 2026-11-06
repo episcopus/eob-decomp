@@ -1,0 +1,1 @@
+The layout of a `.VMP` block map as `CopyViewColumn` reads it: a 22 by 15 background (330 words), then six wall sets of 431 words (`0x35E` bytes) each. A set is nine rectangles of block words, one per size and depth; the table gives where `BuildViewBlockMap` copies each one, in block units (8 pixels), and where its mirror goes for the right-hand side.

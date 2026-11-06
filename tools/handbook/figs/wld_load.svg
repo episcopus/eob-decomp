@@ -1,0 +1,129 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 571" width="760" height="571" class="fig"><defs><marker id="a1F6F66" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#1F6F66"/></marker><marker id="a3B4A8A" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#3B4A8A"/></marker><marker id="a7A3E6B" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#7A3E6B"/></marker><marker id="aA8741A" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#A8741A"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">LOADLEVEL (OVL3:0A7C), IN ORDER: WHAT IT READS, WHAT IT DOES, WHAT IT FILLS</text>
+<rect x="0.0" y="30.0" width="168.0" height="40.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="84.0" y="53.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">LEVELn.INF</text>
+<rect x="188.0" y="30.0" width="390.0" height="40.0" rx="5" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<circle cx="202.0" cy="50.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="202.0" y="53.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+<text x="218.0" y="54.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">read the u16 size and the packed body, Unpack it</text>
+<rect x="598.0" y="30.0" width="162.0" height="40.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="679.0" y="53.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">gLevelInf  (7,500 B)</text>
+<path d="M169.0,50.0 L186.0,50.0" fill="none" stroke="#1F6F66" stroke-width="1.3" marker-end="url(#a1F6F66)"/>
+<path d="M579.0,50.0 L596.0,50.0" fill="none" stroke="#A8741A" stroke-width="1.3" marker-end="url(#aA8741A)"/>
+<rect x="0.0" y="77.0" width="168.0" height="40.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="84.0" y="100.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">LEVELn.MAZ</text>
+<rect x="188.0" y="77.0" width="390.0" height="40.0" rx="5" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<circle cx="202.0" cy="97.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="202.0" y="100.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+<text x="218.0" y="94.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">LoadMaze: 6-byte header, then 4,096 wall bytes, into the 9-byte</text>
+<text x="218.0" y="108.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">cells</text>
+<rect x="598.0" y="77.0" width="162.0" height="40.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="679.0" y="100.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">gMaze  (9,216 B)</text>
+<path d="M169.0,97.0 L186.0,97.0" fill="none" stroke="#1F6F66" stroke-width="1.3" marker-end="url(#a1F6F66)"/>
+<path d="M579.0,97.0 L596.0,97.0" fill="none" stroke="#A8741A" stroke-width="1.3" marker-end="url(#aA8741A)"/>
+<rect x="0.0" y="124.0" width="168.0" height="40.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.2"/>
+<text x="84.0" y="147.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">LEVELS.TMP</text>
+<rect x="188.0" y="124.0" width="390.0" height="40.0" rx="5" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<circle cx="202.0" cy="144.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="202.0" y="147.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">3</text>
+<text x="218.0" y="141.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">if the level was visited (gSavedLevels bit), LoadLevelState</text>
+<text x="218.0" y="155.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">replaces the walls and the monsters</text>
+<rect x="598.0" y="124.0" width="162.0" height="40.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="679.0" y="147.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">gMaze, gMonsters</text>
+<path d="M169.0,144.0 L186.0,144.0" fill="none" stroke="#7A3E6B" stroke-width="1.3" marker-end="url(#a7A3E6B)"/>
+<path d="M579.0,144.0 L596.0,144.0" fill="none" stroke="#A8741A" stroke-width="1.3" marker-end="url(#aA8741A)"/>
+<rect x="0.0" y="171.0" width="168.0" height="40.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="84.0" y="194.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">name.VMP / .EMP, .PAL</text>
+<rect x="188.0" y="171.0" width="390.0" height="40.0" rx="5" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<circle cx="202.0" cy="191.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="202.0" y="194.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">4</text>
+<text x="218.0" y="195.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">wall block maps; the palette in VGA mode</text>
+<rect x="598.0" y="171.0" width="162.0" height="40.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="679.0" y="194.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">gWallBlockMaps, gPaletteBuf</text>
+<path d="M169.0,191.0 L186.0,191.0" fill="none" stroke="#1F6F66" stroke-width="1.3" marker-end="url(#a1F6F66)"/>
+<path d="M579.0,191.0 L596.0,191.0" fill="none" stroke="#A8741A" stroke-width="1.3" marker-end="url(#aA8741A)"/>
+<rect x="0.0" y="218.0" width="168.0" height="40.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="84.0" y="241.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">INF bytes 38 to 72</text>
+<rect x="188.0" y="218.0" width="390.0" height="40.0" rx="5" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<circle cx="202.0" cy="238.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="202.0" y="241.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">5</text>
+<text x="218.0" y="235.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">door picture set, level timer (mode, period, steps), two monster</text>
+<text x="218.0" y="249.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">sprite sheets</text>
+<rect x="598.0" y="218.0" width="162.0" height="40.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="679.0" y="234.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">gDoorShapes, timers,</text>
+<text x="679.0" y="248.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">gLoadedMonsterShapes</text>
+<path d="M169.0,238.0 L186.0,238.0" fill="none" stroke="#3B4A8A" stroke-width="1.3" marker-end="url(#a3B4A8A)"/>
+<path d="M579.0,238.0 L596.0,238.0" fill="none" stroke="#A8741A" stroke-width="1.3" marker-end="url(#aA8741A)"/>
+<rect x="0.0" y="265.0" width="168.0" height="40.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="84.0" y="288.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">INF timer pairs</text>
+<rect x="188.0" y="265.0" width="390.0" height="40.0" rx="5" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<circle cx="202.0" cy="285.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="202.0" y="288.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">6</text>
+<text x="218.0" y="289.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">the periods of the four monster update effects, their first expiry</text>
+<rect x="598.0" y="265.0" width="162.0" height="40.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="679.0" y="288.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">gEffects[2..5]</text>
+<path d="M169.0,285.0 L186.0,285.0" fill="none" stroke="#3B4A8A" stroke-width="1.3" marker-end="url(#a3B4A8A)"/>
+<path d="M579.0,285.0 L596.0,285.0" fill="none" stroke="#A8741A" stroke-width="1.3" marker-end="url(#aA8741A)"/>
+<rect x="0.0" y="312.0" width="168.0" height="40.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="84.0" y="335.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">INF: 30 monster records</text>
+<rect x="188.0" y="312.0" width="390.0" height="40.0" rx="5" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<circle cx="202.0" cy="332.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="202.0" y="335.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">7</text>
+<text x="218.0" y="329.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">InitMonster each (skipped for a visited level, whose monsters are</text>
+<text x="218.0" y="343.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">in the state)</text>
+<rect x="598.0" y="312.0" width="162.0" height="40.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="679.0" y="335.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">gMonsters  (30 x 28 B)</text>
+<path d="M169.0,332.0 L186.0,332.0" fill="none" stroke="#3B4A8A" stroke-width="1.3" marker-end="url(#a3B4A8A)"/>
+<path d="M579.0,332.0 L596.0,332.0" fill="none" stroke="#A8741A" stroke-width="1.3" marker-end="url(#aA8741A)"/>
+<rect x="0.0" y="359.0" width="168.0" height="40.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="84.0" y="382.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">INF wall records, name.DAT</text>
+<rect x="188.0" y="359.0" width="390.0" height="40.0" rx="5" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<circle cx="202.0" cy="379.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="202.0" y="382.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">8</text>
+<text x="218.0" y="376.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">0xEC: LoadWallSet (decorations, rectangles); 0xFB:</text>
+<text x="218.0" y="390.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">DefineWallType (one wall kind)</text>
+<rect x="598.0" y="359.0" width="162.0" height="40.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="679.0" y="375.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">the four per-kind tables,</text>
+<text x="679.0" y="389.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">gWallRecs, gDecorShapes</text>
+<path d="M169.0,379.0 L186.0,379.0" fill="none" stroke="#1F6F66" stroke-width="1.3" marker-end="url(#a1F6F66)"/>
+<path d="M579.0,379.0 L596.0,379.0" fill="none" stroke="#A8741A" stroke-width="1.3" marker-end="url(#aA8741A)"/>
+<rect x="0.0" y="406.0" width="168.0" height="40.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="84.0" y="429.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">ITEM.DAT (already in gItems)</text>
+<rect x="188.0" y="406.0" width="390.0" height="40.0" rx="5" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<circle cx="202.0" cy="426.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="202.0" y="429.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">9</text>
+<text x="218.0" y="423.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">clear the item heads, RebuildItemList: every item of this level</text>
+<text x="218.0" y="437.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">goes into its cell&#x27;s list</text>
+<rect x="598.0" y="406.0" width="162.0" height="40.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="679.0" y="429.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">cell +5 (item list head)</text>
+<path d="M169.0,426.0 L186.0,426.0" fill="none" stroke="#1F6F66" stroke-width="1.3" marker-end="url(#a1F6F66)"/>
+<path d="M579.0,426.0 L596.0,426.0" fill="none" stroke="#A8741A" stroke-width="1.3" marker-end="url(#aA8741A)"/>
+<rect x="0.0" y="453.0" width="168.0" height="40.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="84.0" y="476.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">INF trigger table</text>
+<rect x="188.0" y="453.0" width="390.0" height="40.0" rx="5" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<circle cx="202.0" cy="473.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="202.0" y="476.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">10</text>
+<text x="218.0" y="477.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">for each entry: cell +4 |= flag byte, cell +7 = script offset</text>
+<rect x="598.0" y="453.0" width="162.0" height="40.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="679.0" y="476.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">cell +4 and +7</text>
+<path d="M169.0,473.0 L186.0,473.0" fill="none" stroke="#3B4A8A" stroke-width="1.3" marker-end="url(#a3B4A8A)"/>
+<path d="M579.0,473.0 L596.0,473.0" fill="none" stroke="#A8741A" stroke-width="1.3" marker-end="url(#aA8741A)"/>
+<rect x="0.0" y="500.0" width="168.0" height="40.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="84.0" y="523.3" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="middle">name.VCN / .ECN, INVENT</text>
+<rect x="188.0" y="500.0" width="390.0" height="40.0" rx="5" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<circle cx="202.0" cy="520.0" r="9.0" fill="#3B4A8A" stroke="none" stroke-width="1"/>
+<text x="202.0" y="523.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">11</text>
+<text x="218.0" y="524.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">LoadWallTextures, the inventory screen; gLevelPalettePending = 1</text>
+<rect x="598.0" y="500.0" width="162.0" height="40.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="679.0" y="523.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">gWallBlocks, screen</text>
+<path d="M169.0,520.0 L186.0,520.0" fill="none" stroke="#1F6F66" stroke-width="1.3" marker-end="url(#a1F6F66)"/>
+<path d="M579.0,520.0 L596.0,520.0" fill="none" stroke="#A8741A" stroke-width="1.3" marker-end="url(#aA8741A)"/>
+<rect x="0.0" y="557.0" width="12.0" height="10.0" rx="2" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="16.0" y="565.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">read from a data file</text>
+<rect x="135.7" y="557.0" width="12.0" height="10.0" rx="2" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1"/>
+<text x="151.7" y="565.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">read from the saved state</text>
+<rect x="299.0" y="557.0" width="12.0" height="10.0" rx="2" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1"/>
+<text x="315.0" y="565.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">from the unpacked level file</text>
+<rect x="468.4" y="557.0" width="12.0" height="10.0" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="484.4" y="565.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">where it lands</text>
+</svg>

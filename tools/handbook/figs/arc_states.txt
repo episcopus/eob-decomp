@@ -1,0 +1,1 @@
+The top-level states of the program. Everything but the title menu and character creation happens inside the one loop `RunMapLoop`; the modes of the map screen are different node lists over the same screen, and the camp, event panels and level changes are calls made from it.

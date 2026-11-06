@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 470" width="760" height="470" class="fig"><defs><marker id="a8A8373" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 z" fill="#8A8373"/></marker></defs>
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">ROLLCHARACTERSTATS (OVL0:1BF2)</text>
+<rect x="0.0" y="30.0" width="420.0" height="44.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="10.0" y="47.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#2C386B" text-anchor="start">1  RollAbilityScore</text>
+<text x="10.0" y="62.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">four d6, drop the lowest: 3 to 18 (ovl0:1177)</text>
+<rect x="0.0" y="88.0" width="420.0" height="62.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="10.0" y="105.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#2C386B" text-anchor="start">2  race adjustment</text>
+<text x="10.0" y="120.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">add gRaceAbilityBonus[race / 2][i]: elf DEX +1 CON -1, dwarf CON +1 CHA -1,</text>
+<text x="10.0" y="133.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">gnome INT +1 WIS -1, halfling STR -1 DEX +1</text>
+<rect x="0.0" y="164.0" width="420.0" height="56.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="10.0" y="181.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#2C386B" text-anchor="start">3  raise to the floor</text>
+<text x="10.0" y="196.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">gStatMin[i] = larger of gClassMinAbilities[class][i] and gRaceMinAbilities[race /</text>
+<text x="10.0" y="209.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">2][i]</text>
+<rect x="0.0" y="234.0" width="420.0" height="48.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="10.0" y="251.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#7A5412" text-anchor="start">4  strength only</text>
+<text x="10.0" y="266.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">a score of exactly 18 gets a percentile: d100 in the high byte (18/01 to 18/00)</text>
+<rect x="0.0" y="296.0" width="420.0" height="62.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.2"/>
+<text x="10.0" y="313.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#2C386B" text-anchor="start">5  lower to the ceiling</text>
+<text x="10.0" y="328.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">gStatMax[i] = gRaceMaxAbilities[race / 2][i]; strength is held at 18 when</text>
+<text x="10.0" y="341.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">gClassCombatGroup[class] is not 0</text>
+<rect x="0.0" y="372.0" width="420.0" height="40.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.2"/>
+<text x="10.0" y="389.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#14504A" text-anchor="start">6  store</text>
+<text x="10.0" y="404.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">current and base bytes, two per ability (offsets 0D to 1A)</text>
+<path d="M210.0,74.0 L210.0,88.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M210.0,150.0 L210.0,164.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M210.0,220.0 L210.0,234.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M210.0,282.0 L210.0,296.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<path d="M210.0,358.0 L210.0,372.0" fill="none" stroke="#8A8373" stroke-width="1.3" marker-end="url(#a8A8373)"/>
+<text x="0.0" y="434.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">Steps 1 to 5 run for the six scores in the order STR, INT, WIS, DEX, CON, CHA.</text>
+<text x="450.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">DERIVED FROM THE STORED SCORES</text>
+<rect x="450.0" y="30.0" width="310.0" height="84.0" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="605.0" y="55.6" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#80311F" text-anchor="middle">armour class</text>
+<text x="605.0" y="70.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">armorClass = gDexArmourAdjust[DEX] + 10.</text>
+<text x="605.0" y="84.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">Lower is better; DEX 15 or more subtracts, DEX 6 or less</text>
+<text x="605.0" y="97.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">adds (ds:349E).</text>
+<rect x="450.0" y="128.0" width="310.0" height="128.0" rx="6" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.2"/>
+<text x="605.0" y="161.9" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#80311F" text-anchor="middle">hit points: RollHitPoints (0A72:01AE)</text>
+<text x="605.0" y="176.7" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">per class slot: levels[slot] dice of that slot&#x27;s die, plus a CON</text>
+<text x="605.0" y="190.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">bonus per die;</text>
+<text x="605.0" y="204.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">the bonus is gConHitPointBonus[CON - 1], capped at +2</text>
+<text x="605.0" y="217.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">unless slot 0 is a d10;</text>
+<text x="605.0" y="231.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">the sum is divided by 3 for three classes, by 2 for two.</text>
+<rect x="450.0" y="268.0" width="310.0" height="100.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.2"/>
+<text x="605.0" y="301.6" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#7A5412" text-anchor="middle">levels and experience</text>
+<text x="605.0" y="316.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">levels[i] = gClassStartLevels[class][i].</text>
+<text x="605.0" y="330.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">experience[i] = 5000 / number of classes, for all three</text>
+<text x="605.0" y="343.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">slots (even the unused ones).</text>
+<rect x="450.0" y="380.0" width="310.0" height="56.0" rx="6" fill="#FFFDF8" stroke="#BDB5A2" stroke-width="1.2"/>
+<text x="605.0" y="398.2" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2B2A28" text-anchor="middle">editing afterwards</text>
+<text x="605.0" y="412.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">EditStatField moves each score inside gStatMin and</text>
+<text x="605.0" y="426.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">gStatMax, so the roll is only a start.</text>
+</svg>

@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 340" width="760" height="340" class="fig">
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">THE TEXT WINDOW: WHAT DRAWTEXT DOES WITH A STRING</text>
+<rect x="4.0" y="44.0" width="270.0" height="100.0" rx="0" fill="#FFFDF8" stroke="#1F6F66" stroke-width="1.4"/>
+<line x1="4.0" y1="56.0" x2="274.0" y2="56.0" stroke="#EFE9DA" stroke-width="0.5"/>
+<line x1="4.0" y1="68.0" x2="274.0" y2="68.0" stroke="#EFE9DA" stroke-width="0.5"/>
+<line x1="4.0" y1="80.0" x2="274.0" y2="80.0" stroke="#EFE9DA" stroke-width="0.5"/>
+<line x1="4.0" y1="92.0" x2="274.0" y2="92.0" stroke="#EFE9DA" stroke-width="0.5"/>
+<line x1="4.0" y1="104.0" x2="274.0" y2="104.0" stroke="#EFE9DA" stroke-width="0.5"/>
+<line x1="4.0" y1="116.0" x2="274.0" y2="116.0" stroke="#EFE9DA" stroke-width="0.5"/>
+<line x1="4.0" y1="128.0" x2="274.0" y2="128.0" stroke="#EFE9DA" stroke-width="0.5"/>
+<text x="8.0" y="54.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="start">A text window is one row of</text>
+<text x="8.0" y="66.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="start">the region table: left in 8-pixel</text>
+<text x="8.0" y="78.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="start">columns, top in pixel lines,</text>
+<text x="8.0" y="90.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="start">width in columns, height in lines.</text>
+<rect x="74.0" y="96.0" width="6.0" height="12.0" rx="0" fill="#A8452F" stroke="none" stroke-width="1" opacity="0.8"/>
+<text x="8.0" y="138.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#80311F" text-anchor="start">the cursor is (col, row) in font cells</text>
+<text x="4.0" y="38.0" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#6E695F" text-anchor="start">left edge gTextLeft x 8, right edge (gTextLeft + gTextWidth) x 8</text>
+<text x="0.0" y="164.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">pixel x = gTextLeft * 8 + gFontWidth * col; y =</text>
+<text x="0.0" y="177.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">gTextTop + gFontHeight * row; the window spans</text>
+<text x="0.0" y="190.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">gTextTop to gTextTop + gTextHeight</text>
+<text x="0.0" y="207.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">colours: gTextAttr1 (text) and gTextAttr2 (fill); the</text>
+<text x="0.0" y="220.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">window saves them, with the cursor, in its region</text>
+<text x="0.0" y="233.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">record when another window is selected</text>
+<text x="0.0" y="246.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(SetTextWindow)</text>
+<text x="0.0" y="263.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">when the next line would pass the bottom: CopyRegion</text>
+<text x="0.0" y="276.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">scrolls the window up one font height, the last line is</text>
+<text x="0.0" y="289.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">filled with gTextAttr2 and drawn there</text>
+<text x="0.0" y="306.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">the pointer is hidden over the window for every line</text>
+<text x="0.0" y="319.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(HidePointerZone / ShowPointerZone)</text>
+<text x="300.0" y="34.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12" font-weight="700" fill="#2B2A28" text-anchor="start">bytes DrawText (1DE7:060A) treats specially</text>
+<rect x="300.0" y="46.0" width="456.0" height="33.0" rx="3" fill="#FFFDF8" stroke="#D9D2C3" stroke-width="1"/>
+<text x="308.0" y="61.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#14504A" text-anchor="start">0Dh</text>
+<text x="400.0" y="61.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">end the line, start the next (a word that no longer fits is</text>
+<text x="400.0" y="73.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">moved to the next line)</text>
+<rect x="300.0" y="82.0" width="456.0" height="33.0" rx="3" fill="#FFFDF8" stroke="#D9D2C3" stroke-width="1"/>
+<text x="308.0" y="97.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#14504A" text-anchor="start">20h</text>
+<text x="400.0" y="97.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">word break: a space is kept only if there is room, otherwise</text>
+<text x="400.0" y="109.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">the line is flushed</text>
+<rect x="300.0" y="118.0" width="456.0" height="33.0" rx="3" fill="#FFFDF8" stroke="#D9D2C3" stroke-width="1"/>
+<text x="308.0" y="133.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#14504A" text-anchor="start">02h n</text>
+<text x="400.0" y="133.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">set the fill colour gTextAttr2 to the next byte; the line so</text>
+<text x="400.0" y="145.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">far is drawn first</text>
+<rect x="300.0" y="154.0" width="456.0" height="20.5" rx="3" fill="#FFFDF8" stroke="#D9D2C3" stroke-width="1"/>
+<text x="308.0" y="169.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#14504A" text-anchor="start">06h n</text>
+<text x="400.0" y="169.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">set the text colour gTextAttr1 to the next byte</text>
+<rect x="300.0" y="177.5" width="456.0" height="33.0" rx="3" fill="#FFFDF8" stroke="#D9D2C3" stroke-width="1"/>
+<text x="308.0" y="192.5" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#14504A" text-anchor="start">09h n</text>
+<text x="400.0" y="192.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">move the cursor to column n (column 0 if n is past the right</text>
+<text x="400.0" y="205.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">edge)</text>
+<rect x="300.0" y="213.5" width="456.0" height="20.5" rx="3" fill="#FFFDF8" stroke="#D9D2C3" stroke-width="1"/>
+<text x="308.0" y="228.5" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#14504A" text-anchor="start">13h n</text>
+<text x="400.0" y="228.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">pad with spaces up to column n</text>
+<rect x="300.0" y="237.0" width="456.0" height="20.5" rx="3" fill="#FFFDF8" stroke="#D9D2C3" stroke-width="1"/>
+<text x="308.0" y="252.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#14504A" text-anchor="start">bit 7</text>
+<text x="400.0" y="252.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">the byte is used with bit 7 cleared and ends the string</text>
+<rect x="300.0" y="260.5" width="456.0" height="33.0" rx="3" fill="#FFFDF8" stroke="#D9D2C3" stroke-width="1"/>
+<text x="308.0" y="275.5" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#14504A" text-anchor="start">other</text>
+<text x="400.0" y="275.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">added to the current word; a word as wide as the window is</text>
+<text x="400.0" y="288.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">flushed on its own line</text>
+<text x="300.0" y="308.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">The driver&#x27;s own gDrawText draws one string at pixel (x, y): CR starts a new line at x,</text>
+<text x="300.0" y="321.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">a character past the right edge wraps, background colour 0 is transparent.</text>
+</svg>

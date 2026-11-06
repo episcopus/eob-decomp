@@ -1,0 +1,1 @@
+Three sources feed one routine, `CastSpell`; the spell's `apply` callback (in `gSpells`, +05) does the rest. Whether the effect is instant, timed or a flying record is a property of the handler, not of the casting path.

@@ -1,0 +1,1 @@
+Slot numbers are indexes into `items[27]`; the positions are the pixel table the inventory screen uses, drawn at three times life size. Each slot has a mask, and an item may enter it only when the item type's own mask shares a bit with it.

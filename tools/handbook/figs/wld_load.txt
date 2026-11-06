@@ -1,0 +1,1 @@
+The eleven stages of `LoadLevel`. Steps 1 to 3 settle the cells; the rest is built from the unpacked `LEVELn.INF`. A level visited before takes its walls and monsters from `LEVELS.TMP` (step 3) and skips step 7.

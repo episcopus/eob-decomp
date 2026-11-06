@@ -1,0 +1,1 @@
+DGROUP (segment 212E, 65,508 bytes) to scale in two halves, with the regions that matter marked. Tables and strings fill the first half; the game's live records (monsters, items, maze, characters) are zero in the file and sit in the second.

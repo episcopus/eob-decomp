@@ -1,0 +1,1 @@
+Resting is a loop of ten-minute ticks with nested rhythms: poison bites every hour, a few things happen every eight hours and starvation only every day. Spell memorising is gated by a per-member counter that must climb past 48 before the first slot opens, so a rest shorter than about eight hours restores no spell.

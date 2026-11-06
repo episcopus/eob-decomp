@@ -1,0 +1,1 @@
+The common header of CPS, CMP, EGA, INF, VCN and ECN files, the five formats the game's `Unpack` (1B82:00C7) switches on, and the LCW commands of format 4 as `wwfmt.lcw` decodes them (`tools/re/wwfmt.py`, checked against the game's own routine in `tests/unit/test_wwfmt.py`).

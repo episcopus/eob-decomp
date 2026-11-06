@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 440" width="760" height="440" class="fig">
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">LEVELN.INF AFTER UNPACKING: LEVEL 2, 7,444 BYTES, TO SCALE</text>
+<rect x="0.0" y="30.0" width="8.0" height="34.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.1"/>
+<rect x="8.0" y="30.0" width="42.9" height="34.0" rx="0" fill="#F5E0D9" stroke="#A8452F" stroke-width="1.1"/>
+<rect x="50.8" y="30.0" width="23.1" height="34.0" rx="0" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.1"/>
+<rect x="73.9" y="30.0" width="643.0" height="34.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<rect x="716.9" y="30.0" width="43.1" height="34.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.1"/>
+<text x="395.4" y="52.0" font-family="Inter, 'Inter Display', sans-serif" font-size="12.5" font-weight="700" fill="#2C386B" text-anchor="middle">scripts: 6,298 bytes</text>
+<text x="0.0" y="78.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#3C3A36" text-anchor="start">header</text>
+<text x="0.0" y="91.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">0..77</text>
+<text x="12.0" y="106.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#80311F" text-anchor="start">30 monster records, 78..497</text>
+<line x1="29.4" y1="64.0" x2="29.4" y2="96.0" stroke="#A8452F" stroke-width="0.8"/>
+<text x="64.8" y="122.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#7A5412" text-anchor="start">count and wall records, 498..723</text>
+<line x1="62.4" y1="64.0" x2="62.4" y2="112.0" stroke="#A8741A" stroke-width="0.8"/>
+<text x="760.0" y="90.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="700" fill="#14504A" text-anchor="end">trigger table 7022..7443</text>
+<line x1="0.0" y1="126.0" x2="760.0" y2="126.0" stroke="#D9D2C3" stroke-width="1"/>
+<text x="0.0" y="140.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">THE FIELDS, IN FILE ORDER (OFFSETS ARE FROM THE START; READ BY LOADLEVEL, OVL3:0A7C)</text>
+<text x="0.0" y="160.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="600" fill="#6E695F" text-anchor="start">offset</text>
+<text x="56.0" y="160.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="600" fill="#6E695F" text-anchor="start">bytes</text>
+<text x="150.0" y="160.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="600" fill="#6E695F" text-anchor="start">field</text>
+<line x1="0.0" y1="165.0" x2="760.0" y2="165.0" stroke="#D9D2C3" stroke-width="1"/>
+<text x="0.0" y="184.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">0</text>
+<text x="56.0" y="184.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">2</text>
+<text x="150.0" y="184.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">offset T of the trigger table; the scripts run up to it</text>
+<text x="0.0" y="206.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">2</text>
+<text x="56.0" y="206.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">12</text>
+<text x="150.0" y="206.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">maze file name, NUL-terminated, e.g. level2.maz</text>
+<text x="0.0" y="228.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">14</text>
+<text x="56.0" y="228.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">12</text>
+<text x="150.0" y="228.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">wall block map name (the .VMP or .EMP, and the .PAL), e.g. brick</text>
+<text x="0.0" y="250.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">26</text>
+<text x="56.0" y="250.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">12</text>
+<text x="150.0" y="250.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">wall texture name (the .VCN or .ECN); passed as gLevelInf + 0x1A</text>
+<text x="0.0" y="272.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">38</text>
+<text x="56.0" y="272.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">4</text>
+<text x="150.0" y="272.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">door pictures: two (set, first slot) pairs for LoadDoorShapes, 255 = none</text>
+<text x="0.0" y="294.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">42</text>
+<text x="56.0" y="294.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">1 + 2 + 2</text>
+<text x="150.0" y="294.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">level timer: mode (0 off, 1 ticks, 2 steps, 3 both), period in ticks, steps</text>
+<text x="0.0" y="316.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">47</text>
+<text x="56.0" y="316.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">13 + 13</text>
+<text x="150.0" y="316.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">two monster sprite sheets: loader 0, 1 or 2 (255 none), then the sheet name</text>
+<text x="0.0" y="338.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">73</text>
+<text x="56.0" y="338.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">2n + 1</text>
+<text x="150.0" y="338.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">n pairs (monster speed class, period in ticks), ended by FF</text>
+<text x="0.0" y="360.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">next</text>
+<text x="56.0" y="360.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">420</text>
+<text x="150.0" y="360.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">30 monster records of 14 bytes (a record with cell 0 is an empty slot)</text>
+<text x="0.0" y="382.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">next</text>
+<text x="56.0" y="382.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">2 + ...</text>
+<text x="150.0" y="382.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">count, then wall records: EC + 24 bytes (screen name, .DAT name) or FB + 5 bytes (a wall kind)</text>
+<text x="0.0" y="404.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">next</text>
+<text x="56.0" y="404.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">...</text>
+<text x="150.0" y="404.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">scripts: shared subroutines first, then the script of each trigger entry, back to back</text>
+<text x="0.0" y="426.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">T</text>
+<text x="56.0" y="426.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">2 + 5k</text>
+<text x="150.0" y="426.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">trigger table: count k, then k entries (cell u16, flag byte, script offset u16), ending at the end of the file</text>
+</svg>

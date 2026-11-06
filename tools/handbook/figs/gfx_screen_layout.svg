@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 384" width="760" height="384" class="fig">
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">THE GAME SCREEN, 320 X 200 (PAGE 0), WITH THE RECTANGLES THE CODE USES</text>
+<rect x="2.0" y="22.0" width="496.0" height="310.0" rx="0" fill="#F1EDE2" stroke="#2B2A28" stroke-width="1.4"/>
+<rect x="2.0" y="22.0" width="272.8" height="186.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.4"/>
+<text x="138.4" y="102.6" font-family="Inter, 'Inter Display', sans-serif" font-size="13" font-weight="700" fill="#14504A" text-anchor="middle">3D view</text>
+<text x="138.4" y="124.3" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">region 5: 0, 0, 176 x 120</text>
+<text x="138.4" y="144.4" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">composed on page 2, copied</text>
+<text x="138.4" y="161.5" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="400" fill="#3C3A36" text-anchor="middle">as 22 columns x 120 lines</text>
+<rect x="6.7" y="220.4" width="32.6" height="24.8" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1"/>
+<rect x="39.2" y="220.4" width="32.6" height="24.8" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1"/>
+<rect x="71.8" y="220.4" width="32.6" height="24.8" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1"/>
+<rect x="6.7" y="245.2" width="32.6" height="24.8" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1"/>
+<rect x="39.2" y="245.2" width="32.6" height="24.8" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1"/>
+<rect x="71.8" y="245.2" width="32.6" height="24.8" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1"/>
+<text x="54.7" y="279.3" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="700" fill="#2C386B" text-anchor="middle">six move buttons</text>
+<text x="54.7" y="294.8" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="400" fill="#3C3A36" text-anchor="middle">21 x 16 at x 3, 24, 45</text>
+<rect x="110.5" y="209.6" width="164.3" height="83.7" rx="0" fill="#F4E8CC" stroke="#A8741A" stroke-width="1" stroke-dasharray="3 2"/>
+<text x="192.7" y="243.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">compass</text>
+<text x="192.7" y="260.7" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="400" fill="#3C3A36" text-anchor="middle">3 shapes, redrawn</text>
+<text x="192.7" y="276.2" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="400" fill="#3C3A36" text-anchor="middle">when the facing changes</text>
+<rect x="14.4" y="299.4" width="421.6" height="27.9" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.2"/>
+<text x="225.2" y="318.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#3C3A36" text-anchor="middle">message window: text region 7, 8, 179, 272 x 18</text>
+<rect x="449.9" y="296.4" width="48.1" height="32.6" rx="0" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="474.0" y="316.5" font-family="Inter, 'Inter Display', sans-serif" font-size="9" font-weight="700" fill="#80311F" text-anchor="middle">CAMP</text>
+<rect x="287.2" y="25.1" width="99.2" height="77.5" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.1"/>
+<rect x="287.2" y="39.0" width="49.6" height="49.6" rx="0" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="0.9"/>
+<text x="312.0" y="68.5" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="400" fill="#3C3A36" text-anchor="middle">portrait</text>
+<rect x="336.8" y="39.0" width="48.1" height="24.8" rx="0" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="0.9"/>
+<rect x="336.8" y="63.9" width="48.1" height="24.8" rx="0" fill="#FFFDF8" stroke="#7A3E6B" stroke-width="0.9"/>
+<text x="360.1" y="56.1" font-family="Inter, 'Inter Display', sans-serif" font-size="8" font-weight="400" fill="#3C3A36" text-anchor="middle">hand 0</text>
+<text x="360.1" y="80.9" font-family="Inter, 'Inter Display', sans-serif" font-size="8" font-weight="400" fill="#3C3A36" text-anchor="middle">hand 1</text>
+<text x="290.3" y="37.5" font-family="Inter, 'Inter Display', sans-serif" font-size="8.5" font-weight="400" fill="#3C3A36" text-anchor="start">name</text>
+<rect x="310.4" y="93.3" width="58.9" height="4.7" rx="0" fill="#1F6F66" stroke="none" stroke-width="1"/>
+<rect x="398.8" y="25.1" width="99.2" height="77.5" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.1"/>
+<text x="448.4" y="70.1" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="600" fill="#5C2D50" text-anchor="middle">member 1</text>
+<rect x="287.2" y="105.7" width="99.2" height="77.5" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.1"/>
+<text x="336.8" y="150.7" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="600" fill="#5C2D50" text-anchor="middle">member 2</text>
+<rect x="398.8" y="105.7" width="99.2" height="77.5" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.1"/>
+<text x="448.4" y="150.7" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="600" fill="#5C2D50" text-anchor="middle">member 3</text>
+<rect x="287.2" y="186.3" width="99.2" height="77.5" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.1"/>
+<text x="336.8" y="231.2" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="600" fill="#5C2D50" text-anchor="middle">member 4</text>
+<rect x="398.8" y="186.3" width="99.2" height="77.5" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.1"/>
+<text x="448.4" y="231.2" font-family="Inter, 'Inter Display', sans-serif" font-size="9.5" font-weight="600" fill="#5C2D50" text-anchor="middle">member 5</text>
+<rect x="274.8" y="22.0" width="223.2" height="260.4" rx="0" fill="none" stroke="#A8452F" stroke-width="1.3" stroke-dasharray="5 3"/>
+<text x="2.0" y="350.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#5C2D50" text-anchor="start">plum: the six party blocks, each 64 x 50, at x 184 and 256, y 2, 54 and 106</text>
+<text x="2.0" y="366.1" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="700" fill="#A8452F" text-anchor="start">red dashes: the area (176, 0, 144 x 168) the inventory and character panels redraw</text>
+<text x="516.0" y="26.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">HOW TO READ IT</text>
+<text x="516.0" y="44.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">Every rectangle is a number in the code:</text>
+<text x="516.0" y="57.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">the view and the text windows are rows</text>
+<text x="516.0" y="70.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">of the region table (ds:009F), the hit</text>
+<text x="516.0" y="83.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">rectangles are screen nodes (the 38</text>
+<text x="516.0" y="96.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">records of gTable1b), the member</text>
+<text x="516.0" y="110.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">blocks come from tables at ds:5D1F to</text>
+<text x="516.0" y="123.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">5D4F.</text>
+<text x="516.0" y="141.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">x is in pixels here. The region table and</text>
+<text x="516.0" y="154.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">several routines count x in 8-pixel</text>
+<text x="516.0" y="167.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">columns: the view is 22 columns wide, a</text>
+<text x="516.0" y="181.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">member block 8.</text>
+<text x="516.0" y="199.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">A member block is built on page 2 at x 8</text>
+<text x="516.0" y="212.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">or 80 and copied to page 0 at x + 176</text>
+<text x="516.0" y="225.6" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">(the drawing routines add 0xB0 while</text>
+<text x="516.0" y="238.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">gDrawPage is 0).</text>
+</svg>

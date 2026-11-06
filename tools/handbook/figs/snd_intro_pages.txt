@@ -1,0 +1,1 @@
+A scene loads a compressed picture into one buffer, unpacks it into another, cuts rectangles out as shapes, draws them to an off-screen page and copies rectangles to the screen. The page table has four pages of two slots each; on VGA the two slots of a page are one segment.

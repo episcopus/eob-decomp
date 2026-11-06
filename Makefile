@@ -6,7 +6,7 @@ PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
 .PHONY: help setup doctor inputs overlays pak data emu2 test p0-check tc-install tc-check rtl-compare map match oracle-run golden test-slow \
 	match-gate check queue next claim locks unlock packet skeleton handoff handoffs handoff-done integrate review-pass worker progress \
-	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port port-literals port-hybrid
+	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port port-literals port-hybrid handbook handbook-setup handbook-figs
 
 help:
 	@echo "Phase 0:  setup doctor inputs overlays pak emu2 test p0-check"
@@ -20,6 +20,7 @@ help:
 	@echo "Phase 7:  port (playbook 80: translate port/units.txt, build build/port/eob-port-headless and, with SDL3, build/port/eob-port; self-test)"
 	@echo "          port-hybrid (M2: each translated function against the original on golden states; SESSION= FUNC= SAMPLES=)"
 	@echo "          port-literals (when src/ changes a literal: port/literals.json from the matcher; needs Turbo C++)"
+	@echo "Docs:     handbook (the whitepaper as a PDF: docs/Eye-of-the-Beholder-Whitepaper-v*.pdf; tools/handbook/README.md) handbook-setup handbook-figs"
 	@echo "See AGENTS.md and docs/spec/SPEC.md."
 
 setup:            ## create .venv with the Python tools (uv)
@@ -177,3 +178,16 @@ smoke-agent:      ## one real session of a roster entry on one unit, in a scratc
 
 p0-check: inputs overlays pak test  ## Phase 0 exit criteria (SPEC section 10)
 	@echo "p0-check: OK"
+
+# The whitepaper as a typeset PDF (poolrad-decomp's handbook practice; tools/handbook/README.md).
+HBPY ?= build/handbook/venv/bin/python
+
+handbook-setup:   ## create build/handbook/venv (markdown, beautifulsoup4, pypdf); fonts and node Playwright: tools/handbook/README.md (downloads: the human runs this)
+	uv venv build/handbook/venv
+	uv pip install --python build/handbook/venv/bin/python markdown beautifulsoup4 pypdf
+
+handbook-figs:    ## redraw every figure of the whitepaper (tools/handbook/figs/*.py -> .svg)
+	cd tools/handbook && for f in figs/*.py; do $(abspath $(HBPY)) $$f || exit 1; done
+
+handbook: handbook-figs  ## typeset docs/design/WHITEPAPER.md into docs/Eye-of-the-Beholder-Whitepaper-v*.pdf
+	$(HBPY) tools/handbook/build.py

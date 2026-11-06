@@ -1,0 +1,1 @@
+The main groups of code and what each calls. The main loop reaches the world and the party through the timer table, the node dispatcher and the action handlers; level loading, camp and the 3D view are overlays; every group draws, reads files and plays sounds through the service layer.

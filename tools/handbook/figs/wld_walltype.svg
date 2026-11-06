@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 498" width="760" height="498" class="fig">
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">WALL KINDS: FOUR TABLES OF 70 ENTRIES, INDEXED BY THE BYTE IN THE MAZE</text>
+<rect x="0.0" y="24.0" width="178.0" height="66.0" rx="6" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.1"/>
+<text x="8.0" y="42.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="start">gWallVmpSet</text>
+<text x="8.0" y="56.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">ds:1879</text>
+<text x="8.0" y="71.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">which picture block of the .VMP</text>
+<text x="8.0" y="83.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">draws it (0 = none)</text>
+<rect x="193.0" y="24.0" width="178.0" height="66.0" rx="6" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.1"/>
+<text x="201.0" y="42.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="start">gWallDecorHead</text>
+<text x="201.0" y="56.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">ds:18BF</text>
+<text x="201.0" y="71.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">first decoration record of the</text>
+<text x="201.0" y="83.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">kind (1-based, 0 = none)</text>
+<rect x="386.0" y="24.0" width="178.0" height="66.0" rx="6" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<text x="394.0" y="42.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#2C386B" text-anchor="start">gWallHandlerIndex</text>
+<text x="394.0" y="56.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">ds:1905</text>
+<text x="394.0" y="71.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">what a click or a hit does: 0</text>
+<text x="394.0" y="83.5" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">nothing, 1 to 10 a handler</text>
+<rect x="579.0" y="24.0" width="178.0" height="66.0" rx="6" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.1"/>
+<text x="587.0" y="42.0" font-family="'DejaVu Sans Mono', monospace" font-size="11.5" font-weight="700" fill="#5C2D50" text-anchor="start">gWallTypeFlags</text>
+<text x="587.0" y="56.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">ds:194B</text>
+<text x="587.0" y="71.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="start">the flag bits below</text>
+<text x="0.0" y="108.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">Kinds 0 to 22 are built in. DefineWallType (ovl3:01C8) sets the kinds a level file names, from a 5-byte record:</text>
+<text x="0.0" y="121.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">kind, picture set, decoration, handler, flags. The file&#x27;s flag byte f is stored as f ^ 4: bit 2 means &#x27;blocks monsters&#x27; in the file.</text>
+<line x1="0.0" y1="134.0" x2="760.0" y2="134.0" stroke="#D9D2C3" stroke-width="1"/>
+<text x="0.0" y="150.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">THE FLAG BITS (GWALLTYPEFLAGS), AND WHERE THE CODE TESTS THEM</text>
+<rect x="0.0" y="158.0" width="44.0" height="17.0" rx="3" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="22.0" y="171.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">0x01</text>
+<text x="54.0" y="171.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">the party can walk through; a thrown item passes</text>
+<text x="760.0" y="171.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="end">StepIfOpen, StepDDEffect</text>
+<rect x="0.0" y="179.0" width="44.0" height="17.0" rx="3" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="22.0" y="192.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">0x02</text>
+<text x="54.0" y="192.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">small things pass or see through (bars): items of icon size 15 or more</text>
+<text x="760.0" y="192.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="end">StepDDEffect, TryMonsterRangedAttack</text>
+<rect x="0.0" y="200.0" width="44.0" height="17.0" rx="3" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="22.0" y="213.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#14504A" text-anchor="middle">0x04</text>
+<text x="54.0" y="213.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">a monster may step in</text>
+<text x="760.0" y="213.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="end">TryMoveMonster, StepMonsterAlongWall</text>
+<rect x="0.0" y="221.0" width="44.0" height="17.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="22.0" y="234.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">0x08</text>
+<text x="54.0" y="234.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">a door (set on side 0 when the door lies north to south)</text>
+<text x="760.0" y="234.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="end">OpenDoor, StepDoor</text>
+<rect x="0.0" y="242.0" width="44.0" height="17.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="22.0" y="255.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">0x10</text>
+<text x="54.0" y="255.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">a door in its last &#x27;open&#x27; frame</text>
+<text x="760.0" y="255.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="end">StepDoor, ResetLevel</text>
+<rect x="0.0" y="263.0" width="44.0" height="17.0" rx="3" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="22.0" y="276.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#7A5412" text-anchor="middle">0x20</text>
+<text x="54.0" y="276.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">a door in its first &#x27;closed&#x27; frame</text>
+<text x="760.0" y="276.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="end">StepDoor, UnpryableDoorAction</text>
+<rect x="0.0" y="284.0" width="44.0" height="17.0" rx="3" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="22.0" y="297.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#3C3A36" text-anchor="middle">0x40</text>
+<text x="54.0" y="297.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">(only kind 2 has it; no code tests it)</text>
+<text x="760.0" y="297.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="end">-</text>
+<rect x="0.0" y="305.0" width="44.0" height="17.0" rx="3" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="22.0" y="318.0" font-family="'DejaVu Sans Mono', monospace" font-size="11" font-weight="700" fill="#3C3A36" text-anchor="middle">0x80</text>
+<text x="54.0" y="318.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="400" fill="#3C3A36" text-anchor="start">not a plain wall face: floor items and flying objects are drawn in the cell</text>
+<text x="760.0" y="318.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="end">DrawSlotItems, DrawSlotProjectiles</text>
+<line x1="0.0" y1="338.0" x2="760.0" y2="338.0" stroke="#D9D2C3" stroke-width="1"/>
+<text x="0.0" y="354.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">THE BUILT-IN KINDS 0 TO 24: FLAGS (HEX) AS THE PROGRAM CARRIES THEM</text>
+<rect x="0.0" y="368.0" width="27.2" height="44.0" rx="2" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="13.6" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">0</text>
+<text x="13.6" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">07</text>
+<rect x="29.2" y="368.0" width="27.2" height="44.0" rx="2" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="42.8" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#3C3A36" text-anchor="middle">1</text>
+<text x="42.8" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">00</text>
+<rect x="58.4" y="368.0" width="27.2" height="44.0" rx="2" fill="#ECE7DD" stroke="#8A8373" stroke-width="1"/>
+<text x="72.0" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#3C3A36" text-anchor="middle">2</text>
+<text x="72.0" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">40</text>
+<rect x="87.6" y="368.0" width="27.2" height="44.0" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="101.2" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">3</text>
+<text x="101.2" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">A8</text>
+<rect x="116.8" y="368.0" width="27.2" height="44.0" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="130.4" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">4</text>
+<text x="130.4" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">88</text>
+<rect x="146.0" y="368.0" width="27.2" height="44.0" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="159.6" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">5</text>
+<text x="159.6" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">88</text>
+<rect x="175.2" y="368.0" width="27.2" height="44.0" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="188.8" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">6</text>
+<text x="188.8" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">88</text>
+<rect x="204.4" y="368.0" width="27.2" height="44.0" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="218.0" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">7</text>
+<text x="218.0" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">9F</text>
+<rect x="233.6" y="368.0" width="27.2" height="44.0" rx="2" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="247.2" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">8</text>
+<text x="247.2" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">A8</text>
+<rect x="262.8" y="368.0" width="27.2" height="44.0" rx="2" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="276.4" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">9</text>
+<text x="276.4" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">88</text>
+<rect x="292.0" y="368.0" width="27.2" height="44.0" rx="2" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="305.6" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">10</text>
+<text x="305.6" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">88</text>
+<rect x="321.2" y="368.0" width="27.2" height="44.0" rx="2" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="334.8" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">11</text>
+<text x="334.8" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">88</text>
+<rect x="350.4" y="368.0" width="27.2" height="44.0" rx="2" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="364.0" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">12</text>
+<text x="364.0" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">9F</text>
+<rect x="379.6" y="368.0" width="27.2" height="44.0" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="393.2" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">13</text>
+<text x="393.2" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">AA</text>
+<rect x="408.8" y="368.0" width="27.2" height="44.0" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="422.4" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">14</text>
+<text x="422.4" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">8A</text>
+<rect x="438.0" y="368.0" width="27.2" height="44.0" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="451.6" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">15</text>
+<text x="451.6" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">8A</text>
+<rect x="467.2" y="368.0" width="27.2" height="44.0" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="480.8" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">16</text>
+<text x="480.8" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">8A</text>
+<rect x="496.4" y="368.0" width="27.2" height="44.0" rx="2" fill="#F4E8CC" stroke="#A8741A" stroke-width="1"/>
+<text x="510.0" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#7A5412" text-anchor="middle">17</text>
+<text x="510.0" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">9F</text>
+<rect x="525.6" y="368.0" width="27.2" height="44.0" rx="2" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="539.2" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">18</text>
+<text x="539.2" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">AA</text>
+<rect x="554.8" y="368.0" width="27.2" height="44.0" rx="2" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="568.4" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">19</text>
+<text x="568.4" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">8A</text>
+<rect x="584.0" y="368.0" width="27.2" height="44.0" rx="2" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="597.6" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">20</text>
+<text x="597.6" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">8A</text>
+<rect x="613.2" y="368.0" width="27.2" height="44.0" rx="2" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="626.8" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">21</text>
+<text x="626.8" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">8A</text>
+<rect x="642.4" y="368.0" width="27.2" height="44.0" rx="2" fill="#F5E0D9" stroke="#A8452F" stroke-width="1"/>
+<text x="656.0" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#80311F" text-anchor="middle">22</text>
+<text x="656.0" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">9F</text>
+<rect x="671.6" y="368.0" width="27.2" height="44.0" rx="2" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="685.2" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">23</text>
+<text x="685.2" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">03</text>
+<rect x="700.8" y="368.0" width="27.2" height="44.0" rx="2" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1"/>
+<text x="714.4" y="384.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="700" fill="#14504A" text-anchor="middle">24</text>
+<text x="714.4" y="401.0" font-family="'DejaVu Sans Mono', monospace" font-size="10.5" font-weight="400" fill="#3C3A36" text-anchor="middle">03</text>
+<path d="M0.0,418 L0.0,423 L27.2,423 L27.2,418" fill="none" stroke="#8A8373" stroke-width="1"/>
+<text x="13.6" y="436.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">open</text>
+<path d="M29.2,418 L29.2,423 L85.6,423 L85.6,418" fill="none" stroke="#8A8373" stroke-width="1"/>
+<text x="57.4" y="436.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">walls</text>
+<path d="M87.6,418 L87.6,423 L231.6,423 L231.6,418" fill="none" stroke="#8A8373" stroke-width="1"/>
+<text x="159.6" y="436.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">door A</text>
+<path d="M233.6,418 L233.6,423 L377.59999999999997,423 L377.59999999999997,418" fill="none" stroke="#8A8373" stroke-width="1"/>
+<text x="305.6" y="436.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">door B</text>
+<path d="M379.59999999999997,418 L379.59999999999997,423 L523.6,423 L523.6,418" fill="none" stroke="#8A8373" stroke-width="1"/>
+<text x="451.6" y="436.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">door C</text>
+<path d="M525.6,418 L525.6,423 L669.6,423 L669.6,418" fill="none" stroke="#8A8373" stroke-width="1"/>
+<text x="597.6" y="436.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">door D</text>
+<path d="M671.6,418 L671.6,423 L728.0,423 L728.0,418" fill="none" stroke="#8A8373" stroke-width="1"/>
+<text x="699.8" y="436.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">kinds 23, 24</text>
+<text x="0.0" y="454.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">A door is five kinds in a row: closed (A8), three opening frames (88), open (9F). C and D carry bit 1 as well (AA, 8A): small things pass the bars</text>
+<text x="0.0" y="467.2" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">even when closed. Handler 1 (door button) sits on every frame of A and C, handler 6 (cannot be pried) on the closed frame of B and D. The level</text>
+<text x="0.0" y="480.4" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">files redefine 23 and 24 and add kinds up to 69.</text>
+</svg>

@@ -1,0 +1,1 @@
+The view as 22 by 15 blocks and the rectangles `BuildViewBlockMap` copies into it (`src/EOV4.C`, ovl4:044B), in the order it copies them. The nearest front wall, F13, covers 16 by 12 blocks; each step back is smaller and sits higher, and each side wall is a separate piece per depth.

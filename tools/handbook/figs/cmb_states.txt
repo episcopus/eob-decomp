@@ -1,0 +1,1 @@
+Three zones of hit points and two status bits make up a member's health. A party whose members are all at 0 or below, none dead, is not yet wiped: the check runs only when someone dies.

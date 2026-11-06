@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 412" width="760" height="412" class="fig">
+<text x="0.0" y="11.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">EOB.EXE, 264,480 BYTES, TO SCALE</text>
+<rect x="0.0" y="34.0" width="29.4" height="44.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.1"/>
+<rect x="29.4" y="34.0" width="366.2" height="44.0" rx="0" fill="#DCEBE7" stroke="#1F6F66" stroke-width="1.1"/>
+<rect x="395.6" y="34.0" width="24.3" height="44.0" rx="0" fill="#F4E8CC" stroke="#A8741A" stroke-width="1.1"/>
+<rect x="420.0" y="34.0" width="188.2" height="44.0" rx="0" fill="#E1E5F2" stroke="#3B4A8A" stroke-width="1.1"/>
+<rect x="608.2" y="34.0" width="0.4" height="44.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.1"/>
+<rect x="608.6" y="34.0" width="151.4" height="44.0" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.1"/>
+<text x="212.5" y="54.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="600" fill="#14504A" text-anchor="middle">code, 53 segments</text>
+<text x="514.1" y="54.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="600" fill="#2C386B" text-anchor="middle">DGROUP 65,508</text>
+<text x="684.3" y="47.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="600" fill="#5C2D50" text-anchor="middle">FBOV overlay data</text>
+<text x="684.3" y="60.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="600" fill="#5C2D50" text-anchor="middle">52,688</text>
+<text x="0.0" y="28.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">0</text>
+<text x="33.4" y="28.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">10,240</text>
+<text x="608.6" y="28.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">211,792</text>
+<text x="759.0" y="28.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10" font-weight="400" fill="#6E695F" text-anchor="end">264,480</text>
+<line x1="29.4" y1="86.0" x2="608.6" y2="86.0" stroke="#1F6F66" stroke-width="1.5"/>
+<line x1="29.4" y1="82.0" x2="29.4" y2="90.0" stroke="#1F6F66" stroke-width="1.5"/>
+<line x1="608.6" y1="82.0" x2="608.6" y2="90.0" stroke="#1F6F66" stroke-width="1.5"/>
+<text x="319.0" y="103.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="600" fill="#14504A" text-anchor="middle">load module: 201,552 bytes, what DOS loads at 1000:0000</text>
+<text x="0.0" y="142.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">SEGMENT 0000 (_TEXT), 31,386 BYTES: STARTUP, A SOUND DRIVER, THE RUNTIME</text>
+<rect x="0.0" y="150.0" width="12.7" height="40.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.1"/>
+<rect x="12.7" y="150.0" width="484.2" height="40.0" rx="0" fill="#EFE0EB" stroke="#7A3E6B" stroke-width="1.1"/>
+<text x="254.8" y="174.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="600" fill="#5C2D50" text-anchor="middle">Westwood AdLib driver (E_TEXT.ASM), 19,996 bytes</text>
+<rect x="496.9" y="150.0" width="263.1" height="40.0" rx="0" fill="#ECE7DD" stroke="#8A8373" stroke-width="1.1"/>
+<text x="628.4" y="174.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="600" fill="#3C3A36" text-anchor="middle">Borland runtime library, 10,866 bytes</text>
+<text x="16.7" y="206.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#6E695F" text-anchor="start">020C</text>
+<text x="0.0" y="220.0" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">C0L: Borland start-up code, 524 bytes</text>
+<text x="496.9" y="206.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#6E695F" text-anchor="middle">5028</text>
+<text x="759.0" y="206.0" font-family="'DejaVu Sans Mono', monospace" font-size="10" font-weight="400" fill="#6E695F" text-anchor="end">7A9A</text>
+<text x="0.0" y="260.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11" font-weight="700" fill="#14504A" text-anchor="start" letter-spacing="1.6">THE 53 CODE SEGMENTS: ONE PER WESTWOOD SOURCE MODULE (62 UNITS IN ALL)</text>
+<text x="0.0" y="282.0" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">resident code 127,435 bytes in 53 segments, 31,386 of them segment 0; seven stub segments (20F6 to 212A) call into</text>
+<text x="0.0" y="297.2" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">overlay code</text>
+<text x="0.0" y="316.4" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">overlays: 7 segments, 125 entry points, 50,641 bytes of code, stored after the load module and loaded on demand by the</text>
+<text x="0.0" y="331.5" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">VROOMM manager</text>
+<text x="0.0" y="350.7" font-family="Inter, 'Inter Display', sans-serif" font-size="11.5" font-weight="400" fill="#3C3A36" text-anchor="start">DGROUP at paragraph 212E: typed constants, then variables, ending at 212E:FFE4; the stack lives past it (312D:0080)</text>
+<text x="0.0" y="375.9" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">Sizes are those of sections 2.1.2, 2.2 and 2.3; the 8,469 bytes between the code and DGROUP are what is left after subtracting them from</text>
+<text x="0.0" y="389.8" font-family="Inter, 'Inter Display', sans-serif" font-size="10.5" font-weight="400" fill="#6E695F" text-anchor="start">the load module.</text>
+</svg>

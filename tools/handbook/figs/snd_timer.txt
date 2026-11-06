@@ -1,0 +1,1 @@
+The AdLib driver reprograms the PIT to 874 Hz and divides it in software: every 12th pass is a driver tick, every 48th pass goes to the BIOS so the clock and INT 1Ch keep 18.2 Hz. The speaker driver runs at 291 Hz and chains every 16th pass; on Tandy it starts voices 1 and 2 at passes 35 and 70.

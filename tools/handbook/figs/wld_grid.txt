@@ -1,0 +1,1 @@
+A cell and its eight neighbours (left) with the four wall sides, the four quadrant positions and the centre position of a cell; the step table and the eight-way direction code (right). Directions are 0 north, 1 east, 2 south, 3 west everywhere in the game.

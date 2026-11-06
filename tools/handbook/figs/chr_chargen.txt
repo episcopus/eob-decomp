@@ -1,0 +1,1 @@
+The character panel keeps four name slots; an empty slot opens `CreateCharacter`, which walks race, class and alignment (the back button steps one list back), rolls the stats once and then lets the player re-roll, edit, pick a face and type a name. Only when all four slots are named and PLAY is pressed does the game hand out equipment, spell books and base stats.

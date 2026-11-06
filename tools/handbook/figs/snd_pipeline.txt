@@ -1,0 +1,1 @@
+Every sound takes the same first steps (the gate and the 120-byte map) and then one of three routes chosen by the card digit START1.EXE passed on. The AdLib route queues a driver number and lets a timer interrupt run ten voice scripts; the speaker routes start a song stream and let a faster interrupt play it.

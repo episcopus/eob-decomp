@@ -1,0 +1,1 @@
+The text console of the game (`src/E1DE7.C`). A window is a rectangle of the region table with a cursor in font cells and two colours; `DrawText` splits a string into words and lines, understands seven control bytes, scrolls the window by a copy when the bottom is reached, and leaves the glyph drawing to the driver.

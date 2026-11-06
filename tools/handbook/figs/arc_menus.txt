@@ -1,0 +1,1 @@
+The camp menu tree: three button lists built from the same two tables, the boxes they open, and the key letter of every button. Esc leaves the camp (it is remapped to the Exit button).

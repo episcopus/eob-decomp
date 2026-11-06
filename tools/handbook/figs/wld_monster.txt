@@ -1,0 +1,1 @@
+The three monster records: the 14-byte entry in a level file, the 28-byte live monster and the 27-byte type row it points at. Only `type`, `cell`, `pos`, `dir`, `alt`, `mode`, `timer` and the two drops travel from the level file to the live record; hit points are rolled from the type's hit dice.
