@@ -45,12 +45,11 @@ extern void BuildList3(void); /*@ 0CF7:0140 */
 extern void CopyRegion(int x1, int y1, int x2, int y2, int width, int height, int extra1, int extra2); /*@ 19F3:000E */
 extern void (far *gRestoreRectToPage)(int x, int y, int w, int h, void far *buf); /*@ ds:804A */ /* src/EOV2.C */
 
-extern char gIconTable; /*@ ds:FB34 */           /* the index of the party member being moved, -1 when
-                                               none; src/E1414.C:106 agrees ("the index of the party
-                                               member being moved, -1 when none"). src/E0EF3.C:227
-                                               declares the same address as void far *gIconTable[]
-                                               (far sprite pointers). This unit reads the byte as a
-                                               member index */
+extern char gMovingMember; /*@ ds:FB34 */           /* the index of the party member being moved, -1 when
+                                               none (PickOrSwapMember 0ACD:0264, CancelMemberSwap
+                                               0ACD:0393). The table of far pointers E0EF3 reads
+                                               from 4 bytes higher is gFlameShapes (ds:FB38),
+                                               indexed from 1 */
 extern int gPartyDir; /*@ ds:FBCC */            /* the direction the party faces, 0..3 (kept
                                                modulo 4 by TurnLeft and TurnRight) */
 extern int gPartyCell; /*@ ds:FBCA */     /* the party's map cell: MoveParty (122E:0001)
@@ -300,12 +299,12 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 
 /* 0ACD:0264: the "move/swap party member" action. When MemberIs accepts the record's slot it
-   hides the pointer. With no member being moved (gIconTable == -1) it takes this slot as the moving
+   hides the pointer. With no member being moved (gMovingMember == -1) it takes this slot as the moving
    member, rebuilds list 4, redraws the member and calls ArmEffect(0, 1); otherwise it swaps the
    moving member's 243-byte record with this slot's through the gStagingPage buffer (three Unpack0
    copies), calls ArmEffect(0, 0), clears the moving member, redraws both members, selects the slot,
    rebuilds list 1 and calls RearmCharEffects. A gFlag-gated RedrawPartyPanel runs before both
-   branches and a second one runs in the pick-up branch after gIconTable is set; the swap branch has
+   branches and a second one runs in the pick-up branch after gMovingMember is set; the swap branch has
    no gFlag-gated redraw after the swap. Returns the record's +4. */
 /*@ 0ACD:0264 */ int PickOrSwapMember(struct Action far *action)
 {
@@ -317,21 +316,21 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     LockHidePointer();
     if (gFlag)
         RedrawPartyPanel((struct ActRec far *)gDirectAction);
-    if (gIconTable == -1) {
-        gIconTable = action->slot;
+    if (gMovingMember == -1) {
+        gMovingMember = action->slot;
         if (gFlag)
             RedrawPartyPanel((struct ActRec far *)gDirectAction);
         BuildList4();
-        RedrawMember(gIconTable);
+        RedrawMember(gMovingMember);
         ArmEffect(0, 1);
     } else {
-        old = gIconTable;
+        old = gMovingMember;
         slot = action->slot;
-        Unpack0((char far *)(gChars + gIconTable), gStagingPage, 0xF3L);
-        Unpack0((char far *)(gChars + slot), (void far *)(gChars + gIconTable), 0xF3L);
+        Unpack0((char far *)(gChars + gMovingMember), gStagingPage, 0xF3L);
+        Unpack0((char far *)(gChars + slot), (void far *)(gChars + gMovingMember), 0xF3L);
         Unpack0((char far *)gStagingPage, (void far *)(gChars + slot), 0xF3L);
         ArmEffect(0, 0);
-        gIconTable = -1;
+        gMovingMember = -1;
         RedrawMember(old);
         SelectCharacter(slot);
         RedrawMember(slot);
@@ -343,15 +342,15 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 }
 
 /* 0ACD:0393: cancels the move: hides the pointer, calls ArmEffect(0, 0), clears the moving member
-   gIconTable, redraws it, rebuilds list 1 and shows the pointer. Returns the record's +4. */
+   gMovingMember, redraws it, rebuilds list 1 and shows the pointer. Returns the record's +4. */
 /*@ 0ACD:0393 */ int CancelMemberSwap(struct Action far *action)
 {
     int old;
 
     LockHidePointer();
     ArmEffect(0, 0);
-    old = gIconTable;
-    gIconTable = -1;
+    old = gMovingMember;
+    gMovingMember = -1;
     RedrawMember(old);
     BuildList1();
     LockShowPointer();

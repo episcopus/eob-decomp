@@ -133,8 +133,8 @@ extern void far *gWallBlocks; /*@ ds:DCA6 */  /* the far pointer GetPageBuffer(7
 extern void far *gStagingPage; /*@ ds:DF4E */  /* slot 5's far pointer, GetPageBuffer(5) (07A9:00BA); the
                                               action screen's swap buffer: PickOrSwapMember (src/E0ACD.C:287)
                                               swaps the moving member's 243-byte record with the slot's
-                                              through it (the record at gChars + gFB34 out to it, the
-                                              slot's record into gChars + gFB34, and it back to the
+                                              through it (the record at gChars + gMovingMember out to it, the
+                                              slot's record into gChars + gMovingMember, and it back to the
                                               slot; three Unpack0 copies, src/E0ACD.C:307-309).
                                               RestorePortraitPanel (src/E0ACD.C:263) blits it to the action field
                                               through gRestoreRectToPage (src/E0ACD.C:269), and FindWordPanel

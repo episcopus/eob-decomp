@@ -34,8 +34,8 @@ extern signed char gBlinkPhase; /*@ ds:5CAA */      /* the blink phase toggled b
 extern signed char gDoorMoveDir; /*@ ds:5C76 */      /* gEffects[12].sub, the door step 03B4 reads; src/E122E.C
                                                  (set to 1 at 278, 0xff at 301, negated at 321) */
 extern unsigned char gNextPosByDir[]; /*@ ds:5CAB */  /* a byte table indexed by direction in 0285 */
-extern char gIconTable; /*@ ds:FB34 */             /* the index of the party member being moved, -1
-                                                       when none (src/E0ACD.C:42) */
+extern char gMovingMember; /*@ ds:FB34 */             /* the index of the party member being moved, -1
+                                                       when none (PickOrSwapMember 0ACD:0264) */
 extern char gViewDirty; /*@ ds:DF4C */             /* set to 1 when 0D1C:0006 finds the value
                                                  (src/E0D1C.C:30) or when an action took effect
                                                  (src/E0ACD.C:53); CheckFarTable sets it on a 0x34
@@ -70,21 +70,21 @@ extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0B
 extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 
 /* 1414:0000: the selected-character blink effect, entry 0 of the table (the period word at
-   ds:5BAC is 9). It flips the phase gBlinkPhase; when the phase turns on it saves gIconTable (the member
+   ds:5BAC is 9). It flips the phase gBlinkPhase; when the phase turns on it saves gMovingMember (the member
    being moved), replaces it with 0xFF, redraws that member's row through RedrawMember and restores
-   gIconTable, and when the phase turns off it just redraws gIconTable's row. QUIRK 1414:0037: the
+   gMovingMember, and when the phase turns off it just redraws gMovingMember's row. QUIRK 1414:0037: the
    argument comes in on the stack and is incremented by value, so the increment has no effect. */
 /*@ 1414:0000 */ void BlinkSelected(int unused)
 {
     int old;
 
     if (gBlinkPhase ^= 1) {
-        old = gIconTable;
-        gIconTable = 0xFF;
+        old = gMovingMember;
+        gMovingMember = 0xFF;
         RedrawMember(old);
-        gIconTable = old;
+        gMovingMember = old;
     } else {
-        RedrawMember(gIconTable);
+        RedrawMember(gMovingMember);
     }
     unused++;
 }

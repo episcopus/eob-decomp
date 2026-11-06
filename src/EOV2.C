@@ -60,9 +60,7 @@ extern struct Size2 gCellSize2[]; /*@ ds:65B8 */
 extern void far *gItemL1Icons[][4]; /*@ ds:EC9A */
 extern void far *gItemS1Icons[][4]; /*@ ds:ED8A */
 extern void far *gThrownIcons[][4]; /*@ ds:F2F8 */
-extern void far *gThrownIcon0; /*@ ds:FB38 */
-extern void far *gThrownIcon1; /*@ ds:FB3C */
-extern void far *gThrownIcon2; /*@ ds:FB40 */
+extern void far *gFlameShapes[]; /*@ ds:FB38 */ /* the three flame sprites CastBurningHands draws (0EF3:0F99) */
 extern void far *gThrownIcon3; /*@ ds:EFB4 */
 extern void far *gThrownIcon4; /*@ ds:EFBE */
 extern char gFileNameBuf[]; /*@ ds:FE6E */
@@ -105,7 +103,7 @@ extern char gFailLabelLight; /*@ ds:A95A */ /* the top and right edge colour of 
 extern char gGameLoadState; /*@ ds:A998 */ /* nonzero tells EnterMapScreen (src/E0ACD.C:911) to show the inventory and the loaded map; the saved-game panel writes it in LoadGamePanel */
 extern char gFailLabelShadow; /*@ ds:8A6C */ /* the left and bottom edge colour of the action label panel (src/E1547.C:412), set by SetUiPalette */
 extern char gFailLabelFill; /*@ ds:8A7D */ /* the fill colour of the action label panel (src/E1547.C:412), set by SetUiPalette */
-extern char gIconTable; /*@ ds:FB34 */ /* this unit, src/E0ACD.C:48, src/E1414.C:106 and src/E1547.C:128 read it as the party member being moved (-1 when none); the BlinkSelected comment (1414:0000, src/E1414.C:141-145) saves and restores it as that member. src/E0EF3.C:227 declares ds:FB34 as an array of far sprite pointers (a cross-unit conflict to settle) */
+extern char gMovingMember; /*@ ds:FB34 */ /* the party member being moved, -1 when none (PickOrSwapMember 0ACD:0264, BlinkSelected 1414:0000); this unit clears it. The far pointers 4 bytes higher are gFlameShapes (ds:FB38) */
 extern int gUnusedStartupWord; /*@ ds:EFC8 */ /* a word cleared by InitGameTables; no other reader in src/ yet */
 extern int gUnreadInitWord; /*@ ds:EFCA */ /* a word cleared by InitGameTables; no other reader in src/ yet */
 extern void far *gLoadedMonsterShapes[]; /*@ ds:B802 */ /* 36 far monster shape pointers (src/EOV3.C:146, freed by ovl3:05D2), cleared by InitGameTables */
@@ -251,9 +249,9 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
                 gCellPosS1[i].y + gCellDX[j], gCellSize2[j].w, gCellSize2[j].h,
                 gCgaMapThrown);
 
-    gThrownIcon0 = gGetSpriteCell(0x10, 0, 4, 0x18, gCgaMapThrown);
-    gThrownIcon1 = gGetSpriteCell(0x10, 0x18, 4, 0x18, gCgaMapThrown);
-    gThrownIcon2 = gGetSpriteCell(0x10, 0x30, 3, 0x18, gCgaMapThrown);
+    gFlameShapes[0] = gGetSpriteCell(0x10, 0, 4, 0x18, gCgaMapThrown);
+    gFlameShapes[1] = gGetSpriteCell(0x10, 0x18, 4, 0x18, gCgaMapThrown);
+    gFlameShapes[2] = gGetSpriteCell(0x10, 0x30, 3, 0x18, gCgaMapThrown);
     gThrownIcon3 = gGetSpriteCell(0x10, 0x90, 5, 0x18, gCgaMapThrown);
     gThrownIcon4 = gGetSpriteCell(0x10, 0xa8, 5, 0x10, gCgaMapThrown);
 
@@ -270,7 +268,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 }
 
 /* ovl2:0496: resets the tables a new game starts from and allocates one 0x514-byte scratch buffer
-   for each of the six character records: sets gIconTable (ds:FB34, the party member being moved,
+   for each of the six character records: sets gMovingMember (ds:FB34, the party member being moved,
    -1 when none; src/E0ACD.C:42) to -1, clears the two words gUnusedStartupWord and gUnreadInitWord, the 36 far pointers
    of gLoadedMonsterShapes (src/EOV3.C:146), the six longs of gDoorShapes (src/EOV3.C:138), the far size-record pointer
    of each of the six gDoorButtons records (src/E122E.C:112-117) and the 200 far pointers of gDecorShapes
@@ -280,7 +278,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
 {
     int i;
 
-    gIconTable = 0xff;
+    gMovingMember = 0xff;
     gUnusedStartupWord = 0;
     gUnreadInitWord = 0;
     for (i = 0; i < 0x24; i++)
