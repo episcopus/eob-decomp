@@ -146,6 +146,10 @@ the findings below are empty or each has an owner; the reviewer signs each subsy
   `LoadMonsterShapesA` to `C`), and about 250 comments. A sweep replaced the 128 old names comments
   still used. `make readability` has no finding and its baseline is empty.
 
+- 2026-11-06, the sign-off: every unit of the twelve subsystems of `work/p6-review.md` passed a P6
+  round (the last three, e1a29, eov2 and e082c, after their fixes); ds:FB34 settled through a matcher
+  change; the oracle questions closed with the code readings. Phase 6 is done.
+
 ## Findings
 
 - ds:00EF to 00F5 are gRegions[5] (the maze view window) and ds:0139, 0159, 0169, 0179 the
@@ -159,15 +163,24 @@ the findings below are empty or each has an owner; the reviewer signs each subsy
     no stored far pointer) and nothing stores 5: dead code, and the "rest phase" reading is withdrawn.
   - Settled: Monster +0C `maxHp` stays, marked [H] in src/EOB.H (InitMonster writes the roll it
     gives +0E; nothing reads +0C).
-  - Open, waiting for the human: ds:FB34 is a byte, the party member being moved (five units).
-    E0EF3's far-pointer table "at ds:FB34" is the flame sprites at ds:FB38 (EOV2 cuts them from the
-    thrown-item sheet, `gThrownIcon0` to `2`), indexed from 1, so the compiler's base sits 4 bytes
-    early. The true source form, `gThrownIcons[n - 1]` declared at ds:FB38, compiles to the
-    original's bytes, but `make match` cannot resolve a reference below a symbol's start (each
-    extern is a 256-byte block in its stub DGROUP): a matcher change, asked first.
+  - Settled 2026-11-06 (the human approved the matcher change): ds:FB34 is `gMovingMember`, a byte,
+    the party member being moved (five units). E0EF3's far-pointer table "at ds:FB34" is
+    `gFlameShapes` at ds:FB38, the three flame sprites InitGameTables (ovl2:0496) cuts and
+    CastBurningHands (0EF3:0F99) draws, indexed from 1: the source is `gFlameShapes[n - 1]`, which
+    folds to the symbol minus 4. `make match` now puts a guard of 16 bytes before each extern's
+    256-byte block in its stub DGROUP, so such a reference resolves; the negative fixture
+    `e0ef3-below-start.C` (the index without `- 1`) is rejected.
 - gSpellsTakenByTab (ds:FDE7) has 5 bytes but BuildSpellSlots clears 10, into ds:FDEC, which it
   clears again (a QUIRK).
-- Open, for the oracle (the human, 2026-11-04: trace each one; results go in the whitepaper as QUIRKs with evidence): gLevelFlags (ds:FBD4) is indexed by gCurLevel 1 to 12, so
+- Closed 2026-11-06 (the human: accept the code readings; what stays open goes to the whitepaper's
+  open questions, owned by P7, whose goldens run the same code). Each now: gLevelFlags[12] is
+  gGameFlags, [V] from the code (whitepaper 5.3.6, 5.11.1), whether a script relies on it in 6.1;
+  ToggleDoor's bit 0 test is a QUIRK [V] (5.4.3); the gCgaMap* maps are CGA colour maps, [V] from
+  CGA.OVL's SetDitherTables (2.5); Monster +0C maxHp stays [H] (5.6.1); ds:E06B is entry 1 of the
+  wall decorations, [V] by the address arithmetic (5.3.5); gPosSearchOrder's orders are decoded (5.6.2),
+  what the quadrant numbers are in 6.1; kModifierState is copied from ds:80EA by the INT 9 handler
+  (src/E1AAD.ASM, 1AAD:066E). The questions as they were asked (2026-11-04, "trace each one; results
+  go in the whitepaper as QUIRKs with evidence"): gLevelFlags (ds:FBD4) is indexed by gCurLevel 1 to 12, so
   level 12's flags are the bytes of gGameFlags (ds:FC04), a QUIRK if the game relies on it; the
   door code (122E:0137, ToggleDoor) tests only bit 0 of a cell's monster count; the 32-byte maps
   named gCgaMap* hold only the values 0 to 3 and are only passed as a colour map (the CGA reading

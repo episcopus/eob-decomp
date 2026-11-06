@@ -2480,6 +2480,7 @@ Everything here is a question the evidence did not settle. Each is tagged **[?]*
 
 #### World, scripts and monsters
 
+- **[?]** `FindFreeCellPos` (08E6:0218) tries the quadrants in the order `facing ^ row[k]`, with the rows of `gPosSearchOrder` (ds:31F6) `0 1 2 3` for an even facing and `0 2 1 3` for an odd one, so the orders are 0 1 2 3 (facing 0), 1 3 0 2 (1), 2 3 0 1 (2) and 3 1 2 0 (3) [V, decoded from the image]. Which quadrant each number is, and so whether a monster facing one way fills its rear first, is not established (5.6.2). From P6 (2026-11-06); owner P7, whose goldens place monsters.
 - **[?]** What the ten entries of a wall decoration are (one per renderer face); the click test uses entry 1 only (5.3.5, 5.4.4).
 - **[?]** What the 125 level changes in the scripts are in the game (59 are falls, one level down); level 7 links to levels 2, 4, 5, 9 and 11 in both directions and its archive holds `PORTALA.CPS` and `PORTALB.CPS`, so they may be portals (5.3.7).
 - **[?]** 432 script tests compare a literal with 0 to 3 (108 four-way groups in 54 scripts), so only one arm of each runs: a constant standing for the facing, or an authoring artefact (5.5.6)?
