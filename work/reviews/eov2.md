@@ -1,5 +1,17 @@
 # Review: eov2
 
+# Round P6 re-review 2 (2026-11-06), commit 561ad28fa8b87337dfad11b982122e2121e7d56b
+
+Reviewer: p6-rev-13
+Commit reviewed: 561ad28 (P6 re-review 2; the previous round read 24711ec)
+
+Judged: the previous must-fix and `git diff 24711ec HEAD -- src/EOV2.C` (the header map sentence at :12-14 and the declaration comment at :120). `make match FILE=src/EOV2.C`: 11 of 11 (3332 bytes). `make readability UNIT=eov2`: 0 findings.
+
+- [x] must-fix src/EOV2.C:12-14 (header said DECORATE at 2069): fixed right. 2069:0000 is gCgaMapPlayfld (src/EOV2.C:121, re/renames.toml 2069:0000, passed with PLAYFLD to LoadScreenImage). LoadDecorateIcons (ovl2:0577) passes gCgaMapDefault to its six gDecorateCellRects cuts (:313-315) and gCgaMapPlayfld to the flash, dead, unconscious, hand-shade and disabled cells (:316-322), so "DECORATE uses it for its six cells" is exact. The segment list (ITEML1 20A3, ITEMS1 20A5, THROWN 20A7, ITEMICN 20A9) matches the declarations at :122-125.
+- [x] should src/EOV2.C:120: "item and PLAYFLD art" now matches the five declarations below it. Fixed right.
+- [ ] note src/EOV2.C:12-14: the header does not say that the DECORATE page's other cells (flash frames, dead, unconscious icons, :316-322) take the PLAYFLD map; the code shows it. Non-blocking.
+- [ ] note The previous round's note on gCgaMapDefault in src/E082C.C is judged in the e082c re-review.
+
 # Round P6 re-review (2026-11-04), commit 24711ec
 
 Reviewer: p6-rev-r2
