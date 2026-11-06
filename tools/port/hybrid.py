@@ -198,6 +198,7 @@ class Bench:
         ctypes.memmove(base, data, RAM)
         m.ram = (ctypes.c_char * RAM).from_address(base)
         self.base = base
+        self.c_video = False            # the C is running with the screen in tc_mem (c_video_in)
         m.uc.mem_write(m.linear(*SENTINEL), b"\x90")
         self.comps = components(m)
         self.tc_ss = ctypes.c_uint16.in_dll(lib, "tc_ss")
@@ -270,17 +271,35 @@ class Bench:
     # oracle's, so the screen compared (outside()) is the C's. What the machine's own INT 10h writes
     # during the C's run stays in the oracle's.
     def c_video_in(self):
+        """The C is about to run: it gets mode 13h's memory in tc_mem at A0000h."""
         v = bytes(self.m.ega.vga)
         ctypes.memmove(self.base + 0xA0000, v, 0x10000)
         self._vga0 = v
+        self.c_video = True
 
     def c_video_out(self):
+        """The C has returned: what it wrote at A0000h goes into the oracle's screen."""
+        self._video_to_oracle()
+        self.c_video = False
+
+    def _video_to_oracle(self):
         cur = ctypes.string_at(self.base + 0xA0000, 0x10000)
         if cur != self._vga0:
             vga = self.m.ega.vga
             for i in range(0x10000):
                 if cur[i] != self._vga0[i]:
                     vga[i] = cur[i]
+            self._vga0 = cur
+
+    def _video_crossing(self, to_oracle: bool):
+        """While the C runs, original code it calls on the bench (a driver routine with no C, a service)
+        draws in the oracle's screen and the C in tc_mem: the two are made one at each crossing."""
+        if not self.c_video:
+            return
+        if to_oracle:
+            self._video_to_oracle()
+        else:
+            self.c_video_in()
 
     def _memo(self) -> dict:
         memo = {id(c): c for c in self.comps}
@@ -349,7 +368,9 @@ class Bench:
             m.set("es", self.tc_ds.value)
             m.set("cs", entry >> 16)
             m.set("ip", entry & 0xFFFF)
+            self._video_crossing(True)
             why = self.until(SENTINEL[0], SENTINEL[1], (sp + 4) & 0xFFFF)
+            self._video_crossing(False)
             if why:
                 self.oracle_error = "%04X:%04X %s" % (((entry >> 16) - LOAD_SEG) & 0xFFFF, entry & 0xFFFF, why)
                 self.message.value = self.oracle_error.encode()[:500]
@@ -386,7 +407,9 @@ class Bench:
             m.set("sp", sp)
             m.set("cs", seg)
             m.set("ip", off)
+            self._video_crossing(True)
             why = self.until(SENTINEL[0], SENTINEL[1], (sp + 6) & 0xFFFF)
+            self._video_crossing(False)
             if why:
                 self.oracle_error = "%04X:%04X %s" % ((seg - LOAD_SEG) & 0xFFFF, off, why)
                 self.message.value = self.oracle_error.encode()[:500]

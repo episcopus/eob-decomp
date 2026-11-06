@@ -422,7 +422,8 @@ def test_the_c_unit_clock():
 
 @needs_clang
 @pytest.mark.slow
-@pytest.mark.parametrize("unit", ["e1aad", "e1948", "e_text", "waits", "library", "heap", "e17a6", "pointer", "dosunits"])
+@pytest.mark.parametrize("unit", ["e1aad", "e1948", "e_text", "waits", "library", "heap", "e17a6", "pointer", "dosunits",
+                                  "mcga", "mcga_rect", "mcga_cell", "mcga_shape", "mcga_mask"])
 def test_the_interrupt_units_against_the_original(unit):
     """M3 (playbook 80): the units with interrupt handlers, written in C (port/asm/E1AAD.c, the keyboard;
     E1948.c, the speaker and Tandy driver; E_TEXT.c, the AdLib driver), each called on the bench with
@@ -430,8 +431,8 @@ def test_the_interrupt_units_against_the_original(unit):
     machine's wait (port/runtime/irq.c), the routines that spin on interrupts called with the original's
     interrupts; the library functions on the machine (port/runtime/tcdos.c, tcheap.c) at the library's
     addresses; and the graphics (E17A6.c), the mouse and pointer (E1A72.c, E1BB1.c, E1BBE.c, E1BF3.c)
-    and the DOS units (E1990.c, E19EA.c, E1A19.c, E1C00.c): tests/port_asm/<unit>.py (each script's
-    docstring says what it covers)."""
+    and the DOS units (E1990.c, E19EA.c, E1A19.c, E1C00.c); and MCGA.OVL in C (M4, port/drivers):
+    tests/port_asm/<unit>.py (each script's docstring says what it covers)."""
     r = subprocess.run(["make", "--no-print-directory", "-f", "port/port.mk", "PY=%s" % sys.executable,
                         "port-hybrid"], cwd=ROOT, capture_output=True, text=True)
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]

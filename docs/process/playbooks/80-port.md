@@ -19,8 +19,9 @@ sound and state.
 | Decisions | the nine answered by the human 2026-11-04, the five follow-ups (A to E) 2026-11-05 (section "Decisions"). Linux and Windows deferred by the human 2026-11-05: macOS only for now. Left for the human: install the newest LLVM (section "What the human installs") |
 | M1 tc2c for every C unit | done 2026-11-05 except the LLVM pin, which waits for the human's install: `make port` translates all 41 C units of `EOB.EXE` (609 functions) with none refused, compiles them with `-Werror` and links them; what is still a stub is 63 assembly routines (M3) and 23 library functions that need the machine (section "M1") |
 | M2 the per-function test | the machinery done 2026-11-05: `make port-hybrid` (section "M2"); on the five `EOB.EXE` goldens 129 of the 594 functions with an entry are reached, 118 are the same as the original on every call tested (635 calls), none differ, 11 are reached only where they wait for an interrupt (M3). The rest of the check, every function of `src/`, needs sessions that reach them |
-| M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), and the interrupt handlers' units `E1D8F`, `E1AAD`, `E1948`, `E_TEXT` with the retrace `E1DE4` (35 routines in all), each the same as the original on every call tested; the C-unit clock in the oracle and the five `.clock.json` recordings ("The interrupts and the C clock"); the machine boots to the oracle's memory byte for byte, and its DOS, INT 10h for MCGA, BIOS time, INT 33h driver and ports (PIC, PIT, 61h, 60h, retrace, DAC, AdLib) answer every one of the 335,055 service calls and port accesses of the five goldens as the oracle does. the machine's wait delivers the recorded interrupts to spinning routines (`port/runtime/irq.c`); 19 library functions on the machine (`port/runtime/tcdos.c`: the files, `int86`, `time`, `rand`; `tcheap.c`: the far heap), each the same as the original's on every call tested; every assembly routine the C calls is in C (63, section "The other units"). Next: M4, the MCGA driver |
-| M4 to M7 | not started (section "Order of work") |
+| M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), and the interrupt handlers' units `E1D8F`, `E1AAD`, `E1948`, `E_TEXT` with the retrace `E1DE4` (35 routines in all), each the same as the original on every call tested; the C-unit clock in the oracle and the five `.clock.json` recordings ("The interrupts and the C clock"); the machine boots to the oracle's memory byte for byte, and its DOS, INT 10h for MCGA, BIOS time, INT 33h driver and ports (PIC, PIT, 61h, 60h, retrace, DAC, AdLib) answer every one of the 335,055 service calls and port accesses of the five goldens as the oracle does. the machine's wait delivers the recorded interrupts to spinning routines (`port/runtime/irq.c`); 19 library functions on the machine (`port/runtime/tcdos.c`: the files, `int86`, `time`, `rand`; `tcheap.c`: the far heap), each the same as the original's on every call tested; every assembly routine the C calls is in C (63, section "The other units") |
+| M4 the MCGA driver | done 2026-11-05 (section "M4"): `MCGA.OVL` in C (`port/drivers/`, 40 exports), entered with its argument bytes, the same as the original on every direct call and every golden call tested. Next: step D, the program's data as C (it waits for the P6 review), then M5 |
+| M5 to M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
 
@@ -217,7 +218,7 @@ What each original mechanism becomes:
 
 | Original | Where in `src/` | Port |
 |---|---|---|
-| Graphics drivers, 47 slots: 7 imports the game provides, 40 exports (whitepaper 2.5) | `E1C00.ASM` loads `*.OVL` with DOS 4B03h and calls `LinkDriver`; the game calls the slots at `ds:8046` | The machine's 4B03h allocates the block as DOS does (the driver's size in paragraphs) and fills the driver's export table with the code addresses of the port's driver functions, registered at `loadseg:offset` of each export, so the game's slot table holds the far pointers it holds in the oracle. MCGA only (decision 4) |
+| Graphics drivers, 47 slots: 7 imports the game provides, 40 exports (whitepaper 2.5) | `E1C00.ASM` loads `*.OVL` with DOS 4B03h and calls `LinkDriver`; the game calls the slots at `ds:8046` | The machine's 4B03h loads the driver's image where the game asks and registers the driver in C (`port/drivers`) at `loadseg:offset` of each routine; `LinkDriver` in C fills the game's slots, so they hold the far pointers they hold in the oracle (section "M4"). MCGA only (decision 4) |
 | Video memory and palette | MCGA draws page 0 at `A000:0000`; DAC through INT 10h AX=1012h and ports 3C8h, 3C9h (`I0921.ASM`); retrace port 3DAh (`E1DE4.ASM`); mode set through `int86` (`E1DDD.C`) | `A000:0000` is arena memory; the machine keeps the DAC; the host presents both. Port 3DAh is a read the replay records |
 | Mouse, INT 33h | `E1A72.ASM` (detect, reset, position, handler at `1A72:017A` for mask 1Fh), `E1BF3.ASM` (function 4), the pointer drawn by the game (`E1BBE.ASM`) | The machine is the INT 33h driver: functions 0, 1, 3, 4, 0Ch, with the vector not null so the game finds it; host mouse events become calls of the game's handler with the driver's registers |
 | Keyboard, INT 9 | `E1AAD.ASM`: reads port 60h, acknowledges the PIC, its 256-byte ring | Host scancodes become INT 9 deliveries; port 60h returns the scancode; port 20h is accepted |
@@ -336,6 +337,67 @@ Whatever the clock, the proof has two levels:
 The new recording artefacts (per golden: the clock positions of each interrupt and input) are files
 beside the goldens, `tests/sessions/golden/<name>.clock.json`; the human approved this change to the
 golden format (decision 5). The goldens themselves do not change.
+
+## M4: the MCGA driver (2026-11-05)
+
+```
+make port-hybrid && for t in mcga mcga_rect mcga_cell mcga_shape mcga_mask; do .venv/bin/python tests/port_asm/$t.py; done
+```
+
+- `MCGA.OVL` is in C in `port/drivers/`, written from `src/drivers/MCGA.ASM` routine by routine and
+  label by label, as the assembly units were: `mcga.c` (the entry, `LinkDriver`, the page helpers and
+  13 small exports), `mcga_rect.c` (rectangles, cells, tiles, lines, fills, `XorRect`), `mcga_cell.c`
+  (the two sprite cutters, `DrawMaskedCell16`, the text), `mcga_shape.c` (`DrawShape` and its
+  mirror), `mcga_mask.c` (the masked and the remapped shape draws): all 40 exports and their 25 near
+  helpers. The four parts were written in parallel, each built apart (`OUT=`, `DRV_C=` with a stub of
+  the others' tables).
+- **The calling convention** (`port/include/driver.h`). The units of `src/` declare the driver's slots
+  with differing C types (an `int` here, an `unsigned` there, `gDrawText()` with no parameters), so a
+  driver routine is not called with C arguments: the caller lays out the bytes of its arguments as Turbo
+  C pushes them, as it does for any far pointer with no C function behind it (`tc_code_far`), and the
+  routine reads them where the source does (`arg_word(arg, 6)` is `[bp+6]`). DX:AX is its value; a
+  routine that answers in other registers sets them (`DriverEntry`'s BX, `LinkDriver`'s carry).
+  `tc_code_far` looks in this table first (`tc_code_register_args`), in the port and in the hybrid
+  build.
+- **Where it lives**. The driver's variables and tables stay in the arena at their offsets in the
+  segment the game loaded it at (`mcga_cs`; the game reads the row offsets, the nibble swap and the
+  remap table through its slots). The routines are registered at `segment:offset` when the driver is
+  loaded: by the machine's 4B03h when the file is `MCGA.OVL` (the game shrinks the block in place, so
+  the segment stays), and on the bench when the original links it (`hybrid.py`, at the loader's calls
+  1C00:0091 and 1C00:00C0). Each file has its own table of the routines it has written (offset, name,
+  argument bytes, value bytes, registers answered), so a routine with no C yet runs as the original's
+  code on the bench.
+- **Proven**. The per-function test and `hybrid.Direct` test a driver routine as a translated function
+  (`MCGA.<name>`), comparing memory, the screen and the registers it answers in. Direct calls on a bench
+  run to the title (`tests/port_asm/mcga_bench.py`): `mcga.py` 558, `mcga_rect.py` 3,720,
+  `mcga_cell.py` 755 (and 286 calls of the game's `MemFree` on what the cutters allocated),
+  `mcga_shape.py` 1,275, `mcga_mask.py` 3,161, all the same (and the 3 calls where the C must stop,
+  below, stop); each test caught every bug planted in its file (22 in all: clip edges, a mirror's
+  order, a colour limit, a carry, a mask bit). On the five
+  goldens every call of the driver was tested (`--samples 2000`): 3,991 calls of 19 routines (17
+  exports, the entry and `LinkDriver`), all the same, and every session is still its golden. With the
+  driver in C the goldens reach 204 functions: 193 the same on every call tested, none different, the
+  same 11 waiting for an interrupt.
+- What a count on the original showed: the five goldens call 17 of the 40 exports (`DrawLine` 1,128
+  times, `GetSpriteCell` 425, `DrawShape` 226, `SaveRect` and `RestoreRect` 170 each). The masked,
+  remapped and flipped draws, `XorRect`, `DrawCell8x8`, `PutPixel` and the tile and cell routines are
+  proven by the direct calls alone.
+- The C stops with the reason where the original breaks: a format 0 shape given to the remapped draws
+  (the source pops its saved registers one word off: `DrawShapeRemapped` returns with the caller's DS,
+  SI and DI changed, `DrawShapeFlippedRemapped`'s `retf` leaves the driver), a `gTileMode` that sends
+  `DrawIndexedTile` through its jump table to no routine, and `DrawLine`'s `idiv` faulting (by 0, or a
+  quotient that overflows), the original's INT 0. The source's other quirks are kept and said where
+  they are: `SetTileFormat`'s `and` that clears the carry before its `rcr`, so a 1 by 1 tile set draws
+  tile 0's pixels for every tile; a shape or a region of 0 rows that draws 65536 rows; `DrawGlyph`'s
+  byte count written twice.
+- Found on the way, fixed in the shared tools: while the C runs, original code it calls on the bench
+  (a routine with no C, a service) drew in the oracle's screen and the C in `tc_mem`, each copy blind to
+  the other's writes until the C returned; the bench now makes them one at each crossing (`hybrid.py`,
+  `_video_crossing`). `EnterMapScreen` had a screen differ in `load-walk` before.
+- Left for later: the machine's 4B03h still copies `MCGA.OVL`'s image into the arena, for the driver's
+  tables and variables (the code bytes are not used). The port ships no game bytes (decision 6), so
+  the driver's initial data comes from `src/drivers/MCGA.ASM` with the program's own (step D, before
+  M5).
 
 ## M3: the machine and the assembly units (started 2026-11-05)
 
