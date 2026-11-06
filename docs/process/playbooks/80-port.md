@@ -374,11 +374,20 @@ runs, the alignment pads and the readers.
 (ds:5D1A-5DDF), EOV2 (ds:64F8-683E) and EOV3 (ds:683E-6B80) every name declared before the pool is
 the unit's own. The other ranges hold data of modules with no strings. The segment table has the
 answer for four of them: EOB.EXE has four empty code segments among its resident code, at 07C8:0001,
-177D:000A, 1AAD:000C and 1B82:0009 (`build/re/eob.json`, segments 2, 19, 39 and 41), each the code
+177D:000A, 1AAD:000C and 1B82:0009 (`build/re/eob.json`, segments 2, 19, 39 and 41), each most likely the code
 segment of a **data-only module**, a source file with nothing but data, which `src/` has no file for
 yet. The first is linked right after E07A9, so the 12 KB from ds:01FE (448 relocations, names
 declared by every subsystem, none by E07C8, whose own data starts later) is most likely that module's
 [H until D0 bounds it]. D2 creates these four files.
+
+`make datamap` (`tools/rebuild/datamap.py`) lists the anchors in address order: each unit's pool, each
+run of data relocations with the unit whose code relocations it follows, the empty code segments,
+and between them the names `src/` declares and the units that declare them. Two things it shows
+that D0 must settle: E07C8's literals (ds:3067-31AB) have a run of its data relocations inside them
+(ds:3076-3088, `_ovrbuffer` at ds:3088), so its pool is not one block; and the overlays' data
+relocations all follow E177D's code (ds:65E0-7C06, 58 relocations), since the overlays' own code
+relocations are in their FBOV data, not the table, so the overlays' data is bounded by their pools
+and names only.
 
 The four sub-steps go in this order; D2's units are independent once D1 is in. `INTRO.EXE` follows at
 M6.

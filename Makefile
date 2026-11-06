@@ -6,7 +6,7 @@ PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
 .PHONY: help setup doctor inputs overlays pak data emu2 test p0-check tc-install tc-check rtl-compare map match oracle-run golden test-slow \
 	match-gate check queue next claim locks unlock packet skeleton handoff handoffs handoff-done integrate review-pass worker progress \
-	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port port-literals port-hybrid handbook handbook-setup handbook-figs
+	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port port-literals port-hybrid handbook handbook-setup handbook-figs datamap
 
 help:
 	@echo "Phase 0:  setup doctor inputs overlays pak emu2 test p0-check"
@@ -69,6 +69,9 @@ match:            ## prove C and assembly units against their program (FILE=src/
 
 rebuild:          ## build a program from src/ and compare it with the original (PROGRAM=START1.EXE, or a driver MCGA.OVL; playbook 50)
 	$(PY) tools/rebuild/rebuild.py $(or $(PROGRAM),START1.EXE) $(if $(V),-v)
+
+datamap:          ## the anchors of EOB.EXE's data map: pools, relocation runs, data-only modules, names (playbook 80, step D0)
+	$(PY) tools/rebuild/datamap.py
 
 twin:             ## prove INTRO.EXE units by their EOB.EXE twin, the same module linked elsewhere (UNIT=, WRITE=1 records L2; FIND=1 looks for twins)
 	$(PY) tools/match/twin.py $(if $(FIND),--find) $(if $(UNIT),--unit $(UNIT)) $(if $(WRITE),--write)
