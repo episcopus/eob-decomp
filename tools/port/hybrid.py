@@ -55,7 +55,7 @@ from oracle.machine import LOAD_SEG, REG, Stop, OracleError  # noqa: E402
 from oracle.input import Script  # noqa: E402
 from oracle import golden  # noqa: E402
 from unicorn import UC_PROT_ALL, UC_HOOK_MEM_WRITE, UcError  # noqa: E402
-from unicorn.x86_const import UC_X86_REG_CS  # noqa: E402
+from unicorn.x86_const import UC_X86_REG_CS, UC_X86_REG_EFLAGS  # noqa: E402
 
 import cmatch  # noqa: E402  (read-only: the `/*@ */` annotations, for the names of globals)
 
@@ -69,23 +69,100 @@ BUDGET = 20_000_000               # instructions the original may take on the be
 LIMIT_MS = 5000                   # CPU time the C may take
 MAX_WAITS = 2                     # calls of a function the original does not return from, then it is left
 # Machine attributes that are its wiring, not its state: the bench keeps its own
-WIRING = {"uc", "ram", "services", "port_handlers", "breakpoints", "routine_hooks", "watch_hooks",
+WIRING = {"uc", "ram", "services", "port_handlers", "breakpoints", "routine_hooks", "watch_hooks", "chunk_listeners",
           "overlay_listeners", "file_listeners", "tracer", "canonical", "keys"}
 
 
 class Entry(ctypes.Structure):
     _fields_ = [("seg", ctypes.c_uint16), ("off", ctypes.c_uint16), ("overlay", ctypes.c_int16),
                 ("code_off", ctypes.c_uint16), ("name", ctypes.c_char_p), ("unit", ctypes.c_char_p),
-                ("thunk", ctypes.c_void_p), ("ret_bytes", ctypes.c_uint8), ("arg_bytes", ctypes.c_uint8)]
+                ("thunk", ctypes.c_void_p), ("ret_bytes", ctypes.c_uint8), ("arg_bytes", ctypes.c_uint8),
+                ("interrupt", ctypes.c_uint8)]
+
+
+class DriverRoutine(ctypes.Structure):
+    """driver.h's tc_driver_routine"""
+    _fields_ = [("off", ctypes.c_uint16), ("name", ctypes.c_char_p), ("fn", ctypes.c_void_p),
+                ("arg_bytes", ctypes.c_uint8), ("ret_bytes", ctypes.c_uint8), ("regs", ctypes.c_uint8)]
+
+
+# The graphics driver in C (M4): the loader's two far calls into MCGA.OVL (src/E1C00.ASM), the entry at
+# 1C00:0091 and the link routine at 1C00:00C0, each with the driver's segment at DGROUP:8190h
+DRIVER_CALLS = ((0x1C00, 0x0091), (0x1C00, 0x00C0))
+DRIVER_SEG_PTR = 0x8190
+
+
+class DriverEntry:
+    """A routine of the driver in C, at the segment the original loaded the driver at: tested like a
+    translated function, entered with its argument bytes (driver.h)."""
+    interrupt = 0
+
+    def __init__(self, index: int, seg: int, d: DriverRoutine):
+        self.index, self.seg, self.off = index, seg, d.off
+        self.name = ("MCGA." + d.name.decode()).encode()
+        self.unit = b"port/drivers"
+        self.arg_bytes, self.ret_bytes, self.regs = d.arg_bytes, d.ret_bytes, d.regs
+
+
+def driver_routines(lib) -> list:
+    lib.tc_hybrid_driver_routine.restype = ctypes.POINTER(DriverRoutine)
+    lib.tc_hybrid_driver_routine.argtypes = [ctypes.c_uint]
+    lib.tc_hybrid_driver_register.argtypes = [ctypes.c_uint16]
+    lib.tc_hybrid_run_driver.argtypes = [ctypes.c_uint, ctypes.c_uint16, ctypes.c_uint16, ctypes.c_uint16,
+                                         ctypes.c_uint16, ctypes.POINTER(ctypes.c_uint32), ctypes.c_void_p,
+                                         ctypes.c_uint]
+    lib.tc_hybrid_run_driver.restype = ctypes.c_int
+    out = []
+    while True:
+        p = lib.tc_hybrid_driver_routine(len(out))
+        if not p:
+            return out
+        out.append(p.contents)
 
 
 ORACLE_FN = ctypes.CFUNCTYPE(ctypes.c_uint32, ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint16)
 
 
+class Regs(ctypes.Structure):
+    _fields_ = [(n, ctypes.c_uint16) for n in ("ax", "bx", "cx", "dx", "si", "di", "bp", "ds", "es", "flags")]
+
+
+# the bench runs interrupt code (a service, a handler with no C) and port accesses for the C
+INT_FN = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_uint16, ctypes.c_uint16, ctypes.POINTER(Regs))
+PORT_FN = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_uint16, ctypes.c_int, ctypes.POINTER(ctypes.c_uint16))
+RAISE_FN = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_uint8, ctypes.c_uint8, ctypes.c_uint16, ctypes.c_uint16,
+                            ctypes.c_uint16, ctypes.c_uint16)
+INSNS_FN = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_uint32)
+
+
+class Event(ctypes.Structure):
+    """machine.h's machine_event"""
+    _fields_ = [("at", ctypes.c_uint32), ("access", ctypes.c_uint32), ("kind", ctypes.c_uint8),
+                ("scancode", ctypes.c_uint8), ("cond", ctypes.c_uint16), ("buttons", ctypes.c_uint16),
+                ("x", ctypes.c_uint16), ("y", ctypes.c_uint16)]
+
+
+def event(rec: list) -> Event:
+    """A recording's interrupt ([at, access], [at, access, "irq1", scancode], [at, access, "mouse",
+    condition, buttons, x, y]) as the machine's."""
+    at, access, *rest = rec
+    if not rest:
+        return Event(at, access, 0)
+    if rest[0] == "irq1":
+        return Event(at, access, 1, rest[1] & 0xFF)
+    return Event(at, access, 2, 0, *rest[1:5])
+
+
 def components(m) -> list:
-    """The machine and the oracle's objects it holds (the EGA, DOS, the VFS, the BIOS, the devices),
-    in a fixed order, so two machines built alike pair up."""
+    """The machine and the oracle's objects it holds (the EGA, DOS, the VFS, the BIOS, the devices,
+    those behind its port handlers), in a fixed order, so two machines built alike pair up."""
     out, seen = [m], {id(m)}
+    # a device the machine reaches only through its port handlers (the AdLib) is state too
+    for rd, _wr in m.port_handlers.values():
+        owner = getattr(rd, "__self__", None)
+        if owner is not None and id(owner) not in seen and type(owner).__module__.startswith("oracle."):
+            seen.add(id(owner))
+            out.append(owner)
     i = 0
     while i < len(out):
         for k, v in vars(out[i]).items():
@@ -121,6 +198,7 @@ class Bench:
         ctypes.memmove(base, data, RAM)
         m.ram = (ctypes.c_char * RAM).from_address(base)
         self.base = base
+        self.c_video = False            # the C is running with the screen in tc_mem (c_video_in)
         m.uc.mem_write(m.linear(*SENTINEL), b"\x90")
         self.comps = components(m)
         self.tc_ss = ctypes.c_uint16.in_dll(lib, "tc_ss")
@@ -129,7 +207,17 @@ class Bench:
         self.failed = ctypes.c_int.in_dll(lib, "tc_hybrid_oracle_failed")
         self.message = (ctypes.c_char * 512).in_dll(lib, "tc_hybrid_message")
         self.callback = ORACLE_FN(self.oracle)
+        self.far_regs = Regs.in_dll(lib, "tc_hybrid_far_regs")
         ctypes.c_void_p.in_dll(lib, "tc_hybrid_oracle").value = ctypes.cast(self.callback, ctypes.c_void_p).value
+        self.int_callback = INT_FN(self.oracle_int)
+        self.port_callback = PORT_FN(self.oracle_port)
+        ctypes.c_void_p.in_dll(lib, "tc_hybrid_int_fn").value = ctypes.cast(self.int_callback, ctypes.c_void_p).value
+        ctypes.c_void_p.in_dll(lib, "tc_hybrid_port_fn").value = ctypes.cast(self.port_callback, ctypes.c_void_p).value
+        self.raise_callback = RAISE_FN(self.oracle_raise)
+        self.insns_callback = INSNS_FN(self.oracle_insns)
+        ctypes.c_void_p.in_dll(lib, "tc_hybrid_raise_fn").value = ctypes.cast(self.raise_callback, ctypes.c_void_p).value
+        ctypes.c_void_p.in_dll(lib, "tc_hybrid_insns_fn").value = ctypes.cast(self.insns_callback, ctypes.c_void_p).value
+        self.cclock = None                   # attached when a call runs with interrupts
         self.oracle_calls = 0
         self.oracle_error = ""
         self.written: set | None = None      # what the overlay manager wrote, while watched
@@ -163,6 +251,9 @@ class Bench:
         m = self.m
         ctypes.memmove(self.base, ctypes.addressof(src.ram), RAM)
         m.uc.ctl_remove_cache(0, RAM)
+        # the mouse driver's event record in the ROM (F000:3080): the C handler reads its registers there,
+        # in tc_mem, which the bench maps only below A0000h
+        ctypes.memmove(self.base + 0xF3080, bytes(src.uc.mem_read(0xF3080, 0x20)), 0x20)
         for r in REG:
             m.set(r, src.get(r))
         memo = dict(memo0)
@@ -175,14 +266,70 @@ class Bench:
     def memory(self) -> bytes:
         return ctypes.string_at(self.base, RAM)
 
+    # mode 13h's memory: the bench's original runs on the oracle's own (ega.vga), the C on tc_mem at
+    # A0000h. Before the C runs tc_mem gets the oracle's; after, what the C wrote there goes back into the
+    # oracle's, so the screen compared (outside()) is the C's. What the machine's own INT 10h writes
+    # during the C's run stays in the oracle's.
+    def c_video_in(self):
+        """The C is about to run: it gets mode 13h's memory in tc_mem at A0000h."""
+        v = bytes(self.m.ega.vga)
+        ctypes.memmove(self.base + 0xA0000, v, 0x10000)
+        self._vga0 = v
+        self.c_video = True
+
+    def c_video_out(self):
+        """The C has returned: what it wrote at A0000h goes into the oracle's screen."""
+        self._video_to_oracle()
+        self.c_video = False
+
+    def _video_to_oracle(self):
+        cur = ctypes.string_at(self.base + 0xA0000, 0x10000)
+        if cur != self._vga0:
+            vga = self.m.ega.vga
+            for i in range(0x10000):
+                if cur[i] != self._vga0[i]:
+                    vga[i] = cur[i]
+            self._vga0 = cur
+
+    def _video_crossing(self, to_oracle: bool):
+        """While the C runs, original code it calls on the bench (a driver routine with no C, a service)
+        draws in the oracle's screen and the C in tc_mem: the two are made one at each crossing."""
+        if not self.c_video:
+            return
+        if to_oracle:
+            self._video_to_oracle()
+        else:
+            self.c_video_in()
+
+    def _memo(self) -> dict:
+        memo = {id(c): c for c in self.comps}
+        memo[id(self.m.uc)] = self.m.uc
+        return memo
+
+    def save(self) -> list:
+        """The oracle's Python state of the bench (its devices, DOS, the EGA), to restore()."""
+        memo = self._memo()
+        return [(c, {k: copy.deepcopy(v, memo) for k, v in vars(c).items() if not (c is self.m and k in WIRING)})
+                for c in self.comps]
+
+    def restore(self, saved: list) -> None:
+        memo = self._memo()
+        for c, d in saved:
+            c.__dict__.update({k: copy.deepcopy(v, memo) for k, v in d.items()})
+
     def outside(self) -> dict:
         m = self.m
         h = hashlib.sha256()
         for path in sorted(m.vfs.layer):
             h.update(path.encode() + b"\0" + bytes(m.vfs.layer[path]))
-        return {"screen": m.ega.digest_bytes().hex(), "adlib": len(getattr(m, "adlib_log", [])),
-                "adlib_tail": repr(getattr(m, "adlib_log", [])[-64:]), "speaker": repr(m.speaker_log[-16:]),
-                "files": h.hexdigest(), "deleted": sorted(m.vfs.deleted)}
+        out = {"screen": m.ega.digest_bytes().hex(), "clock": m.extra, "files": h.hexdigest(),
+               "deleted": sorted(m.vfs.deleted),
+               "timer": (m.port61, m.pic_mask, m.pit_reload, m.next_irq0, m.irq0_in_service, m.irq1_in_service)}
+        # what went to the sound devices and the timer: each log's length and its last entries
+        for name in ("adlib_log", "speaker_log", "tandy_log", "pit0_log"):
+            log = getattr(m, name, [])
+            out[name] = (len(log), repr(log[-64:]))
+        return out
 
     # -- running the original on the bench
     def until(self, seg, off, sp_after, budget=BUDGET) -> str:
@@ -221,18 +368,152 @@ class Bench:
             m.set("es", self.tc_ds.value)
             m.set("cs", entry >> 16)
             m.set("ip", entry & 0xFFFF)
+            self._video_crossing(True)
             why = self.until(SENTINEL[0], SENTINEL[1], (sp + 4) & 0xFFFF)
+            self._video_crossing(False)
             if why:
                 self.oracle_error = "%04X:%04X %s" % (((entry >> 16) - LOAD_SEG) & 0xFFFF, entry & 0xFFFF, why)
                 self.message.value = self.oracle_error.encode()[:500]
                 self.failed.value = 1
                 return 0
+            for k in REG_NAMES:                  # every register, for a caller that reads more than DX:AX
+                setattr(self.far_regs, k, m.get(k))
+            self.far_regs.flags = m.get("flags") & 0xFFFF
             return (m.get("dx") << 16) | m.get("ax")
         except Exception as e:  # noqa: BLE001  (a Python error must not unwind through C)
             self.oracle_error = "the bench failed: %r" % e
             self.message.value = self.oracle_error.encode()[:500]
             self.failed.value = 1
             return 0
+
+
+    def oracle_int(self, seg, off, regs):
+        """The C reaches interrupt code it has no C for (a service stub, a handler it chains to): run it on
+        the bench as the CPU enters an interrupt, FLAGS and a return to the sentinel pushed below the C's
+        stack, the registers from and back to *regs."""
+        m, r = self.m, regs.contents
+        try:
+            self.oracle_calls += 1
+            ss, sp = self.tc_ss.value, (self.tc_sp.value - 6) & 0xFFFF
+            m.ww(ss, sp, SENTINEL[1])
+            m.ww(ss, sp + 2, SENTINEL[0])
+            m.ww(ss, sp + 4, (r.flags & 0x0CD5) | 0x0202)
+            for k in REG_NAMES:
+                m.set(k, getattr(r, k))
+            # the CPU's flags as the INT leaves them: those pushed, IF and TF cleared (a handler that returns
+            # with RETF 2, or reads its flags, sees them)
+            m.uc.reg_write(UC_X86_REG_EFLAGS, ((r.flags & 0x0CD5) | 0x0002) & ~0x0300)
+            m.set("ss", ss)
+            m.set("sp", sp)
+            m.set("cs", seg)
+            m.set("ip", off)
+            self._video_crossing(True)
+            why = self.until(SENTINEL[0], SENTINEL[1], (sp + 6) & 0xFFFF)
+            self._video_crossing(False)
+            if why:
+                self.oracle_error = "%04X:%04X %s" % ((seg - LOAD_SEG) & 0xFFFF, off, why)
+                self.message.value = self.oracle_error.encode()[:500]
+                return -1
+            for k in REG_NAMES:
+                setattr(r, k, m.get(k))
+            r.flags = m.get("flags") & 0xFFFF
+            return 0
+        except Exception as e:  # noqa: BLE001
+            self.oracle_error = "the bench failed: %r" % e
+            self.message.value = self.oracle_error.encode()[:500]
+            return -1
+
+    def oracle_port(self, write, port, size, value):
+        try:
+            if write:
+                self.m.port_write(port, size, value.contents.value)
+            else:
+                value.contents.value = self.m.port_read(port, size) & 0xFFFF
+            return 0
+        except Exception as e:  # noqa: BLE001
+            self.oracle_error = "the bench's port %04X failed: %r" % (port, e)
+            self.message.value = self.oracle_error.encode()[:500]
+            return -1
+
+
+    def oracle_raise(self, kind, scancode, cond, buttons, x, y):
+        """The C machine delivers an interrupt: the bench's controller and devices take it as the oracle's
+        delivery does (Machine._try_deliver_irq0/1, input.py Mouse.deliver)."""
+        m = self.m
+        try:
+            if kind == 0:
+                m.irq0_in_service = True
+            elif kind == 1:
+                m.kbd_data = scancode
+                m.irq1_in_service = True
+            else:
+                import struct
+                from oracle.input import ROM_MOUSE
+                seg, off, _mask = m.mouse.handler
+                m.uc.mem_write(m.linear(*ROM_MOUSE) + 0x80, struct.pack("<6H", cond, buttons, x, y, 0, 0))
+                m.uc.mem_write(m.linear(*ROM_MOUSE) + 0x90, struct.pack("<HH", off, seg))
+                m.mouse_busy = True
+            return 0
+        except Exception as e:  # noqa: BLE001
+            self.message.value = ("the bench's interrupt failed: %r" % e).encode()[:500]
+            return -1
+
+    def oracle_insns(self, insns):
+        self.m.insns = insns
+        return 0
+
+    def run_with_interrupts(self, seg, off, sp_after, keys=(), budget=BUDGET) -> str:
+        """Run from CS:IP until seg:off is reached with SP at sp_after, the oracle delivering its
+        interrupts as in a session (the timer by its clock, IRQ 1 for each of `keys`: a scancode now, or
+        (instructions, scancode) once that many have run); what it delivered and the clock it read are
+        in self.cclock (a CClock counted from 0); '' or why not."""
+        from oracle.cclock import CClock
+        from oracle.machine import FLAG_IF
+        m = self.m
+        if self.cclock is None:
+            self.cclock = CClock(m)
+            self._stop_at = None
+
+            def at_sentinel(mach):
+                if self._stop_at is not None and mach.get("sp") == self._stop_at:
+                    raise Stop("returned")
+            m.add_breakpoint(SENTINEL[0], SENTINEL[1], at_sentinel)
+            self._later = []
+
+            def feed(mach, chunk):
+                while self._later and mach.insns + chunk >= self._later[0][0]:
+                    mach.kbd_queue.append(self._later.pop(0)[1])
+            m.chunk_listeners.append(feed)
+            # a pending interrupt taken at the first instruction with IF set, as the CPU takes it: the C
+            # delivers right after the access before it, and a later look could fall after memory writes
+            # with no access between (StartSample's setup after its sti); and a spin loop's IF-on phases
+            # are always reached (machine.py wait_chunk)
+            m.wait_chunk = 1
+        cc = self.cclock
+        cc.resume()
+        cc.count = cc.accesses = cc.library_accesses = 0
+        cc.events, cc.times, cc.library_times = [], [], []
+        cc._last_insns = cc._last_library_insns = None
+        cc.chunk_sum, cc.last = 0, None
+        start = m.insns
+        m.kbd_queue.extend(k for k in keys if isinstance(k, int))
+        self._later = sorted((start + k[0], k[1]) for k in keys if not isinstance(k, int))
+        m.uc.reg_write(UC_X86_REG_EFLAGS, m.get("flags") | FLAG_IF)
+        self._stop_at = sp_after
+        try:
+            why = m.run(budget)
+        except OracleError as e:
+            return "oracle: %s" % str(e).splitlines()[0]
+        except UcError as e:
+            return "guest fault: %s" % e
+        finally:
+            self._stop_at = None
+            self._later = []
+            cc.pause()
+        if why != "returned":
+            return "did not return in %d instructions (%s, at %04X:%04X)" % (
+                budget, why, (m.get("cs") - LOAD_SEG) & 0xFFFF, m.get("ip"))
+        return ""
 
 
 class Tester:
@@ -245,6 +526,7 @@ class Tester:
                                            ctypes.POINTER(ctypes.c_uint32), ctypes.c_uint]
         self.lib.tc_hybrid_run.restype = ctypes.c_int
         self.lib.tc_hybrid_init(LOAD_SEG, DGROUP)
+        self.driver = driver_routines(self.lib)
         self.samples = samples
         self.only = only
         self.names = globals_by_offset()
@@ -312,6 +594,42 @@ class Tester:
                     counts[i] = c + 1
             m.add_breakpoint(LOAD_SEG + e.seg, e.off, at_entry)
             handles[lin] = i
+
+        # the driver in C, once the original has loaded MCGA.OVL: registered at its segment, and each
+        # routine tested as it is entered
+        linked = set()
+
+        def at_driver_call(mach):
+            seg = mach.rw(DGROUP, DRIVER_SEG_PTR)
+            if seg in linked:
+                return
+            linked.add(seg)
+            self.lib.tc_hybrid_driver_register(seg)
+            for k, d in enumerate(self.driver):
+                de = DriverEntry(k, seg, d)
+                if self.only and de.name.decode() not in self.only:
+                    continue
+
+                def at_entry(mach, de=de):
+                    if self.busy:
+                        return
+                    c = counts.get(de.name, 0)
+                    if c >= self.samples or waits.get(de.name, 0) >= MAX_WAITS:
+                        return
+                    self.busy = True
+                    try:
+                        r = self.test(mach, bench, de, session, c)
+                    finally:
+                        self.busy = False
+                    self.results.append(r)
+                    if r["status"].startswith("not tested"):
+                        waits[de.name] = waits.get(de.name, 0) + 1
+                    else:
+                        counts[de.name] = c + 1
+                mach.add_breakpoint(seg, d.off, at_entry)
+            mach.uc.ctl_remove_cache(seg * 16, seg * 16 + 0x10000)
+        for seg, off in DRIVER_CALLS:
+            m.add_breakpoint(LOAD_SEG + seg, off, at_driver_call)
         pairs = list(zip(components(m), bench.comps))
         if [type(a) for a, _ in pairs] != [type(b) for _, b in pairs]:
             raise SystemExit("hybrid: the bench is not built like the session's machine")
@@ -321,19 +639,21 @@ class Tester:
 
     # -- one call
     def test(self, m, bench, i, session, sample) -> dict:
-        e = self.entries[i]
+        """i: an index of the translated functions' table, or a DriverEntry"""
+        e = i if isinstance(i, DriverEntry) else self.entries[i]
         r = {"function": e.name.decode(), "unit": e.unit.decode(), "session": session, "sample": sample,
              "at": m.insns}
         ss, sp, ds = m.get("ss"), m.get("sp"), m.get("ds")
         ret_ip, ret_cs = m.rw(ss, sp), m.rw(ss, sp + 2)
-        if ds != DGROUP:
+        frame = 6 if e.interrupt else 4                  # IRET pops FLAGS too
+        if ds != DGROUP and not e.interrupt:
             r["status"] = "not tested: DS is %04X at the entry" % ds
             return r
         t0 = time.monotonic()
         # 2. the original
         bench.take(m, self.pairs, self.memo0)
         bench.watch()
-        why = bench.until(ret_cs, ret_ip, (sp + 4) & 0xFFFF)
+        why = bench.until(ret_cs, ret_ip, (sp + frame) & 0xFFFF)
         manager = bench.unwatch()
         if why:
             r["status"] = "not tested: the original %s" % why
@@ -341,12 +661,20 @@ class Tester:
         bm = bench.m
         o_mem, o_out = bench.memory(), bench.outside()
         o_regs = (bm.get("ax"), bm.get("dx"))
+        o_bx, o_cf = bm.get("bx"), bm.get("flags") & 1
         # 3. the C
         bench.take(m, self.pairs, self.memo0)
+        bench.c_video_in()
         bench.oracle_calls = 0
         bench.oracle_error = ""
         val = ctypes.c_uint32(0)
-        code = self.lib.tc_hybrid_run(i, ss, sp, ds, ctypes.byref(val), LIMIT_MS)
+        c_regs = Regs()
+        if isinstance(i, DriverEntry):
+            code = self.lib.tc_hybrid_run_driver(i.index, i.seg, ss, sp, ds, ctypes.byref(val),
+                                                 ctypes.byref(c_regs), LIMIT_MS)
+        else:
+            code = self.lib.tc_hybrid_run(i, ss, sp, ds, ctypes.byref(val), LIMIT_MS)
+        bench.c_video_out()
         r["oracle_calls"] = bench.oracle_calls
         r["seconds"] = round(time.monotonic() - t0, 3)
         if code:
@@ -356,7 +684,7 @@ class Tester:
         c_mem, c_out = bench.memory(), bench.outside()
         # 4. compare
         lo = ss * 16
-        masks = [(lo, lo + ((sp + 4 + e.arg_bytes) & 0xFFFF))]
+        masks = [(lo, lo + ((sp + frame + e.arg_bytes) & 0xFFFF))]
         spans = diff(o_mem, c_mem, masks, manager)
         if manager:
             r["masked_overlay_manager"] = len(manager)
@@ -368,6 +696,12 @@ class Tester:
             cv = val.value & mask
             if ov != cv:
                 regs.append("returns %0*X, the original %0*X" % (2 * rb, cv, 2 * rb, ov))
+        if getattr(e, "regs", 0) & 1:                   # driver.h: TC_ANSWERS_BX
+            if c_regs.bx != o_bx:
+                regs.append("BX %04X, the original %04X" % (c_regs.bx, o_bx))
+        if getattr(e, "regs", 0) & 2:                   # TC_ANSWERS_CF
+            if (c_regs.flags & 1) != o_cf:
+                regs.append("CF %d, the original %d" % (c_regs.flags & 1, o_cf))
         outs = ["%s differs" % k for k in o_out if o_out[k] != c_out[k]]
         if not spans and not regs and not outs:
             r["status"] = "same"
@@ -403,49 +737,130 @@ class Direct:
 
     STACK = (0x9000, 0xFFF0)          # SS:SP of the calls: conventional memory the loaded program leaves free
 
-    def __init__(self, lib: Path = LIB):
+    def __init__(self, lib: Path = LIB, **machine):
+        """machine: run.build_machine's options (mouse=True, sound="adlib")"""
         self.t = Tester(1, None, lib)
-        self.bench = Bench(self.t.lib, run.build_machine)
+        self.bench = Bench(self.t.lib, lambda: run.build_machine(**machine))
         self.m = self.bench.m
         self.index = {e.name.decode(): i for i, e in enumerate(self.t.entries)}
+        self.driver_seg = None
+
+    def link_driver(self, budget: int = 60_000_000) -> int:
+        """Runs the program on the bench until the original has loaded and linked MCGA.OVL (the
+        return from the loader's call of LinkDriver, 1C00:00C4), and registers the driver's C at its
+        segment, so that "MCGA.<routine>" can be called. Returns the segment."""
+        done = []
+
+        def linked(mach):
+            if not done:
+                done.append(True)
+                raise Stop("linked")
+        self.m.add_breakpoint(LOAD_SEG + 0x1C00, 0x00C4, linked)
+        why = self.m.run(budget)
+        if why != "linked":
+            raise SystemExit("hybrid: the driver was not linked (%s)" % why)
+        self.driver_seg = self.m.rw(DGROUP, DRIVER_SEG_PTR)
+        self.t.lib.tc_hybrid_driver_register(self.driver_seg)
+        return self.driver_seg
+
+    def entry(self, name: str):
+        """A translated function's index, or the DriverEntry of a name MCGA.<routine>"""
+        if name.startswith("MCGA."):
+            if self.driver_seg is None:
+                raise SystemExit("hybrid: call link_driver() before the driver's routines")
+            for k, d in enumerate(self.t.driver):
+                if d.name.decode() == name[5:]:
+                    return DriverEntry(k, self.driver_seg, d)
+            raise SystemExit("hybrid: the driver has no C for %s yet" % name)
+        return self.index[name]
 
     def write(self, seg: int, off: int, data: bytes) -> None:
         self.m.write(seg, off, data)
 
+    def clear_logs(self) -> None:
+        """Empties the oracle's device logs (the bench copies them at every call: a long sequence slows)."""
+        for name in ("adlib_log", "speaker_log", "tandy_log", "pit0_log", "tod_log"):
+            if hasattr(self.m, name):
+                getattr(self.m, name).clear()
+
     def read(self, seg: int, off: int, n: int) -> bytes:
         return bytes(self.m.read(seg, off, n))
 
-    def call(self, name: str, *args) -> dict:
-        """args: ints (a word each) or (value, 4) for a long or a far pointer. Returns {"status":
-        "same" | "differs" | "C stopped" | "not tested: ...", "value": the original's DX:AX, ...}."""
-        m, bench, i = self.m, self.bench, self.index[name]
-        e = self.t.entries[i]
+    def call(self, name: str, *args, ds: int = DGROUP, es: int = DGROUP, interrupts: bool = False,
+             keys=(), alter=None, budget: int = BUDGET) -> dict:
+        """args: ints (a word each) or (value, 4) for a long or a far pointer. An interrupt handler is
+        entered as the CPU enters it (FLAGS, CS and IP pushed; ds and es as given). With interrupts, the
+        original runs as in a session, the oracle delivering the timer's interrupts and IRQ 1 for each
+        scancode of `keys`; the C then runs with what the original was delivered, in order, at the same
+        accesses (the machine's wait, irq.c), and those still due when it returns are delivered after;
+        `alter(events, times)` may change what the C is given (a test that the comparison notices).
+        Returns {"status": "same" | "differs" | "C stopped" | "not tested: ...", "value": the original's
+        DX:AX, ...}."""
+        m, bench, i = self.m, self.bench, self.entry(name)
+        driver = isinstance(i, DriverEntry)
+        e = i if driver else self.t.entries[i]
         block = b""
         for a in args:
             v, w = a if isinstance(a, tuple) else (a, 2)
             block += (v & (0xFFFFFFFF if w == 4 else 0xFFFF)).to_bytes(w, "little")
+        if e.interrupt:
+            block = b"\x02\x02" + block                  # the FLAGS the INT pushed: IF set
         ss, top = self.STACK
         sp = (top - len(block) - 4) & 0xFFFF
+        frame = 6 if e.interrupt else 4
         m.write(ss, sp + 4, block)
         m.ww(ss, sp, SENTINEL[1])
         m.ww(ss, sp + 2, SENTINEL[0])
-        for r, v in (("ss", ss), ("sp", sp), ("ds", DGROUP), ("es", DGROUP), ("cs", LOAD_SEG + e.seg), ("ip", e.off)):
+        cs = e.seg if driver else LOAD_SEG + e.seg
+        for r, v in (("ss", ss), ("sp", sp), ("ds", ds), ("es", es), ("cs", cs), ("ip", e.off)):
             m.set(r, v)
         before = bench.memory()
-        why = bench.until(SENTINEL[0], SENTINEL[1], (sp + 4) & 0xFFFF)
+        before_state = bench.save()
+        if interrupts:
+            why = bench.run_with_interrupts(SENTINEL[0], SENTINEL[1], (sp + frame) & 0xFFFF, keys, budget)
+        else:
+            why = bench.until(SENTINEL[0], SENTINEL[1], (sp + frame) & 0xFFFF)
         r = {"function": name}
         if why:
             r["status"] = "not tested: the original %s" % why
             return r
         o_mem, o_regs = bench.memory(), (m.get("ax"), m.get("dx"))
+        o_bx, o_cf = m.get("bx"), m.get("flags") & 1
         r["value"] = (o_regs[1] << 16) | o_regs[0]
+        o_out = bench.outside()
+        after_state = bench.save()
         ctypes.memmove(bench.base, before, RAM)
         m.uc.ctl_remove_cache(0, RAM)
+        bench.restore(before_state)
+        lib = self.t.lib
+        lib.machine_events_reset()
+        if interrupts:
+            cc = bench.cclock
+            r["interrupts"] = len(cc.events)
+            evs, tms = list(cc.events), list(cc.times)
+            if alter is not None:
+                evs, tms = alter(evs, tms)
+            for rec in evs:
+                ev = event(rec)
+                lib.machine_event_push(ctypes.byref(ev))
+            for access, insns in tms:
+                lib.machine_time_push(ctypes.c_uint32(access), ctypes.c_uint32(insns))
         val = ctypes.c_uint32(0)
-        code = self.t.lib.tc_hybrid_run(i, ss, sp, DGROUP, ctypes.byref(val), LIMIT_MS)
-        c_mem = bench.memory()
+        bench.c_video_in()
+        c_regs = Regs()
+        if driver:
+            code = lib.tc_hybrid_run_driver(i.index, i.seg, ss, sp, ds, ctypes.byref(val), ctypes.byref(c_regs),
+                                            LIMIT_MS)
+        else:
+            code = lib.tc_hybrid_run(i, ss, sp, ds, ctypes.byref(val), LIMIT_MS)
+        if code == 0:
+            code = lib.tc_hybrid_drain()
+        bench.c_video_out()
+        left = lib.machine_events_left()
+        c_mem, c_out = bench.memory(), bench.outside()
         ctypes.memmove(bench.base, o_mem, RAM)          # go on from the original's state
         m.uc.ctl_remove_cache(0, RAM)
+        bench.restore(after_state)
         if code:
             r["status"] = "C stopped"
             r["why"] = bench.message.value.decode("latin-1")
@@ -456,11 +871,324 @@ class Direct:
             mask = (1 << (8 * e.ret_bytes)) - 1
             if r["value"] & mask != val.value & mask:
                 regs.append("returns %X, the original %X" % (val.value & mask, r["value"] & mask))
-        r["status"] = "same" if not spans and not regs else "differs"
+        if getattr(e, "regs", 0) & 1:                   # driver.h: TC_ANSWERS_BX
+            if c_regs.bx != o_bx:
+                regs.append("BX %04X, the original %04X" % (c_regs.bx, o_bx))
+        if getattr(e, "regs", 0) & 2:                   # TC_ANSWERS_CF
+            if (c_regs.flags & 1) != o_cf:
+                regs.append("CF %d, the original %d" % (c_regs.flags & 1, o_cf))
+        outs = ["%s differs" % k for k in o_out if o_out[k] != c_out[k]]
+        if left:
+            outs.append("%d interrupts never came due for the C" % left)
+        r["status"] = "same" if not spans and not regs and not outs else "differs"
         if r["status"] == "differs":
             r["registers"] = regs
+            r["outside"] = outs
             r["memory"] = [self.t.describe(a, b, o_mem, c_mem) for a, b in spans[:8]]
         return r
+
+
+class Video(ctypes.Structure):
+    _fields_ = [("mode", ctypes.c_uint8), ("page", ctypes.c_uint8), ("dac", ctypes.c_uint8 * 768)]
+
+
+class Hw(ctypes.Structure):
+    u8, u16, u32 = ctypes.c_uint8, ctypes.c_uint16, ctypes.c_uint32
+    _fields_ = [("pic_mask", u8), ("port61", u8), ("irq0_in_service", u8), ("irq1_in_service", u8),
+                ("kbd_data", ctypes.c_int16), ("pit_reload", u32), ("pit_latch_lo", u8), ("pit_mode_access", u8),
+                ("pit_lo", u8), ("pit2_lo", u8), ("pit2_reload", u16), ("next_irq0", u32), ("dac_read", u16),
+                ("dac_write", u16), ("attr_ff", u8), ("adlib", u8), ("adlib_index", u8), ("adlib_flags", u8),
+                ("adlib_regs", u8 * 256), ("adlib_running", u8 * 2), ("adlib_started", u32 * 2)]
+
+
+class MouseState(ctypes.Structure):
+    u16 = ctypes.c_uint16
+    _fields_ = [("x", u16), ("y", u16), ("buttons", u16), ("visible", u16), ("range_x0", u16), ("range_x1", u16),
+                ("range_y0", u16), ("range_y1", u16), ("has_handler", ctypes.c_uint8), ("handler_seg", u16),
+                ("handler_off", u16), ("handler_mask", u16)]
+
+
+class Clock(ctypes.Structure):
+    _fields_ = [("insns", ctypes.c_uint32), ("extra", ctypes.c_uint32), ("insn_per_sec", ctypes.c_uint32), ("pinned", ctypes.c_int),
+                ("clock_pin", ctypes.c_uint32), ("tod_offset_set", ctypes.c_int), ("tod_offset", ctypes.c_int32)]
+
+
+FILE_SIZE = ctypes.CFUNCTYPE(ctypes.c_int32, ctypes.c_char_p)
+FILE_READ = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_char_p, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint32)
+SHADOWED = (0x10, 0x11, 0x12, 0x13, 0x1A, 0x20, 0x21, 0x29, 0x2F, 0x33)
+REG_NAMES = ("ax", "bx", "cx", "dx", "si", "di", "bp", "ds", "es")
+
+
+class Shadow:
+    """The machine's proof (M3, --shadow): a golden plays on the oracle, and every call of a service
+    the machine has (DOS, the BIOS's 10h, 11h, 12h, 13h, 1Ah, INT 33h with no mouse) is made to the machine
+    too, just before the oracle's own service answers it: the machine runs on a copy of the oracle's
+    memory (the library's arena) with the same registers and the flags the INT pushed, then the two
+    answers are compared: the registers, the flags returned (CF), memory but the flags word of the INT
+    frame, which the oracle's services edit in place, and the video: the mode, the DAC and mode 13h's
+    64 KB at A000:0000 (the oracle's EGA model keeps them; the machine's MCGA, video.c). The machine's own state (its files, the
+    memory arena, the clock's offset) lives on from call to call, as the oracle's does, so a
+    difference in it shows at the first call it changes. The files are what the session's VFS had
+    when the first call came (the pinned files, the saved game the session names)."""
+
+    def __init__(self, lib: Path = LIB):
+        self.lib = ctypes.CDLL(str(lib))
+        self.lib.tc_hybrid_init.argtypes = [ctypes.c_uint16, ctypes.c_uint16]
+        self.lib.tc_hybrid_init(LOAD_SEG, DGROUP)
+        self.lib.tc_hybrid_service.argtypes = [ctypes.c_uint8, ctypes.POINTER(Regs)]
+        self.lib.tc_hybrid_machine_reset.argtypes = [ctypes.c_char_p, ctypes.c_char_p, ctypes.c_uint16, ctypes.c_int,
+                                                     ctypes.c_int]
+        self.lib.tc_hybrid_in.argtypes = [ctypes.c_uint16, ctypes.c_int, ctypes.POINTER(ctypes.c_uint16)]
+        self.lib.tc_hybrid_out.argtypes = [ctypes.c_uint16, ctypes.c_int, ctypes.c_uint16]
+        self.hw = Hw.in_dll(self.lib, "hw")
+        self.mouse = MouseState.in_dll(self.lib, "mouse")
+        self.adlib_count = ctypes.c_uint32.in_dll(self.lib, "tc_hybrid_adlib_count")
+        self.adlib_last = (ctypes.c_uint8 * 2).in_dll(self.lib, "tc_hybrid_adlib_last")
+        self.speaker_count = ctypes.c_uint32.in_dll(self.lib, "tc_hybrid_speaker_count")
+        self.speaker = (ctypes.c_uint16.in_dll(self.lib, "tc_hybrid_speaker_divisor"),
+                        ctypes.c_uint8.in_dll(self.lib, "tc_hybrid_speaker_bits"))
+        self.base = ctypes.addressof(ctypes.c_uint8.in_dll(self.lib, "tc_mem"))
+        self.message = (ctypes.c_char * 512).in_dll(self.lib, "tc_hybrid_message")
+        self.clock = Clock.in_dll(self.lib, "machine_time")
+        self.video = Video.in_dll(self.lib, "video")
+        self.size_cb, self.read_cb = FILE_SIZE(self.file_size), FILE_READ(self.file_read)
+        ctypes.c_void_p.in_dll(self.lib, "tc_hybrid_file_size").value = ctypes.cast(self.size_cb, ctypes.c_void_p).value
+        ctypes.c_void_p.in_dll(self.lib, "tc_hybrid_file_read").value = ctypes.cast(self.read_cb, ctypes.c_void_p).value
+        self.calls: dict[str, dict] = {}
+        self.differences: list[dict] = []
+        self.vfs = None
+
+    # -- the files, as the session's VFS had them when the first call came
+    def lookup(self, name: bytes):
+        v = self.vfs
+        full = v.mount + "\\" + name.decode("latin-1").upper()
+        if full in v.deleted:
+            return None
+        if full in v.layer:
+            return bytes(v.layer[full])
+        if full in v.host_index:
+            return v.host_index[full].read_bytes()
+        return None
+
+    def file_size(self, name):
+        d = self.lookup(name)
+        return -1 if d is None else len(d)
+
+    def file_read(self, name, buf, size):
+        d = self.lookup(name)
+        if d is None or len(d) != size:
+            return -1
+        ctypes.memmove(buf, d, size)
+        return 0
+
+    def attach(self, m, session: str):
+        self.session = session
+        self.vfs = None
+        self.m = m
+        for n in SHADOWED:
+            fn = m.services.get(n)
+            if fn is not None:
+                m.services[n] = (lambda mach, n=n, fn=fn: self.call(mach, n, fn))
+        rd, wr = m.port_read, m.port_write
+        m.port_read = lambda port, size: self.port(m, "in", port, size, None, rd)
+        m.port_write = lambda port, size, val: self.port(m, "out", port, size, val, wr)
+
+    def key(self, m, n) -> str:
+        ah = m.get("ax") >> 8
+        return "INT %02Xh" % n + (" AH=%02Xh" % ah if n in (0x10, 0x21, 0x1A, 0x13) else "")
+
+    def start(self, m):
+        """The first call of the session: the machine boots as the session's machine was built."""
+        if self.vfs is None:
+            self.vfs = copy.deepcopy(m.vfs)
+            cmd = m.read(0x0FF0, 0x81, m.rb(0x0FF0, 0x80))
+            code = self.lib.tc_hybrid_machine_reset(m.exe.name.upper().encode(), cmd, len(cmd),
+                                                    m.mouse is not None, hasattr(m, "adlib_log"))
+            if code:
+                raise SystemExit("hybrid: the machine does not boot: %s" % self.message.value.decode())
+
+    def set_clock(self, m):
+        self.clock.insns = m.insns & 0xFFFFFFFF
+        self.clock.extra = m.extra & 0xFFFFFFFF
+        self.clock.insn_per_sec = m.insn_per_sec
+        self.clock.pinned = m.clock_pin is not None
+        self.clock.clock_pin = m.clock_pin or 0
+
+    def state(self, m) -> list[str]:
+        """The hardware and driver state the machine keeps, against the oracle's."""
+        hw, out = self.hw, []
+        want = {"pic_mask": m.pic_mask, "port61": m.port61, "irq0_in_service": int(m.irq0_in_service),
+                "irq1_in_service": int(m.irq1_in_service), "pit_reload": m.pit_reload,
+                "pit_latch_lo": int(m.pit_latch_lo), "pit_mode_access": m.pit_mode_access,
+                "pit2_reload": m.pit2_reload, "pit2_lo": int(m.pit2_lo), "next_irq0": m.next_irq0,
+                "dac_read": m.ega.dac_read, "dac_write": m.ega.dac_write, "attr_ff": int(m.ega.attr_ff)}
+        for k, v in want.items():
+            if getattr(hw, k) != v:
+                out.append("%s %X, the oracle %X" % (k, getattr(hw, k), v))
+        if self.clock.extra != m.extra & 0xFFFFFFFF:
+            out.append("the clock's charges %d, the oracle %d" % (self.clock.extra, m.extra))
+        if bytes(self.video.dac) != bytes(m.ega.dac):
+            out.append("the DAC differs")
+        ad = getattr(m, "adlib_log", None)
+        if ad is not None:
+            o = m.port_handlers[0x388][0].__self__
+            if bytes(hw.adlib_regs) != bytes(o.regs) or hw.adlib_flags != o.flags or hw.adlib_index != o.index:
+                out.append("the AdLib's registers or status differ")
+            for t in range(2):
+                started = None if not hw.adlib_running[t] else hw.adlib_started[t]
+                theirs = None if o.started[t] is None else round(o.started[t] * m.insn_per_sec)
+                if started != theirs:
+                    out.append("AdLib timer %d started at %s, the oracle %s" % (t + 1, started, theirs))
+        mo = m.mouse
+        if mo is not None:
+            mine = (self.mouse.x, self.mouse.y, self.mouse.buttons, self.mouse.visible & 0xFFFF,
+                    (self.mouse.range_x0, self.mouse.range_x1), (self.mouse.range_y0, self.mouse.range_y1),
+                    (self.mouse.handler_seg, self.mouse.handler_off, self.mouse.handler_mask) if self.mouse.has_handler else None)
+            theirs = (mo.x, mo.y, mo.buttons, mo.visible & 0xFFFF, tuple(mo.range_x), tuple(mo.range_y),
+                      tuple(mo.handler) if mo.handler else None)
+            if mine != theirs:
+                out.append("the mouse driver %r, the oracle %r" % (mine, theirs))
+        return out
+
+    def sync(self, m):
+        """What the interrupts and the host's input change, which the shadow does not run yet: the
+        oracle's, before a call."""
+        self.hw.irq0_in_service = int(m.irq0_in_service)
+        self.hw.irq1_in_service = int(m.irq1_in_service)
+        self.hw.kbd_data = -1 if m.kbd_data is None else m.kbd_data
+        self.hw.next_irq0 = m.next_irq0 & 0xFFFFFFFF
+        if m.mouse is not None:              # the host's moves and clicks (input.py Mouse.move, buttons_to)
+            self.mouse.x, self.mouse.y, self.mouse.buttons = m.mouse.x, m.mouse.y, m.mouse.buttons
+
+    def port(self, m, d, port, size, val, fn):
+        self.start(m)
+        self.sync(m)
+        self.set_clock(m)
+        key = "%s %Xh" % (d, port)
+        ad0, sp0 = self.adlib_count.value, self.speaker_count.value
+        ad_len = len(getattr(m, "adlib_log", []))
+        sp_len = len(m.speaker_log)
+        got = ctypes.c_uint16(0)
+        if d == "in":
+            code = self.lib.tc_hybrid_in(port, size, ctypes.byref(got))
+        else:
+            code = self.lib.tc_hybrid_out(port, size, val & 0xFFFF)
+        why = self.message.value.decode("latin-1")
+        res = fn(port, size) if d == "in" else fn(port, size, val)
+        st = self.calls.setdefault(key, {"same": 0, "differs": 0, "machine lacks": 0})
+        out = []
+        if code == 74:
+            st["machine lacks"] += 1
+            out.append("the machine: %s" % why)
+        else:
+            if d == "in" and got.value != (res & 0xFFFF):
+                out.append("reads %X, the oracle %X" % (got.value, res))
+            out += self.state(m)
+            ad = getattr(m, "adlib_log", [])
+            if (self.adlib_count.value - ad0) != (len(ad) - ad_len):
+                out.append("%d AdLib writes, the oracle %d" % (self.adlib_count.value - ad0, len(ad) - ad_len))
+            elif len(ad) > ad_len and tuple(self.adlib_last) != tuple(ad[-1][1:]):
+                out.append("AdLib %r, the oracle %r" % (tuple(self.adlib_last), ad[-1][1:]))
+            if (self.speaker_count.value - sp0) != (len(m.speaker_log) - sp_len):
+                out.append("%d speaker changes, the oracle %d" % (self.speaker_count.value - sp0, len(m.speaker_log) - sp_len))
+            elif len(m.speaker_log) > sp_len:
+                div, bits = self.speaker[0].value, self.speaker[1].value
+                on = m.speaker_log[-1][2]
+                # the oracle's port 42h entry tests port61 & 1 (`port61 & 3 == 3` binds as port61 & True)
+                mine_on = (bits == 3) if port == 0x61 else bool(bits & 1)
+                if div != m.speaker_log[-1][1] or mine_on != on:
+                    out.append("speaker (%X, %s), the oracle %r" % (div, mine_on, m.speaker_log[-1][1:]))
+            st["differs" if out else "same"] += 1
+        if out and len(self.differences) < 50:
+            self.differences.append({"session": self.session, "call": key, "at": m.insns, "what": out})
+        return res
+
+    def call(self, m, n, fn):
+        self.start(m)
+        self.sync(m)
+        key = self.key(m, n)
+        ss, sp = m.get("ss"), m.get("sp")
+        frame = m.linear(ss, (sp + 4) & 0xFFFF)
+        r = Regs(*[m.get(x) for x in REG_NAMES], m.rw(ss, (sp + 4) & 0xFFFF))
+        ctypes.memmove(self.base, ctypes.addressof(m.ram), RAM)
+        ctypes.memmove(self.base + 0xA0000, bytes(m.ega.vga), 0x10000)    # mode 13h's memory
+        self.set_clock(m)
+        code = self.lib.tc_hybrid_service(n, ctypes.byref(r))
+        why = self.message.value.decode("latin-1")
+        raised = None
+        try:
+            fn(m)
+        except Exception as e:  # noqa: BLE001  (compared, then raised again)
+            raised = e
+        st = self.calls.setdefault(key, {"same": 0, "differs": 0, "machine lacks": 0})
+        o_reason = None if raised is None else (
+            "exit" if isinstance(raised, Stop) and raised.reason == "exit" else type(raised).__name__)
+        c_reason = {0: None, 76: "exit"}.get(code, "stopped")
+        out = []
+        if code == 74:
+            st["machine lacks"] += 1
+            out.append("the machine: %s" % why)
+        elif o_reason != c_reason:
+            out.append("the oracle %s, the machine %s" % (o_reason or "returned", why or "returned"))
+        elif raised is None:
+            for x in REG_NAMES:
+                if getattr(r, x) != m.get(x):
+                    out.append("%s %04X, the oracle %04X" % (x.upper(), getattr(r, x), m.get(x)))
+            of = m.rw(ss, (sp + 4) & 0xFFFF)
+            if (r.flags ^ of) & 0x0FD5:
+                out.append("flags %04X, the oracle %04X" % (r.flags, of))
+            out += self.state(m)
+            if self.video.mode != m.ega.mode:
+                out.append("video mode %02Xh, the oracle %02Xh" % (self.video.mode, m.ega.mode))
+            if ctypes.string_at(self.base + 0xA0000, 0x10000) != bytes(m.ega.vga):
+                out.append("A000 differs")
+            a, b = bytes(m.ram), ctypes.string_at(self.base, RAM)
+            if a != b:
+                for x, y in diff(a, b, [(frame, frame + 2)])[:6]:
+                    out.append("%05X: the oracle %s, the machine %s" % (x, a[x:y][:12].hex(" "), b[x:y][:12].hex(" ")))
+        if code != 74:
+            st["differs" if out else "same"] += 1
+        if out and len(self.differences) < 50:
+            self.differences.append({"session": self.session, "call": key, "at": m.insns, "what": out})
+        if raised is not None:
+            raise raised
+
+
+def run_shadow(sessions, lib: Path, out: Path) -> int:
+    sh = Shadow(lib)
+    played = []
+    for name in sessions:
+        text = (golden.SESSIONS / ("%s.keys" % name)).read_text()
+        opts = Script(text).options
+        build = run.build_machine
+
+        def build_and_attach(*a, **k):
+            m = build(*a, **k)
+            sh.attach(m, name)
+            return m
+        run.build_machine = build_and_attach
+        save = golden.SESSIONS / opts["save"] if "save" in opts else None
+        t0 = time.monotonic()
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                s = run.run_session(text, out=Path(tmp), max_insns=int(opts.get("insns", 60_000_000)),
+                                    mouse="mouse" in opts, sound=opts.get("sound"), save=save,
+                                    program=opts.get("program", "EOB.EXE"))
+        finally:
+            run.build_machine = build
+        played.append({"session": name, "stop": s["stop"], "seconds": round(time.monotonic() - t0, 1)})
+        print("%s: %s, %.0f s" % (name, s["stop"], played[-1]["seconds"]))
+    out.mkdir(parents=True, exist_ok=True)
+    report = out / "shadow.json"
+    report.write_text(json.dumps({"sessions": played, "calls": sh.calls, "differences": sh.differences}, indent=1) + "\n")
+    same = sum(c["same"] for c in sh.calls.values())
+    differs = sum(c["differs"] for c in sh.calls.values())
+    lacks = {k: c["machine lacks"] for k, c in sh.calls.items() if c["machine lacks"]}
+    print("shadow: %d service calls the same as the oracle's, %d differ; the machine lacks %s (report: %s)" % (
+        same, differs, ", ".join("%s (%d)" % kv for kv in sorted(lacks.items())) or "none", report))
+    for d in sh.differences[:12]:
+        print("  %s, %s at %d: %s" % (d["session"], d["call"], d["at"], "; ".join(d["what"][:4])))
+    return 1 if differs or lacks else 0
 
 
 def diff(a: bytes, b: bytes, masks, skip=frozenset()) -> list[tuple[int, int]]:
@@ -486,12 +1214,15 @@ def main(argv=None) -> int:
     ap.add_argument("--samples", type=int, default=3, help="calls tested per function and session")
     ap.add_argument("--out", type=Path, default=ROOT / "build" / "port" / "hybrid")
     ap.add_argument("--lib", type=Path, default=LIB, help="the hybrid library (default: make port-hybrid's)")
+    ap.add_argument("--shadow", action="store_true", help="the machine's test: every service call against the oracle's")
     a = ap.parse_args(argv)
     if not a.lib.exists():
         print("hybrid: %s is missing (make port-hybrid)" % a.lib)
         return 1
     sessions = a.session or sorted(p.stem for p in golden.SESSIONS.glob("*.keys")
                                    if "program INTRO.EXE" not in p.read_text())
+    if a.shadow:
+        return run_shadow(sessions, a.lib, a.out)
     t = Tester(a.samples, set(a.function) if a.function else None, a.lib)
     played = []
     for s in sessions:

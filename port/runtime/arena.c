@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "tcport.h"
+#include "driver.h"
 
 u8 tc_mem[TC_MEM_SIZE] = {0};
 u16 tc_load_seg;
@@ -97,12 +98,74 @@ tc_fn tc_code_find(farptr addr)
     return 0;
 }
 
+/* the routines entered with their argument bytes (driver.h) */
+static struct {
+    farptr addr;
+    tc_argfn fn;
+    const char *name;
+} argcode[CODE_MAX];
+static unsigned argcode_count;
+
+void tc_code_register_args(farptr addr, tc_argfn fn, const char *name)
+{
+    unsigned i;
+    for (i = 0; i < argcode_count; i++) {
+        if (argcode[i].addr == addr) {
+            argcode[i].fn = fn;
+            argcode[i].name = name;
+            return;
+        }
+    }
+    if (argcode_count == CODE_MAX) {
+        tc_fail(70, "code table full at %s", name);
+    }
+    argcode[argcode_count].addr = addr;
+    argcode[argcode_count].fn = fn;
+    argcode[argcode_count].name = name;
+    argcode_count++;
+}
+
+tc_argfn tc_code_find_args(farptr addr)
+{
+    unsigned i;
+    for (i = 0; i < argcode_count; i++) {
+        if (argcode[i].addr == addr) {
+            return argcode[i].fn;
+        }
+    }
+    return 0;
+}
+
+int tc_code_call_args(farptr addr, const u8 *args, u16 n, tc_regs *r, u32 *ret)
+{
+    u8 b[TC_ARG_MAX];
+    tc_argfn fn = tc_code_find_args(addr);
+    if (fn == 0) {
+        return 0;
+    }
+    if (n > TC_ARG_MAX) {
+        tc_fail(70, "%u argument bytes for the routine at %04X:%04X", n, TC_SEG(addr), TC_OFF(addr));
+    }
+    memset(b, 0, sizeof b);
+    if (n) {
+        memcpy(b, args, n);
+    }
+    memset(r, 0, sizeof *r);
+    *ret = fn(b, r);
+    return 1;
+}
+
 #ifdef TC_HYBRID
 #include "hybrid.h"
 #endif
 
 u32 tc_code_far(farptr addr, const u8 *args, u16 n, const char *site)
 {
+    tc_regs r;
+    u32 v;
+    if (tc_code_call_args(addr, args, n, &r, &v)) {
+        return v;
+    }
 #ifdef TC_HYBRID
     (void)site;
     return tc_hybrid_far(addr, args, n);

@@ -103,6 +103,7 @@ class Machine:
         self.service_counts: dict = {}   # calls that reached one of our service stubs, by number
         self.overlay_listeners: list = []   # callables(machine) after each read of GAME.OVR (routines.py)
         self.file_listeners: list = []   # callables(machine, op, path, pos, n) after each file read/write
+        self.chunk_listeners: list = []  # callables(machine, chunk) after each run chunk (cclock.py)
         self.image_loads: list = []      # (name, segment, relocation factor) of every INT 21h 4B03h load of an MZ file
         self.canonical = None            # callable(machine, memory) putting a rebuild's memory in the original's form (layout.py)
 
@@ -131,6 +132,11 @@ class Machine:
         self.irq0_raised = 0               # timer interrupts raised so far (replay.py records it per read)
         self.irq0_owed: int | None = None  # replay: interrupts to raise, set at reads (None: from the clock)
         self._pending_since = 0
+        # how often a pending interrupt is looked at again while it cannot be taken (IF off, a handler in
+        # service); the sessions use 100. A guest loop whose length divides into it the same way each time
+        # can keep IF off at every look (WaitKeyEvent's 8-instruction cli/sti loop sees 2 of its 8 phases),
+        # so the per-function bench looks at every instruction (tools/port/hybrid.py run_with_interrupts)
+        self.wait_chunk = 100
         self.next_irq0 = self._irq0_period()
         self.pic_mask = 0
         self.speaker_log = []              # (time, divisor, on) for sound capture
@@ -564,7 +570,7 @@ class Machine:
                                           self.insns - self._pending_since, self.get("cs"), self.get("ip")))
                 if self.irq0_pending or self.irq1_pending or self.kbd_queue or (
                         self.mouse is not None and self.mouse.events):
-                    chunk = 100                      # waiting for IF; look again soon
+                    chunk = self.wait_chunk          # waiting for IF; look again soon
                 elif self.irq0_owed is not None:
                     chunk = 50_000                   # replay: no clock event to stop at
                 else:
@@ -574,6 +580,8 @@ class Machine:
                     return "max-insns"
                 start = self.linear(self.get("cs"), self.get("ip"))
                 uc.emu_start(start, 0xFFFFFFFF, count=chunk)
+                for cb in self.chunk_listeners:
+                    cb(self, chunk)
                 self.insns += chunk
                 # HLT leaves emu_start early; jump to the next timer event instead of spinning
                 # (in a replay the interrupts come from the recorded reads, so a halt simply resumes)

@@ -21,6 +21,8 @@ typedef uint16_t u16;
 typedef int16_t s16;
 typedef uint32_t u32;
 typedef int32_t s32;
+typedef uint64_t u64;   /* the runtime's, never the generated code's: file positions, clock products */
+typedef int64_t s64;
 
 /* A Turbo C far pointer: (segment << 16) | offset. Null is 0000:0000. Code addresses (a far
    function pointer, an interrupt vector) have the same form. */

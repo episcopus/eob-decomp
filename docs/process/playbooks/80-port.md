@@ -19,8 +19,9 @@ sound and state.
 | Decisions | the nine answered by the human 2026-11-04, the five follow-ups (A to E) 2026-11-05 (section "Decisions"). Linux and Windows deferred by the human 2026-11-05: macOS only for now. Left for the human: install the newest LLVM (section "What the human installs") |
 | M1 tc2c for every C unit | done 2026-11-05 except the LLVM pin, which waits for the human's install: `make port` translates all 41 C units of `EOB.EXE` (609 functions) with none refused, compiles them with `-Werror` and links them; what is still a stub is 63 assembly routines (M3) and 23 library functions that need the machine (section "M1") |
 | M2 the per-function test | the machinery done 2026-11-05: `make port-hybrid` (section "M2"); on the five `EOB.EXE` goldens 129 of the 594 functions with an entry are reached, 118 are the same as the original on every call tested (635 calls), none differ, 11 are reached only where they wait for an interrupt (M3). The rest of the check, every function of `src/`, needs sessions that reach them |
-| M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), each the same as the original on every call tested; the machine itself and the other 15 units are next |
-| M4 to M7 | not started (section "Order of work") |
+| M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), and the interrupt handlers' units `E1D8F`, `E1AAD`, `E1948`, `E_TEXT` with the retrace `E1DE4` (35 routines in all), each the same as the original on every call tested; the C-unit clock in the oracle and the five `.clock.json` recordings ("The interrupts and the C clock"); the machine boots to the oracle's memory byte for byte, and its DOS, INT 10h for MCGA, BIOS time, INT 33h driver and ports (PIC, PIT, 61h, 60h, retrace, DAC, AdLib) answer every one of the 335,055 service calls and port accesses of the five goldens as the oracle does. the machine's wait delivers the recorded interrupts to spinning routines (`port/runtime/irq.c`); 19 library functions on the machine (`port/runtime/tcdos.c`: the files, `int86`, `time`, `rand`; `tcheap.c`: the far heap), each the same as the original's on every call tested; every assembly routine the C calls is in C (63, section "The other units") |
+| M4 the MCGA driver | done 2026-11-05 (section "M4"): `MCGA.OVL` in C (`port/drivers/`, 40 exports), entered with its argument bytes, the same as the original on every direct call and every golden call tested. Next: step D, the program's data as C (it waits for the P6 review), then M5 |
+| M5 to M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
 
@@ -217,7 +218,7 @@ What each original mechanism becomes:
 
 | Original | Where in `src/` | Port |
 |---|---|---|
-| Graphics drivers, 47 slots: 7 imports the game provides, 40 exports (whitepaper 2.5) | `E1C00.ASM` loads `*.OVL` with DOS 4B03h and calls `LinkDriver`; the game calls the slots at `ds:8046` | The machine's 4B03h allocates the block as DOS does (the driver's size in paragraphs) and fills the driver's export table with the code addresses of the port's driver functions, registered at `loadseg:offset` of each export, so the game's slot table holds the far pointers it holds in the oracle. MCGA only (decision 4) |
+| Graphics drivers, 47 slots: 7 imports the game provides, 40 exports (whitepaper 2.5) | `E1C00.ASM` loads `*.OVL` with DOS 4B03h and calls `LinkDriver`; the game calls the slots at `ds:8046` | The machine's 4B03h loads the driver's image where the game asks and registers the driver in C (`port/drivers`) at `loadseg:offset` of each routine; `LinkDriver` in C fills the game's slots, so they hold the far pointers they hold in the oracle (section "M4"). MCGA only (decision 4) |
 | Video memory and palette | MCGA draws page 0 at `A000:0000`; DAC through INT 10h AX=1012h and ports 3C8h, 3C9h (`I0921.ASM`); retrace port 3DAh (`E1DE4.ASM`); mode set through `int86` (`E1DDD.C`) | `A000:0000` is arena memory; the machine keeps the DAC; the host presents both. Port 3DAh is a read the replay records |
 | Mouse, INT 33h | `E1A72.ASM` (detect, reset, position, handler at `1A72:017A` for mask 1Fh), `E1BF3.ASM` (function 4), the pointer drawn by the game (`E1BBE.ASM`) | The machine is the INT 33h driver: functions 0, 1, 3, 4, 0Ch, with the vector not null so the game finds it; host mouse events become calls of the game's handler with the driver's registers |
 | Keyboard, INT 9 | `E1AAD.ASM`: reads port 60h, acknowledges the PIC, its 256-byte ring | Host scancodes become INT 9 deliveries; port 60h returns the scancode; port 20h is accepted |
@@ -225,7 +226,7 @@ What each original mechanism becomes:
 | AdLib, ports 388h and 389h | `E_TEXT.ASM` | `platform_adlib_write`; the SDL host synthesises with ymfm (decision 7, M7); the sound digest compares the register stream |
 | PC speaker, Tandy | `E1948.ASM`, ports 42h, 43h, 61h, C0h | `platform_speaker`; Tandy later |
 | DOS files | the library's `_open`, `_read` (`E1A47.C`), `LoadFile`, `FileRead` | INT 21h 3Dh to 42h over `platform_file_*`, in a copy of the game's directory (never `eob/` itself) |
-| DOS memory | `MemAlloc` (`E19BC.C`), `E1990.ASM`, which walks the MCB chain itself | INT 21h 48h, 49h, 4Ah with MCBs in the arena, laid out as `tools/oracle/dos.py` lays them |
+| DOS memory | `MemAlloc` (`E19BC.C`), `E1990.ASM`, which walks the MCB chain itself | INT 21h 48h, 49h, 4Ah over a list of blocks, as `tools/oracle/dos.py` keeps it: the oracle writes no MCBs into memory, so neither does the machine (`port/runtime/dos.c`) |
 | Console, drives | `E19EA.ASM` (DOS 06h), `E1A19.ASM` (19h, 0Eh) | the machine's INT 21h |
 
 ## The assembly units (decision 3: hand-written C)
@@ -337,6 +338,67 @@ The new recording artefacts (per golden: the clock positions of each interrupt a
 beside the goldens, `tests/sessions/golden/<name>.clock.json`; the human approved this change to the
 golden format (decision 5). The goldens themselves do not change.
 
+## M4: the MCGA driver (2026-11-05)
+
+```
+make port-hybrid && for t in mcga mcga_rect mcga_cell mcga_shape mcga_mask; do .venv/bin/python tests/port_asm/$t.py; done
+```
+
+- `MCGA.OVL` is in C in `port/drivers/`, written from `src/drivers/MCGA.ASM` routine by routine and
+  label by label, as the assembly units were: `mcga.c` (the entry, `LinkDriver`, the page helpers and
+  13 small exports), `mcga_rect.c` (rectangles, cells, tiles, lines, fills, `XorRect`), `mcga_cell.c`
+  (the two sprite cutters, `DrawMaskedCell16`, the text), `mcga_shape.c` (`DrawShape` and its
+  mirror), `mcga_mask.c` (the masked and the remapped shape draws): all 40 exports and their 25 near
+  helpers. The four parts were written in parallel, each built apart (`OUT=`, `DRV_C=` with a stub of
+  the others' tables).
+- **The calling convention** (`port/include/driver.h`). The units of `src/` declare the driver's slots
+  with differing C types (an `int` here, an `unsigned` there, `gDrawText()` with no parameters), so a
+  driver routine is not called with C arguments: the caller lays out the bytes of its arguments as Turbo
+  C pushes them, as it does for any far pointer with no C function behind it (`tc_code_far`), and the
+  routine reads them where the source does (`arg_word(arg, 6)` is `[bp+6]`). DX:AX is its value; a
+  routine that answers in other registers sets them (`DriverEntry`'s BX, `LinkDriver`'s carry).
+  `tc_code_far` looks in this table first (`tc_code_register_args`), in the port and in the hybrid
+  build.
+- **Where it lives**. The driver's variables and tables stay in the arena at their offsets in the
+  segment the game loaded it at (`mcga_cs`; the game reads the row offsets, the nibble swap and the
+  remap table through its slots). The routines are registered at `segment:offset` when the driver is
+  loaded: by the machine's 4B03h when the file is `MCGA.OVL` (the game shrinks the block in place, so
+  the segment stays), and on the bench when the original links it (`hybrid.py`, at the loader's calls
+  1C00:0091 and 1C00:00C0). Each file has its own table of the routines it has written (offset, name,
+  argument bytes, value bytes, registers answered), so a routine with no C yet runs as the original's
+  code on the bench.
+- **Proven**. The per-function test and `hybrid.Direct` test a driver routine as a translated function
+  (`MCGA.<name>`), comparing memory, the screen and the registers it answers in. Direct calls on a bench
+  run to the title (`tests/port_asm/mcga_bench.py`): `mcga.py` 558, `mcga_rect.py` 3,720,
+  `mcga_cell.py` 755 (and 286 calls of the game's `MemFree` on what the cutters allocated),
+  `mcga_shape.py` 1,275, `mcga_mask.py` 3,161, all the same (and the 3 calls where the C must stop,
+  below, stop); each test caught every bug planted in its file (22 in all: clip edges, a mirror's
+  order, a colour limit, a carry, a mask bit). On the five
+  goldens every call of the driver was tested (`--samples 2000`): 3,991 calls of 19 routines (17
+  exports, the entry and `LinkDriver`), all the same, and every session is still its golden. With the
+  driver in C the goldens reach 204 functions: 193 the same on every call tested, none different, the
+  same 11 waiting for an interrupt.
+- What a count on the original showed: the five goldens call 17 of the 40 exports (`DrawLine` 1,128
+  times, `GetSpriteCell` 425, `DrawShape` 226, `SaveRect` and `RestoreRect` 170 each). The masked,
+  remapped and flipped draws, `XorRect`, `DrawCell8x8`, `PutPixel` and the tile and cell routines are
+  proven by the direct calls alone.
+- The C stops with the reason where the original breaks: a format 0 shape given to the remapped draws
+  (the source pops its saved registers one word off: `DrawShapeRemapped` returns with the caller's DS,
+  SI and DI changed, `DrawShapeFlippedRemapped`'s `retf` leaves the driver), a `gTileMode` that sends
+  `DrawIndexedTile` through its jump table to no routine, and `DrawLine`'s `idiv` faulting (by 0, or a
+  quotient that overflows), the original's INT 0. The source's other quirks are kept and said where
+  they are: `SetTileFormat`'s `and` that clears the carry before its `rcr`, so a 1 by 1 tile set draws
+  tile 0's pixels for every tile; a shape or a region of 0 rows that draws 65536 rows; `DrawGlyph`'s
+  byte count written twice.
+- Found on the way, fixed in the shared tools: while the C runs, original code it calls on the bench
+  (a routine with no C, a service) drew in the oracle's screen and the C in `tc_mem`, each copy blind to
+  the other's writes until the C returned; the bench now makes them one at each crossing (`hybrid.py`,
+  `_video_crossing`). `EnterMapScreen` had a screen differ in `load-walk` before.
+- Left for later: the machine's 4B03h still copies `MCGA.OVL`'s image into the arena, for the driver's
+  tables and variables (the code bytes are not used). The port ships no game bytes (decision 6), so
+  the driver's initial data comes from `src/drivers/MCGA.ASM` with the program's own (step D, before
+  M5).
+
 ## M3: the machine and the assembly units (started 2026-11-05)
 
 - `port/asm/<unit>.c` holds an assembly unit of `src/` written in C, one routine per routine of the
@@ -365,10 +427,327 @@ golden format (decision 5). The goldens themselves do not change.
   and +2 of the segment, as the compiled code makes them.
 - With these, the five goldens reach 132 functions: 121 the same on every call tested, none
   different, the same 11 waiting for an interrupt.
-- Next: the machine (`port/runtime/`: the vector table, the PIT, the ports, INT 21h with DOS memory
-  and files, INT 33h, INT 10h, 4B03h), then the units that use it, the interrupt handlers last with
-  the clock. In the hybrid build an interrupt a routine issues can go to the oracle's own services,
-  as the routines with no C do now, so each unit is proven before the machine is complete.
+
+### The machine (2026-11-05)
+
+```
+make port-hybrid && .venv/bin/python tools/port/hybrid.py --shadow [--session NAME]
+```
+
+- `port/include/machine.h` and `port/runtime/`: `machine.c` (the vector table, the ROM and its
+  service stubs, dispatch; a software interrupt is `machine_int(n, &regs)` with a register record, and
+  the vector decides as the CPU's INT does), `dos.c` (INT 21h, 20h, 29h, 2Fh; the PSP and the
+  environment; the memory arena; the files over a VFS that keeps writes in memory, as the oracle's),
+  `bios.c` (the BIOS data area, INT 11h, 12h, 13h, 1Ah), `video.c` (INT 10h for MCGA: mode set, the
+  DAC; mode 13h's memory is the arena at A000:0000), `ports.c` (`machine_in`, `machine_out`: the
+  interrupt controller's mask and EOI, the timer's channels 0 and 2 with the next timer interrupt's
+  clock, port 61h, the keyboard's data port, the retrace bit and the DAC ports, the AdLib with its
+  timers; AdLib writes and speaker changes go to the platform), `mouse.c` (the INT 33h driver and its
+  event trampoline in the ROM). The clock is the oracle's: instructions plus what polls charge (a
+  retrace poll 40, an AdLib status poll 20); the AdLib's timers are decided in whole instructions
+  where the oracle uses float seconds (no floating point in the port), and no poll of the goldens
+  falls on a boundary where the two differ. Each is written from the oracle's model
+  (`tools/oracle/dos.py`, `vfs.py`, `bios.py`, `ega.py`), function by function, because the goldens
+  are the oracle's. A service the oracle has and the goldens never call stops with the oracle's words
+  (`machine_unimplemented`); the shadow would report it.
+- The host's files: `platform.h` now has what the VFS needs, a file's size and its bytes
+  (`platform_file_size`, `platform_file_read`), with `port/platform/files.c` over a directory for both
+  programs; the hybrid build answers from the session's VFS.
+- The proof, two checks (`tests/unit/test_port.py`, slow set):
+  - **boot**: `machine_boot` and the loader on an empty arena give the oracle's memory before it runs,
+    every byte of conventional memory and of the ROM (the vector table, the stubs, the default INT 8,
+    the BIOS data area, the PSP, the environment, the relocated image);
+  - **shadow** (`hybrid.py --shadow`): through each golden, every call of a service the machine has is
+    made to the machine just before the oracle's own service answers it, on a copy of the oracle's
+    memory with the same registers and pushed flags; the machine's state (files, positions, the arena)
+    lives on from call to call, as the oracle's does. Every port access is shadowed the same way.
+    Compared: the registers, the flags returned, memory but the INT frame's flags word, the video
+    mode, the DAC and A000, the value a port reads, the hardware state (the PIC, the PIT, the next
+    timer interrupt, the clock's charges, the AdLib's registers, status and timers, the mouse
+    driver), the AdLib writes and speaker changes. What the shadow does not run yet comes from the
+    oracle before each call: the interrupts' in-service flags and keyboard byte, the next timer
+    interrupt's clock, the mouse's position and buttons. The five goldens make 335,055 calls and
+    accesses: 24,966 service calls (20,566 reads; overlay loads of the graphics driver with 4B03h),
+    144,585 AdLib status polls, 63,946 retrace polls, 90,793 EOIs, the rest; all the same. A copy
+    with three bugs (the current drive, one relocation of a 4B03h load, a retrace poll's charge) is
+    caught.
+- Not yet: the delivery of the hardware interrupts in the port itself, on the C clock (M5, with tc2c's
+  block counts); the library functions on `machine_int` (they still run as the original's code in the
+  hybrid build); text output. The interrupts' handlers and the clock are the next section.
+
+### The interrupts and the C clock (2026-11-05)
+
+```
+make golden CLOCK=1 [CHECK=1] [NAME=x]          # the C-clock recordings beside the goldens
+```
+
+- **Handlers in C.** A routine of `port/asm` marked `/*@ SSSS:OOOO interrupt */` is an interrupt
+  handler, `void f(void)`, entered through a vector: tc2c registers it at its address (with no caller
+  in C it is declared in `ported.h` as such) and gives it an entry in the per-function table whose
+  frame is IRET's (FLAGS, CS, IP). The machine runs whatever a vector or a saved vector points at with
+  `machine_call_handler(seg, off, &regs)`: a service stub, the generic IRET, the ROM's default INT 8
+  (written in C from its code: the tick count at 40:6C, INT 1Ch, EOI) and IRQ default (EOI), or a
+  registered handler; `machine_irq(n)` is the hardware's entry, `machine_int(n)` a software INT's. A
+  handler chaining to the vector it replaced (`jmp far`, `pushf; call far`) calls `x86_chain`; its port
+  accesses are `machine_port_in`/`machine_port_out` (`x86_inb`, `x86_outb`).
+- **On the bench.** In the hybrid build a service, a handler with no C and every port access of a
+  routine of `port/asm` run on the bench, whose DOS and devices are the session's (`hybrid.py`:
+  `oracle_int` enters the code as the CPU enters an interrupt, `oracle_port` reads or writes the
+  oracle's port); the C machine answers the shadow test only. What a call is compared on now includes
+  the oracle's clock charges (`extra`): a wait that polls once too often or too few times differs.
+  `hybrid.Direct` calls an interrupt handler with chosen registers (`ds=`), and takes the oracle's
+  Python state back between the two runs, so a device the original changed is the same for the C.
+- **Done**, every handler unit of the plan and the retrace (35 routines of `port/asm` in all now; 28
+  assembly routines are still stubs):
+  - `E1D8F`: `ReadTickCount`, `InstallTickHandler`, `RemoveTickHandler`, the INT 1Ch handler `TickIsr`
+    (1D8F:0055). `E1DE4`: `IsInVerticalRetrace`, `WaitRetrace`.
+  - `E1AAD`, the keyboard driver: the readers, `GetKeyState`, install and removal, `QueueInputEvent`,
+    `HandleMouseButtons`; the INT 9 handler `KeyboardIsr` (1AAD:07C0, the address the install sets)
+    and the bare IRET it gives INT 23h (1AAD:09F5); its near routines are static.
+  - `E1948`, the PC speaker and Tandy driver: install, uninstall, `StartSound`, `StopSound`, resume,
+    the silence; the INT 8 handler `SoundTimerIsr` at 1948:000A (the vector's address: the symbol's
+    first four bytes, at 0006, are the saved vector).
+  - `E_TEXT`, the AdLib driver: the accessors at 03A1 to 03FA, the two INT 8 handlers (3E66, 3EE5),
+    start, stop, the queue and the tables, `StartSample`; the script interpreter reads its jump table
+    (4F94) from the arena and switches on the target address, so a changed entry is still followed and
+    an unknown one stops.
+- **Their proof.** In the goldens, all the same: 150 functions reached now, 139 the same on every call
+  tested, none differ, the same 11 waiting for an interrupt (three calls of each); with 3,000 samples,
+  `AdlibTimerIsr`, `QueueSound`, `SetSoundByte`, `GetSoundByte` and `KeyboardIsr` on boot-adlib and
+  load-walk, 7,997 calls. `Direct`, through `tests/port_asm/<unit>.py` (slow set): the keyboard
+  handler on make, break, E0 and E1 scancodes with the ring full or not, the readers in each record
+  mode (the record file written and replayed); every song of `PCGAMESN.DAT` to its end on the speaker
+  and on Tandy, synthetic streams over every command byte, random states (26,110 calls, 148 the
+  original does not return from: a song looping forever, a divide error the oracle sits on); the
+  AdLib driver with `ADLIB.DAT`'s block, the game's sounds and generated scripts over every command,
+  the handlers on every pass, all 74 jump-table entries dispatched over the seeds. A planted bug in
+  each unit is caught.
+- **Not exact, by construction** (each a `QUIRK` comment in the C): the keyboard handler tests its
+  lock tables against CH, the interrupted code's CX, which a C handler does not have (it uses 0; it
+  matters only with Caps Lock or Num Lock on, which the oracle's BIOS never sets); `WaitKeyEvent` in
+  replay mode and `GetDriverTable` above 4 return the caller's AX in the original (0 in the C); the
+  AdLib driver's pitch slide pops its own return address when an F-number's low ten bits are zero
+  (the C stops there; never reached). `StartSample` polls the timer chip until a count the oracle
+  never gives, so the original does not return on the bench; in the port the C clock stands still in
+  assembly code, so it needs the machine's wait (below).
+- **Found on the way:** the oracle's AdLib hangs off its port handlers only, so the bench never took or
+  restored it, and the AdLib register writes were not compared (M2's runs included). `components()`
+  now takes the owners of the port handlers; the reruns above compare them. The bench now also
+  compares the Tandy and timer logs and the timer and PIC state; `tc2c` regenerates when the build's
+  list of `port/asm` files changes, takes a routine's prototype from its own definition when no C unit
+  declares it (so `Direct` reaches routines only assembly calls), and leaves `static` routines alone.
+- **The wait** (`port/runtime/irq.c`, 2026-11-05). The machine takes the interrupts as a list of
+  events in the order they are due, each with its C-clock position and the number of the game's
+  accesses made before it (port accesses and service calls; the library's are counted apart, since
+  the port's library is its own and makes other calls: an access's CS:IP, or a service's return
+  address, in the start-up or the library). It delivers an event once both its counts are reached:
+  after each access (`machine_access`, in `machine_port_in`/`out` and a service called through
+  `machine_int`), at the C units' block boundaries (M5), and in `machine_wait`, which a hand-written
+  routine calls on each turn it spins on memory a handler writes (the three blocking key readers);
+  no event due there means the routine would spin forever, and the machine stops. A routine that
+  spins on a port (`StartSample` on the timer chip, `WaitRetrace`) needs no call: its accesses
+  deliver, and the oracle's instruction count, which the recording gives at the access where it
+  changed, moves the port's answer. An interrupt is the controller's in-service flag (the scancode in
+  port 60h for IRQ 1, the driver's event and the game's handler in the trampoline's data for the
+  mouse) and the handler through its vector; none is delivered inside a handler (the oracle's
+  controller would not either, but for a handler that opens interrupts, which the goldens show if it
+  matters).
+- The recordings now key each interrupt by the access count too (`[position, access]`, ...) and keep
+  the library's clock marks apart (`library_times`, `library_accesses`).
+- **Proven** by `hybrid.Direct` with `interrupts=True`: the original runs as in a session (the
+  oracle's own delivery, the timer by its clock, IRQ 1 for the keys given, at once or after a number
+  of instructions), the oracle's C clock records what it delivered and the clock marks, and the C is
+  given those; events still due when it returns are delivered after (as the port's next check
+  would); an event already due when the routine is entered is delivered before its first statement,
+  as the original took it before its first instruction (`tc_hybrid_run`). `tests/port_asm/waits.py`
+  (slow set, 83 calls, all the same): the three readers 25 times each over keys, released and special
+  keys among them, so a reader turns several times and waits between; `StartSample` 8 times, through
+  1 to 2,772 timer interrupts (the sample of the call before still playing at divisor 4Bh, so the C
+  `SampleTimerIsr` runs throughout; untestable before: the original never returned on a bench without
+  them); and two alterations noticed, the clock marks dropped and a key dropped.
+- **Where the bench's oracle takes an interrupt.** With an interrupt pending that it cannot take (IF
+  off, a handler in service) the oracle looks again every 100 instructions (`Machine.wait_chunk`; the
+  sessions keep 100, so the goldens and recordings are unchanged). The bench looks at every
+  instruction instead, so it takes the interrupt at the first instruction with IF set, as the CPU
+  does. Two failures showed why. The readers' loop opens interrupts for two instructions in eight
+  (`sti`, `jmp`, then `cli`), and a look every 100 lands on two phases of the eight, so 70 of 75
+  reader calls stalled. And `StartSample` runs its wait and two AdLib writes under `cli`, then sets up
+  the sample right after its `sti`: a look 100 instructions late took the pending timer interrupt
+  after those writes, with no access between, which no access count can say; the C, delivering right
+  after the access before, did as the CPU would and differed from the late oracle.
+- Found on the way: with a block hook installed, Unicorn's `emu_start` runs past its `until` address;
+  the bench's C clock counts only while a run with interrupts goes on (`CClock.pause`, `resume`).
+- Found on the way: the C's time limit (`LIMIT_MS`, a virtual-time signal that jumps out of the C)
+  must never jump while Python runs inside one of the library's callbacks: the jump leaves that
+  callback holding Python's lock and the test hangs for good with no CPU used (a first run of
+  `waits.py` sat 4.5 hours that way). Every callback (`tc_hybrid_far`, `_oracle_int`, `_oracle_port`,
+  `_raise`, `_set_insns`) now marks the time as Python's, saving and restoring the mark so a callback
+  that calls the C again cannot clear it; the limit then stops the C when the callback returns, and a
+  stop raised by C that a callback called aborts with its message instead of hanging.
+- **The C clock in the oracle** (`tools/oracle/cclock.py`, question A): instructions executed in the
+  code of the C units of `port/units.txt`, resident (`re/units.toml`) or overlaid (an overlay's code,
+  recognised by its hash in `build/re/eob.json` when the manager reads it from `EOB.EXE` into its
+  buffer). A block hook adds each translation block's instruction count (capstone, cached) when it
+  starts in C code; `Machine.run` now tells `chunk_listeners` after each chunk, and the overshoot of a
+  chunk that stopped inside a block is taken back from that block. Over the first 40 million
+  instructions of `EOB.EXE` it equals a count taken instruction by instruction (37,158,988 C-unit
+  instructions); it costs about 7 s a session.
+- **The recordings** (`tests/sessions/golden/<name>.clock.json`, question E), for the five `EOB.EXE`
+  goldens (`INTRO.EXE`'s wait for M6): each hardware interrupt delivered at its C-clock position, in
+  order (`[position]` for IRQ 0, `[position, "irq1", scancode]`, `[position, "mouse", condition,
+  buttons, x, y]`); the C-clock position of each checkpoint; and the oracle's instruction count at
+  each port access or service call where it changed since the one before (`[access, insns]`). That
+  last list is an addition to the design: the oracle's clock moves by run chunks, which its own
+  scheduling decides, and the retrace bit, the AdLib's timers, the timer's next interrupt and the
+  time of day read it; no C clock gives those values, so the port's machine sets its clock from the
+  recording at each access. `golden.py --clock` plays the session once more with the clock and writes
+  the file only if the run is still its golden; `--clock --check` plays it again and compares. Sizes:
+  20 to 32 KB, 0.8 MB for boot-adlib and 1.8 MB for load-walk, whose timer runs fast (28,016 and
+  60,222 interrupts).
+- The proof: `tests/unit/test_port.py` (slow set), `test_the_c_unit_clock` (the two counts over 5
+  million instructions; every recording reproduced) and the assembly fuzz test, which now calls the
+  handler and the retrace routines.
+
+### The library on the machine (2026-11-05)
+
+```
+make port-hybrid && .venv/bin/python tests/port_asm/library.py
+```
+
+- `port/runtime/tcdos.c` has the Borland library functions that need the machine or keep the library's
+  own data: `rand`, `srand`, `getdisk`, `setdisk`, `time` (with `tzset` and `dostounix`), `int86`,
+  `harderr`, and the files: `open`, `close`, `read`, `write`, `lseek`, `filelength`, `remove`. Each
+  definition is marked with the library routine's address, `/*@ 0000:XXXX library */`; tc2c reads the
+  marks (`--lib`, `LIBRARY_MARK`) and gives each an entry in the per-function test's table, named
+  `tcl_<name>`, so `hybrid.Direct` calls the original routine and the C side by side and the goldens'
+  test stops at the library's own entries. In the hybrid build the translated callers now call the C
+  library, so every caller tested in a golden tests it too.
+- **How the behaviour is known.** The library is library (AGENTS.md): nothing is translated from its
+  code. Each function is written from its documented behaviour, then the original is called on the
+  bench with chosen arguments and its DOS calls, the bytes it writes and its results are recorded
+  (scratch observers on `hybrid.Direct` and on the goldens' calls), and the C is made to do the same.
+  What was found that way:
+  - the library's data: `errno` DG:007D, `_doserrno` DG:879A, the file table `_openfd` DG:8758 (20
+    flag words, FFFFh when closed) and `_fmode` DG:8780 just after it, `rand`'s 32-bit state DG:8784,
+    `timezone` DG:8818 and `daylight` DG:881C, `tzname`'s two 4-byte buffers DG:FFDC, the handler
+    `harderr` installs DG:FFD6 (INT 24h then goes to the library's own handler at 0000:6014);
+  - the error exit (`ioerror`): a DOS code 0 to 58h sets `_doserrno` to it and `errno` from an
+    89-entry table (derived by `int86` on a handler that returns each code with the carry set); 59h
+    and up count as 57h; minus an `errno` of 35 or less sets it, `_doserrno` FFFFh; below that, 57h;
+  - `int86` executes its INT with the flags of the library's byte compare of the interrupt number
+    against 25h (below it) or 26h (above it), its test for `absread` and `abswrite`, and the caller's
+    IF; with the carry back it takes the error exit with AX;
+  - `open`: 3Dh with AL from the access bits, then IOCTL 0 (the device bit, 2000h); with `O_CREAT`,
+    4300h first: an existing file is opened (error 50h with `O_EXCL`), a missing one created with 3Ch,
+    read-only unless the mode has `S_IWRITE`, with `errno` left at 2 by the failed 4300h; the flag word
+    is the access less `O_CREAT`, `O_TRUNC` and `O_EXCL`, with 1000h when either of the first two was
+    given; `O_TRUNC` writes nothing at the start; no text or binary bit takes `_fmode`'s;
+  - the flag word's 0200h is the end of the file: `read` returns 0 without DOS while it is set, and
+    `lseek` clears it, even when it fails; a write sets 1000h; `O_APPEND` seeks to the end first; only
+    `close` checks a handle against the 20 (error 6, no DOS call), and it marks the handle closed even
+    when DOS refuses;
+  - `filelength` reads the position, the end, and seeks back.
+- Text-mode reads and writes, `int86` with INT 25h or 26h, and a `TZ` in the environment stop with
+  the port's words: the game's handles are all binary, and its environment has no `TZ`.
+- **Proven** by `tests/port_asm/library.py` (slow set, 891 calls, all the same): `rand` 300 times with
+  reseeds; the disk; `time` at two times of day; `int86` for every interrupt number, to handlers that
+  return the carry clear or set, through the whole error table and its limits, and through the
+  machine's INT 10h and 21h; the files in every access mode, on files that are there and not, every
+  whence, the end-of-file bit, the append path, handles past the table. On the five goldens the
+  library entries are reached 2,719 times at 200 samples (13 of the 14 functions; `setdisk` is not),
+  all the same; with the C library under them, the goldens reach 163 functions, 152 the same on every
+  call, none different, the 11 that wait for interrupts as before.
+- Found on the way: the bench entered interrupt code the C reaches without setting the CPU's flags
+  as the INT leaves them (only the pushed copy), so a handler that returns with `RETF 2` or reads its
+  flags saw stale ones (`Bench.oracle_int`). Unicorn takes `INT 6` for its invalid-opcode exception.
+- **The far heap** (`port/runtime/tcheap.c`): `farmalloc`, `farfree`, `realloc` (the large model's,
+  `farrealloc` with the size as a long), `farcoreleft`, `farheapwalk`, found the same way, on a bench
+  that has run the start-up to `main` (the heap the game starts with). What the original does:
+  - its words: `_psp` DG:0079, the heap's base DG:0083, the break level DG:0087 and the heap's top
+    DG:008B (far pointers, A000:0000 for the top), the program's DOS memory in 1 KB units DG:85C6;
+    and in the library's code segment at 0000:70B0 the first block, the last, the rover, DS (written
+    by every call) and `realloc`'s size as a long;
+  - a block takes (size + 4 + 15) / 16 paragraphs (none for 0 or more than FFFFh), its header at
+    seg:0000: the size, then the previous block's segment (the first block's own) in use or 0 free; a
+    free block keeps the previous block at +8 and its two ring links at +4 and +6; the pointer is
+    seg:0004;
+  - the free ring: a freed block goes in just after the rover on the +6 side; an allocation looks at
+    the rover, then along +6, and takes the first block big enough, from its high end (the rest stays
+    free in place) or whole when it fits exactly (+8 back to +2); a block taken out moves the rover to
+    its +4 neighbour; with none, the block comes from the break level, refused past the heap's top;
+  - a freed block is marked free first (+8, then 0 at +2) even when it then joins the free block
+    before it; it joins a free block after it too, and the link to the block before is written where
+    the block keeps it (+8 when free); the last block goes back to the break level, with a free
+    block before it;
+  - the break level sets DOS's memory block (4Ah, ES the PSP) to (break - PSP) / 40h + 1 KB, no
+    further than the heap's top, whenever that count changes;
+  - `realloc`: NULL allocates; fewer paragraphs split the block and free the tail (the last block's
+    break level just comes down); more allocate a new block, copy the old data (paragraphs * 16 - 4
+    bytes) and free the old one, never growing in place; a size of 0 frees and returns what the free
+    left in DX:AX, which the game never asks for (the port returns NULL);
+  - `farcoreleft` is (top - break) * 16 - 16; `farheapwalk` gives the block after the one given (the
+    first for NULL) with its size in bytes and whether it is in use, 2, then 5 at the end.
+- **Proven** by `tests/port_asm/heap.py` (slow set): 1,500 random steps of allocations from 0 bytes to
+  past the top, frees in random order and `realloc` shrinking, keeping and growing, with
+  `farcoreleft` and whole walks: 2,241 calls, all the same; three more seeds of 3,000 steps, about
+  20,000 calls, all the same. Three wrong drafts were each caught: a freed block not marked before
+  joining the one before it, a header written for the last block's freed tail, the link to the
+  block before written at +2 of a free block.
+  On the five goldens the heap's entries are reached 774 times at 400 samples, all the same; with the
+  whole library in C under them, the goldens reach 168 functions, 157 the same on every call, none
+  different, the same 11 waiting for interrupts.
+- Still stubs: `chsize`, `exit`, `hardretn`, `heapcheck`; the goldens never call them.
+
+### The other units (2026-11-05)
+
+```
+make port-hybrid && .venv/bin/python tests/port_asm/e17a6.py && .venv/bin/python tests/port_asm/pointer.py \
+    && .venv/bin/python tests/port_asm/dosunits.py
+```
+
+- Every assembly routine the C units call is now in C: `port/asm/` has 63 routines, and `unported.c`
+  has no assembly stub left. The nine units of this step, each written from its TASM source label by
+  label (three written in parallel, each built apart with `OUT=` and `ASM_C=`):
+  - `E17A6.c`, the graphics support: `DirectionFromPoints`, `Distance`, `FindNeighbour`,
+    `SetPlaneTables`, `DrawTile` (its CGA, Tandy and MCGA branches), `ExpandNibbles`, the three
+    sprite blitters, `BuildMask`, `TranslateImage`. `DrawTile`'s EGA branch stops with its reason: it
+    draws through the EGA's sequencer and latches, which the MCGA-only port (decision 4) has no use
+    for and the bench cannot compare. An 8-bit `div` that overflows raises INT 0 as `E1948.c` does.
+  - `E1A72.c`, `E1BB1.c`, `E1BBE.c`, `E1BF3.c`, the mouse and the game's own pointer: `InitMouse` and
+    the INT 33h event handler it installs (1A72:017A), `RemoveMouseHandler`, `IsMouseInRect`, the
+    interrupt wrappers (empty: the machine has no IF, the recording places each interrupt where the
+    original took it), `SetFarPointer` and `GetFarPointer`, `SetMousePointerShape`, the hide and
+    show family with zones and locks, the pointer's moves. The handler takes BX, CX and DX in
+    registers; it reads them from the trampoline's event record at F000:3080, which the machine's
+    delivery writes, so the record is its register record. The INT 3Fh overlay hook is left out
+    (overlays are plain code).
+  - `E1990.c` (the DOS memory chain: `CheckMemoryChain`, `ReserveMemoryBelowVideo`,
+    `TrimMemoryToVideo`), `E19EA.c` (`PrintString`), `E1A19.c` (`FindLastDrive`,
+    `IsLastLogicalDrive`), `E1C00.c` (the graphics driver loader, `RunOverlayRequest`, 4B03h). Two
+    QUIRK exits of `E1990.ASM`, where the original returns through the wrong stack words and faults,
+    stop with the quirk's words.
+- `E1E8B.ASM`, the overlay manager, has no C: natively only its start-up allocation remains (section
+  "The overlays as plain code"), which the port's own start-up makes (M5).
+- **Proven**: `tests/port_asm/e17a6.py` (2,695 calls), `pointer.py` (1,697), `dosunits.py` (1,390),
+  original then C, all the same; each catches planted mistakes (an off-by-one, a "fixed" QUIRK, a
+  wrong mask, a missing branch). On the five goldens the new units' routines are reached 1,918 times
+  at 200 samples (17 routines: `Distance`, `DirectionFromPoints`, `DrawTile`, `SetPlaneTables`, the
+  pointer family, `InitMouse`, the mouse handler, `SetMousePointerShape`, `FindLastDrive`,
+  `RunOverlayRequest`), all the same; the goldens now reach 185 functions, 174 the same on every call,
+  none different, the 11 that wait for interrupts as before. The routines the goldens do not reach
+  (the CGA, EGA and Tandy paths, the memory chain, the drive test) are proven by the direct calls.
+- Found on the way, fixed in the shared tools:
+  - code the C has no C for answers in registers a prototype cannot state (the graphics driver's
+    entry returns BX, its link routine CF): the bench now leaves every register and the flags of
+    such a call in `tc_hybrid_far_regs` (`hybrid.h`);
+  - the bench maps only memory below A0000h, so the C saw neither the mouse event record (F000:3080)
+    nor mode 13h's memory: `Bench.take` copies the record into `tc_mem`, and the per-function test
+    gives the C the screen and folds what it wrote back into the oracle's before the screen is
+    compared; the hybrid build's delivery writes the record in the arena too;
+  - the port had no C for the mouse trampoline (F000:3000): the machine now calls the handler
+    registered at F000:3090 (`machine_call_handler`);
+  - the machine's DOS lacked INT 21h 06h (`PrintString`'s output): output goes to the console, which
+    the machine does not have yet, as for 02h and 09h.
 
 ## M2: the per-function test (2026-11-05)
 
