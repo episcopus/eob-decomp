@@ -11,12 +11,14 @@
 
    The driver's code returns in registers, which a C prototype cannot state: its entry gives AX (the
    link routine's offset) and BX (its size in paragraphs), its link routine gives CF. The driver in C
-   is M4's (decision 4); until then a call to it goes where the port sends code it has no C for
+   (port/drivers, M4) is entered with its argument bytes and sets those registers (driver.h); a driver
+   with no C (one the port does not have, decision 4) goes where the port sends code it has no C for
    (tc_code_far: the hybrid build runs the original's code on the bench), and driver_call reads the
    registers that code returned (tc_hybrid_far_regs). */
 #include "tcport.h"
 #include "ported.h"
 #include "x86.h"
+#include "driver.h"
 
 #define DGROUP ((u16)(tc_load_seg + 0x212Eu))           /* the value `mov ax,212Eh` gives */
 #define WAIT_SEG ((u16)(tc_load_seg + 0x1A16u))         /* `mov bx,1A16h` at 1C00:0089, relocated at load */
@@ -40,9 +42,10 @@
 static void driver_call(farptr target, const u8 *args, u16 n, tc_regs *r, const char *site)
 {
     u32 v;
-    if (tc_code_find(target) != 0) {
-        tc_fail(70, "%s: the driver at %04X:%04X has C, whose register convention is M4's", site,
-                TC_SEG(target), TC_OFF(target));
+    if (tc_code_call_args(target, args, n, r, &v)) {
+        r->ax = (u16)v;
+        r->dx = (u16)(v >> 16);
+        return;
     }
     v = tc_code_far(target, args, n, site);
 #ifdef TC_HYBRID

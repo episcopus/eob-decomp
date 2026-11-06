@@ -29,10 +29,12 @@ SDL_LIBS := $(shell pkg-config --libs sdl3 2>/dev/null)
 CFLAGS := -std=gnu99 -O2 -Wall -Wextra -Werror -Wno-unused-value -Wno-parentheses-equality -Iport/include -I$(GEN)
 # the generated C keeps every parameter of src/, read or not
 GEN_CFLAGS := -Wno-unused-parameter
-HEADERS := $(wildcard port/include/*.h port/include/tc/*.h port/asm/*.h)
+HEADERS := $(wildcard port/include/*.h port/include/tc/*.h port/asm/*.h port/drivers/*.h)
 # the assembly units written in C (M3); tc2c reads their `/*@ */` addresses. OUT and ASM_C can be
 # given on the command line, to build a unit being written apart from the others
 ASM_C := $(wildcard port/asm/*.c)
+# the graphics driver in C (M4): registered at the segment the game loads it at, so tc2c does not read it
+DRV_C := $(wildcard port/drivers/*.c)
 # the library functions on the machine (M3); tc2c reads their `/*@ 0000:XXXX library */` addresses
 LIB_C := $(wildcard port/runtime/tcdos.c port/runtime/tcheap.c)
 TC2C_IN := port/units.txt tools/port/tc2c.py port/include/tc/prelude.h $(wildcard port/include/tc/sys/*.h) \
@@ -44,9 +46,10 @@ GEN_C := $(addprefix $(GEN)/,$(UNITS:.C=.c)) $(GEN)/units.c $(GEN)/unported.c
 MACHINE_C := port/runtime/machine.c port/runtime/dos.c port/runtime/bios.c port/runtime/video.c port/runtime/ports.c port/runtime/mouse.c \
 	port/runtime/irq.c
 HYB := $(OUT)/hybrid
-HYB_C := $(GEN_C) $(GEN)/hybrid.c port/runtime/arena.c port/runtime/tclib.c $(LIB_C) port/runtime/hybrid.c $(MACHINE_C) $(ASM_C)
+HYB_C := $(GEN_C) $(GEN)/hybrid.c port/runtime/arena.c port/runtime/tclib.c $(LIB_C) port/runtime/hybrid.c $(MACHINE_C) $(ASM_C) \
+	$(DRV_C)
 HYB_O := $(patsubst %.c,$(HYB)/obj/%.o,$(HYB_C))
-CORE_C := port/runtime/arena.c port/runtime/tclib.c $(LIB_C) port/main.c $(MACHINE_C) $(ASM_C)
+CORE_C := port/runtime/arena.c port/runtime/tclib.c $(LIB_C) port/main.c $(MACHINE_C) $(ASM_C) $(DRV_C)
 CORE_O := $(patsubst $(GEN)/%.c,$(OBJ)/gen/%.o,$(GEN_C)) $(patsubst %.c,$(OBJ)/%.o,$(CORE_C))
 
 .PHONY: port port-check port-boundary port-sdl port-hybrid FORCE

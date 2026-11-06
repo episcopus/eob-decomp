@@ -19,6 +19,7 @@
 #include "hybrid.h"
 #include "ported.h"
 #include "machine.h"
+#include "driver.h"
 
 void tc2c_init_unported(void);
 
@@ -120,6 +121,66 @@ int tc_hybrid_run(unsigned index, u16 ss, u16 sp, u16 ds, u32 *ret, unsigned lim
            original took it (the port's next check would come after an access) */
         machine_deliver_due();
         *ret = tc_hybrid_entries[index].thunk();
+    }
+    running = 0;
+    memset(&t, 0, sizeof t);
+    setitimer(ITIMER_VIRTUAL, &t, NULL);
+    in_oracle = 0;
+    return code;
+}
+
+/* ---- the graphics driver (M4) ------------------------------------------------------------------- */
+
+/* The driver's routines, for the test to list: routine i, or 0 past the last (driver.h). */
+const tc_driver_routine *tc_hybrid_driver_routine(unsigned i)
+{
+    return mcga_routine(i);
+}
+
+/* Registers the driver's C at the segment the original loaded it at. */
+void tc_hybrid_driver_register(u16 seg)
+{
+    mcga_register(seg);
+}
+
+/* Runs driver routine i (registered at seg) with the original's SS:SP and DS at its entry, its
+   arguments read where the caller pushed them (SS:SP+4). Returns 0 with DX:AX in *ret and the other
+   registers it answers in in *regs, or the stop's code with its message in tc_hybrid_message. */
+int tc_hybrid_run_driver(unsigned index, u16 seg, u16 ss, u16 sp, u16 ds, u32 *ret, tc_regs *regs,
+                         unsigned limit_ms)
+{
+    struct itimerval t;
+    int code;
+    u8 args[TC_ARG_MAX];
+    unsigned k;
+    const tc_driver_routine *d = mcga_routine(index);
+    if (d == 0) {
+        snprintf(tc_hybrid_message, sizeof tc_hybrid_message, "no driver routine %u", index);
+        return 70;
+    }
+    tc_ss = ss;
+    tc_sp = sp;
+    tc_ds = ds;
+    for (k = 0; k < sizeof args; k++) {
+        args[k] = tc_ld_u8(TC_MKFP(ss, (u16)(sp + 4u + k)));
+    }
+    memset(regs, 0, sizeof *regs);
+    tc_hybrid_message[0] = 0;
+    tc_hybrid_oracle_failed = 0;
+    late = 0;
+    in_oracle = 0;
+    memset(&t, 0, sizeof t);
+    code = sigsetjmp(jb, 1);
+    if (code == 0) {
+        t.it_value.tv_sec = limit_ms / 1000u;
+        t.it_value.tv_usec = (limit_ms % 1000u) * 1000;
+        running = 1;
+        setitimer(ITIMER_VIRTUAL, &t, NULL);
+        machine_deliver_due();
+        if (tc_code_find_args(TC_MKFP(seg, d->off)) != d->fn) {
+            tc_fail(70, "the driver's %s is not registered at %04X:%04X", d->name, seg, d->off);
+        }
+        *ret = d->fn(args, regs);
     }
     running = 0;
     memset(&t, 0, sizeof t);

@@ -80,6 +80,46 @@ class Entry(ctypes.Structure):
                 ("interrupt", ctypes.c_uint8)]
 
 
+class DriverRoutine(ctypes.Structure):
+    """driver.h's tc_driver_routine"""
+    _fields_ = [("off", ctypes.c_uint16), ("name", ctypes.c_char_p), ("fn", ctypes.c_void_p),
+                ("arg_bytes", ctypes.c_uint8), ("ret_bytes", ctypes.c_uint8), ("regs", ctypes.c_uint8)]
+
+
+# The graphics driver in C (M4): the loader's two far calls into MCGA.OVL (src/E1C00.ASM), the entry at
+# 1C00:0091 and the link routine at 1C00:00C0, each with the driver's segment at DGROUP:8190h
+DRIVER_CALLS = ((0x1C00, 0x0091), (0x1C00, 0x00C0))
+DRIVER_SEG_PTR = 0x8190
+
+
+class DriverEntry:
+    """A routine of the driver in C, at the segment the original loaded the driver at: tested like a
+    translated function, entered with its argument bytes (driver.h)."""
+    interrupt = 0
+
+    def __init__(self, index: int, seg: int, d: DriverRoutine):
+        self.index, self.seg, self.off = index, seg, d.off
+        self.name = ("MCGA." + d.name.decode()).encode()
+        self.unit = b"port/drivers"
+        self.arg_bytes, self.ret_bytes, self.regs = d.arg_bytes, d.ret_bytes, d.regs
+
+
+def driver_routines(lib) -> list:
+    lib.tc_hybrid_driver_routine.restype = ctypes.POINTER(DriverRoutine)
+    lib.tc_hybrid_driver_routine.argtypes = [ctypes.c_uint]
+    lib.tc_hybrid_driver_register.argtypes = [ctypes.c_uint16]
+    lib.tc_hybrid_run_driver.argtypes = [ctypes.c_uint, ctypes.c_uint16, ctypes.c_uint16, ctypes.c_uint16,
+                                         ctypes.c_uint16, ctypes.POINTER(ctypes.c_uint32), ctypes.c_void_p,
+                                         ctypes.c_uint]
+    lib.tc_hybrid_run_driver.restype = ctypes.c_int
+    out = []
+    while True:
+        p = lib.tc_hybrid_driver_routine(len(out))
+        if not p:
+            return out
+        out.append(p.contents)
+
+
 ORACLE_FN = ctypes.CFUNCTYPE(ctypes.c_uint32, ctypes.c_uint32, ctypes.POINTER(ctypes.c_uint8), ctypes.c_uint16)
 
 
@@ -463,6 +503,7 @@ class Tester:
                                            ctypes.POINTER(ctypes.c_uint32), ctypes.c_uint]
         self.lib.tc_hybrid_run.restype = ctypes.c_int
         self.lib.tc_hybrid_init(LOAD_SEG, DGROUP)
+        self.driver = driver_routines(self.lib)
         self.samples = samples
         self.only = only
         self.names = globals_by_offset()
@@ -530,6 +571,42 @@ class Tester:
                     counts[i] = c + 1
             m.add_breakpoint(LOAD_SEG + e.seg, e.off, at_entry)
             handles[lin] = i
+
+        # the driver in C, once the original has loaded MCGA.OVL: registered at its segment, and each
+        # routine tested as it is entered
+        linked = set()
+
+        def at_driver_call(mach):
+            seg = mach.rw(DGROUP, DRIVER_SEG_PTR)
+            if seg in linked:
+                return
+            linked.add(seg)
+            self.lib.tc_hybrid_driver_register(seg)
+            for k, d in enumerate(self.driver):
+                de = DriverEntry(k, seg, d)
+                if self.only and de.name.decode() not in self.only:
+                    continue
+
+                def at_entry(mach, de=de):
+                    if self.busy:
+                        return
+                    c = counts.get(de.name, 0)
+                    if c >= self.samples or waits.get(de.name, 0) >= MAX_WAITS:
+                        return
+                    self.busy = True
+                    try:
+                        r = self.test(mach, bench, de, session, c)
+                    finally:
+                        self.busy = False
+                    self.results.append(r)
+                    if r["status"].startswith("not tested"):
+                        waits[de.name] = waits.get(de.name, 0) + 1
+                    else:
+                        counts[de.name] = c + 1
+                mach.add_breakpoint(seg, d.off, at_entry)
+            mach.uc.ctl_remove_cache(seg * 16, seg * 16 + 0x10000)
+        for seg, off in DRIVER_CALLS:
+            m.add_breakpoint(LOAD_SEG + seg, off, at_driver_call)
         pairs = list(zip(components(m), bench.comps))
         if [type(a) for a, _ in pairs] != [type(b) for _, b in pairs]:
             raise SystemExit("hybrid: the bench is not built like the session's machine")
@@ -539,7 +616,8 @@ class Tester:
 
     # -- one call
     def test(self, m, bench, i, session, sample) -> dict:
-        e = self.entries[i]
+        """i: an index of the translated functions' table, or a DriverEntry"""
+        e = i if isinstance(i, DriverEntry) else self.entries[i]
         r = {"function": e.name.decode(), "unit": e.unit.decode(), "session": session, "sample": sample,
              "at": m.insns}
         ss, sp, ds = m.get("ss"), m.get("sp"), m.get("ds")
@@ -560,13 +638,19 @@ class Tester:
         bm = bench.m
         o_mem, o_out = bench.memory(), bench.outside()
         o_regs = (bm.get("ax"), bm.get("dx"))
+        o_bx, o_cf = bm.get("bx"), bm.get("flags") & 1
         # 3. the C
         bench.take(m, self.pairs, self.memo0)
         bench.c_video_in()
         bench.oracle_calls = 0
         bench.oracle_error = ""
         val = ctypes.c_uint32(0)
-        code = self.lib.tc_hybrid_run(i, ss, sp, ds, ctypes.byref(val), LIMIT_MS)
+        c_regs = Regs()
+        if isinstance(i, DriverEntry):
+            code = self.lib.tc_hybrid_run_driver(i.index, i.seg, ss, sp, ds, ctypes.byref(val),
+                                                 ctypes.byref(c_regs), LIMIT_MS)
+        else:
+            code = self.lib.tc_hybrid_run(i, ss, sp, ds, ctypes.byref(val), LIMIT_MS)
         bench.c_video_out()
         r["oracle_calls"] = bench.oracle_calls
         r["seconds"] = round(time.monotonic() - t0, 3)
@@ -589,6 +673,12 @@ class Tester:
             cv = val.value & mask
             if ov != cv:
                 regs.append("returns %0*X, the original %0*X" % (2 * rb, cv, 2 * rb, ov))
+        if getattr(e, "regs", 0) & 1:                   # driver.h: TC_ANSWERS_BX
+            if c_regs.bx != o_bx:
+                regs.append("BX %04X, the original %04X" % (c_regs.bx, o_bx))
+        if getattr(e, "regs", 0) & 2:                   # TC_ANSWERS_CF
+            if (c_regs.flags & 1) != o_cf:
+                regs.append("CF %d, the original %d" % (c_regs.flags & 1, o_cf))
         outs = ["%s differs" % k for k in o_out if o_out[k] != c_out[k]]
         if not spans and not regs and not outs:
             r["status"] = "same"
@@ -630,6 +720,36 @@ class Direct:
         self.bench = Bench(self.t.lib, lambda: run.build_machine(**machine))
         self.m = self.bench.m
         self.index = {e.name.decode(): i for i, e in enumerate(self.t.entries)}
+        self.driver_seg = None
+
+    def link_driver(self, budget: int = 60_000_000) -> int:
+        """Runs the program on the bench until the original has loaded and linked MCGA.OVL (the
+        return from the loader's call of LinkDriver, 1C00:00C4), and registers the driver's C at its
+        segment, so that "MCGA.<routine>" can be called. Returns the segment."""
+        done = []
+
+        def linked(mach):
+            if not done:
+                done.append(True)
+                raise Stop("linked")
+        self.m.add_breakpoint(LOAD_SEG + 0x1C00, 0x00C4, linked)
+        why = self.m.run(budget)
+        if why != "linked":
+            raise SystemExit("hybrid: the driver was not linked (%s)" % why)
+        self.driver_seg = self.m.rw(DGROUP, DRIVER_SEG_PTR)
+        self.t.lib.tc_hybrid_driver_register(self.driver_seg)
+        return self.driver_seg
+
+    def entry(self, name: str):
+        """A translated function's index, or the DriverEntry of a name MCGA.<routine>"""
+        if name.startswith("MCGA."):
+            if self.driver_seg is None:
+                raise SystemExit("hybrid: call link_driver() before the driver's routines")
+            for k, d in enumerate(self.t.driver):
+                if d.name.decode() == name[5:]:
+                    return DriverEntry(k, self.driver_seg, d)
+            raise SystemExit("hybrid: the driver has no C for %s yet" % name)
+        return self.index[name]
 
     def write(self, seg: int, off: int, data: bytes) -> None:
         self.m.write(seg, off, data)
@@ -653,8 +773,9 @@ class Direct:
         `alter(events, times)` may change what the C is given (a test that the comparison notices).
         Returns {"status": "same" | "differs" | "C stopped" | "not tested: ...", "value": the original's
         DX:AX, ...}."""
-        m, bench, i = self.m, self.bench, self.index[name]
-        e = self.t.entries[i]
+        m, bench, i = self.m, self.bench, self.entry(name)
+        driver = isinstance(i, DriverEntry)
+        e = i if driver else self.t.entries[i]
         block = b""
         for a in args:
             v, w = a if isinstance(a, tuple) else (a, 2)
@@ -667,7 +788,8 @@ class Direct:
         m.write(ss, sp + 4, block)
         m.ww(ss, sp, SENTINEL[1])
         m.ww(ss, sp + 2, SENTINEL[0])
-        for r, v in (("ss", ss), ("sp", sp), ("ds", ds), ("es", es), ("cs", LOAD_SEG + e.seg), ("ip", e.off)):
+        cs = e.seg if driver else LOAD_SEG + e.seg
+        for r, v in (("ss", ss), ("sp", sp), ("ds", ds), ("es", es), ("cs", cs), ("ip", e.off)):
             m.set(r, v)
         before = bench.memory()
         before_state = bench.save()
@@ -680,6 +802,7 @@ class Direct:
             r["status"] = "not tested: the original %s" % why
             return r
         o_mem, o_regs = bench.memory(), (m.get("ax"), m.get("dx"))
+        o_bx, o_cf = m.get("bx"), m.get("flags") & 1
         r["value"] = (o_regs[1] << 16) | o_regs[0]
         o_out = bench.outside()
         after_state = bench.save()
@@ -701,7 +824,12 @@ class Direct:
                 lib.machine_time_push(ctypes.c_uint32(access), ctypes.c_uint32(insns))
         val = ctypes.c_uint32(0)
         bench.c_video_in()
-        code = lib.tc_hybrid_run(i, ss, sp, ds, ctypes.byref(val), LIMIT_MS)
+        c_regs = Regs()
+        if driver:
+            code = lib.tc_hybrid_run_driver(i.index, i.seg, ss, sp, ds, ctypes.byref(val), ctypes.byref(c_regs),
+                                            LIMIT_MS)
+        else:
+            code = lib.tc_hybrid_run(i, ss, sp, ds, ctypes.byref(val), LIMIT_MS)
         if code == 0:
             code = lib.tc_hybrid_drain()
         bench.c_video_out()
@@ -720,6 +848,12 @@ class Direct:
             mask = (1 << (8 * e.ret_bytes)) - 1
             if r["value"] & mask != val.value & mask:
                 regs.append("returns %X, the original %X" % (val.value & mask, r["value"] & mask))
+        if getattr(e, "regs", 0) & 1:                   # driver.h: TC_ANSWERS_BX
+            if c_regs.bx != o_bx:
+                regs.append("BX %04X, the original %04X" % (c_regs.bx, o_bx))
+        if getattr(e, "regs", 0) & 2:                   # TC_ANSWERS_CF
+            if (c_regs.flags & 1) != o_cf:
+                regs.append("CF %d, the original %d" % (c_regs.flags & 1, o_cf))
         outs = ["%s differs" % k for k in o_out if o_out[k] != c_out[k]]
         if left:
             outs.append("%d interrupts never came due for the C" % left)

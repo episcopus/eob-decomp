@@ -14,6 +14,7 @@
 
 #include "tcport.h"
 #include "machine.h"
+#include "driver.h"
 #include "platform.h"
 
 #define MAX_HANDLES 20
@@ -699,6 +700,21 @@ static void f4B(tc_regs *r, u8 al)
     }
     release(f);
     machine_ok(r);
+    /* the graphics driver the port has in C (decision 4: MCGA only) answers at the segment it was
+       loaded at; the game shrinks the block in place (MemRealloc), so the segment stays */
+    {
+        const char *base = strrchr(path, '\\');
+        char name[13];
+        unsigned k;
+        base = base ? base + 1 : path;
+        for (k = 0; k < sizeof name - 1 && base[k]; k++) {
+            name[k] = (char)(base[k] >= 'a' && base[k] <= 'z' ? base[k] - 32 : base[k]);
+        }
+        name[k] = 0;
+        if (strcmp(name, "MCGA.OVL") == 0) {
+            mcga_register(seg);
+        }
+    }
 }
 
 void dos_int21(tc_regs *r)
