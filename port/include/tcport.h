@@ -67,12 +67,19 @@ extern u32 tc_changes;
 extern u32 tc_hot_reads;
 extern u8 tc_in_handler;
 extern u8 tc_hot[TC_MEM_SIZE / 8u];
+/* set by the replay's trace: each read of a handler's byte is reported (irq.c: one read while an
+   interrupt is due but not yet delivered sees what the original's read may not have) */
+extern u8 tc_hot_watch;
+void tc_hot_read(u32 a);
 /* marks n bytes from p as written by a handler before one has written them (port/start.c) */
 void tc_hot_range(farptr p, u16 n);
 static inline u8 tc_ld_byte(u32 a)
 {
     if (tc_hot[a >> 3] & (1u << (a & 7u))) {
         tc_hot_reads++;
+        if (tc_hot_watch) {
+            tc_hot_read(a);
+        }
     }
     return tc_mem[a];
 }

@@ -17,9 +17,12 @@ u32 tc_hot_reads;
 u32 tc_accesses;
 u8 tc_in_handler;
 u8 tc_hot[TC_MEM_SIZE / 8u] = {0};
+u8 tc_hot_watch;
 
 /* a loop's idle turn outside a replay (the self-test, the per-function test): nothing to deliver */
 __attribute__((weak)) void tc_spin_idle(void) {}
+/* the replay's trace of reads of handler-written bytes (irq.c); nothing outside it */
+__attribute__((weak)) void tc_hot_read(u32 a) { (void)a; }
 
 void (*tc_fail_hook)(int code, const char *msg);
 

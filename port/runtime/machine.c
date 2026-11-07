@@ -129,7 +129,11 @@ void machine_call_handler(u16 seg, u16 off, tc_regs *r)
         if (off >= MACHINE_STUB_OFF0 && off < MACHINE_STUB_OFF0 + 0x400u && (off - MACHINE_STUB_OFF0) % 4u == 0) {
             u8 k = (u8)((off - MACHINE_STUB_OFF0) / 4u);
             if (library_call) {
+                if (k == 0x21u && (r->ax >> 8) >= 0x3Cu && (r->ax >> 8) <= 0x44u) {
+                    machine_library_file();
+                }
                 machine_library_access();      /* the runtime's library calls it, as the Borland library did */
+                machine_trace_line("L%lu int %02X %04X", (unsigned long)machine_library_accesses, k, r->ax);
             } else {
                 machine_access();              /* a service the game calls */
                 machine_trace_line("%lu int %02X %04X", (unsigned long)machine_accesses, k, r->ax);

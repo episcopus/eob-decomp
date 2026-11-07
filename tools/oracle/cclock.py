@@ -64,6 +64,12 @@ def c_units() -> set[str]:
     return out
 
 
+# the library's file calls (INT 21h with AH 3Ch to 44h): the port's runtime library makes the same ones
+# as the Borland library, one for one (its other calls differ: setvect makes none, the heap grows in
+# other steps), so they also place an interrupt that came while the game made no access of its own
+# (loading a file): `interrupt_files`, the file calls made before each interrupt (playbook 80, M6)
+FILE_CALLS = {0x2100 | ah for ah in range(0x3C, 0x45)}
+
 # the overlay manager (VROOMM, src/E1E8B.ASM): its file reads load overlays, which the port has as code
 OVERLAY_MANAGER = {"EOB.EXE": "e1e8b"}
 
@@ -112,8 +118,17 @@ class CClock:
         self._last_library_insns = None
         base = LOAD_SEG * 16
         self.library = [(base + a, base + b) for a, b in library_ranges(program)]
+        mgr = [u for u in tomllib.loads(UNITS_TOML.read_text())["unit"]
+               if u["program"] == program and u["id"] == OVERLAY_MANAGER.get(program)]
+        self.manager = [(base + int(u["start"][:4], 16) * 16 + int(u["start"][5:], 16),
+                         base + int(u["start"][:4], 16) * 16 + int(u["start"][5:], 16) + u["bytes"]) for u in mgr]
+        if program == "EOB.EXE":
+            # the library's overlay module OVRHALT, 0000:5028 to ATEXIT at 0000:5098 (build/re/rtl_compare.json)
+            self.manager.append((base + 0x5028, base + 0x5098))
         self.checkpoints: list[list] = []
         self.marks: list[dict] = []     # the port's checkpoints (mark)
+        self.files = 0                  # the library's file calls so far (FILE_CALLS)
+        self.event_files: list[int] = []   # the file calls made before each interrupt
         self._pending: list[dict] = []  # marks waiting for the next interrupt or access
         self._overlays = []
         if program == "EOB.EXE" and LAYOUT.exists():
@@ -189,6 +204,7 @@ class CClock:
         def deliver_interrupt(n, clear_if=True):
             if hw["on"]:
                 self._resolve()
+                self.event_files.append(self.files)
                 at = [self.count, self.accesses]
                 if n == 0x09:
                     self.events.append(at + ["irq1", m.kbd_data])
@@ -212,8 +228,10 @@ class CClock:
                     hw["on"] = False
             setattr(m, name, wrapped)
 
-        def access(lin):
+        def access(lin, service=None):
             if any(a <= lin < b for a, b in self.library):
+                if service in FILE_CALLS and not any(a <= lin < b for a, b in self.manager):
+                    self.files += 1
                 self.library_accesses += 1
                 if m.insns != self._last_library_insns:
                     self._last_library_insns = m.insns
@@ -238,9 +256,17 @@ class CClock:
             return write(port, size, val)
         m.port_read, m.port_write = port_read, port_write
         for n, fn in list(m.services.items()):
-            def service(mach, fn=fn):
+            def service(mach, fn=fn, n=n):
                 ss, sp = mach.get("ss"), mach.get("sp")       # the INT's frame: IP, CS of the caller
-                access(mach.linear(mach.rw(ss, sp + 2), mach.rw(ss, sp)))
+                svc = (n << 8) | (mach.get("ax") >> 8) if n == 0x21 else None
+                if svc in FILE_CALLS:
+                    # a library routine run for the overlay manager: _chmod called from the library's
+                    # overlay module OVRHALT (0000:506F) before an overlay's read; the routine's
+                    # caller, at [BP+2] of its frame, is in that module
+                    bp = mach.get("bp")
+                    if any(a <= mach.linear(mach.rw(ss, bp + 4), mach.rw(ss, bp + 2)) < b for a, b in self.manager):
+                        svc = None
+                access(mach.linear(mach.rw(ss, sp + 2), mach.rw(ss, sp)), svc)
                 return fn(mach)
             m.services[n] = service
 
@@ -275,4 +301,5 @@ class CClock:
         return {"clock": "instructions executed in the code of the C units of port/units.txt (playbook 80)",
                 "checkpoints": self.checkpoints, "interrupts": self.events, "times": self.times,
                 "accesses": self.accesses, "library_times": self.library_times,
-                "library_accesses": self.library_accesses}
+                "library_accesses": self.library_accesses, "interrupt_files": self.event_files,
+                "files": self.files}
