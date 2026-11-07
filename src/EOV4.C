@@ -190,7 +190,10 @@ signed char gDoorSlideFrom30[4] = { 0, 2, 4, 0 }; /*@ ds:719A */
 signed char gDoorSplitStep[4] = { 7, 11, 14, 0 }; /*@ ds:719E */
 signed char gDoorSplitFrom30[4] = { 0, 2, 4, 0 }; /*@ ds:71A2 */
 unsigned char gProjectileX[1] = { 0 }; /*@ ds:71A6 */
-unsigned char gPoolNameBase[71] = { /*@ ds:71A7 */ /* declared `extern struct PoolNameRec gPoolNameBase[];` (eov5): write it as its type */
+/* ds:71A7 is where EOV5's folded base of gCharPool[-n-1].name falls (gCharPool + 2 - 0xF3, src/EOV5.C),
+   so the name the link needs for it is defined on these bytes of this unit's, which nothing in this
+   unit reads by it */
+unsigned char gPoolNameBase[71] = { /*@ ds:71A7 */
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x21, 0x34, 0x00,
     0x00, 0x47, 0x5A, 0x00, 0x00, 0x6D, 0x7F, 0x00, 0x00, 0x92, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFD, 0x19, 0xE9, 0x0F, 0x3C,

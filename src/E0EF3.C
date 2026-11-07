@@ -131,8 +131,6 @@ extern char gStrSpellAborted[];                /*@ ds:57C8 */ /* said by 0EF3:08
 extern char gStrSpellExpires[];                /*@ ds:57D9 */ /* "%s's %s spell expires." (0EF3:0D78) */
 extern char gStrAllDispelled[];                /*@ ds:5859 */ /* "All spells on %s are dispelled." (0EF3:131A) */
 extern char gStrAidFails[];                /*@ ds:5899 */ /* "The aid spell fails!" (0EF3:1BA3) */
-extern signed char gEffectSound[];      /*@ ds:1355 */ /* one record per effect value, stride 0x13;
-                                                           the first byte is a sound id (0EF3:08CF) */
 extern void (far *gCurrentSpellApply)(void);       /*@ ds:EFBA */ /* the current spell's apply callback
                                                          (Spell.apply): set by 0EF3:2676 from
                                                          spell->apply and run there, and run by
@@ -791,7 +789,7 @@ char gStrCastOk[5] = "ok\r"; /*@ ds:59AB */
             return rec->m04;
         DrawText(gCurRec->name);
         DrawText(gStrTargetOk);
-        PlaySound(gEffectSound[gCurrentSpell * 0x13]);
+        PlaySound(gSpells[gCurrentSpell].sound);
         FlashPartyMembers(gCurMember);
         gCurrentSpellApply();
         RedrawMember(gCurMember);
