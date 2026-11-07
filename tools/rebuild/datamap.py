@@ -104,7 +104,7 @@ def records(xs: list[int]) -> list[list[int]]:
 
 def pools() -> dict[str, tuple[int, int, int]]:
     """unit -> (first literal, end of the last with its NUL, count)"""
-    lits = json.loads((ROOT / "port/literals.json").read_text())["units"]
+    lits = json.loads(at_d0("port/literals.json"))["units"]
     out = {}
     for u, ls in lits.items():
         if not ls:
@@ -119,6 +119,16 @@ def pools() -> dict[str, tuple[int, int, int]]:
 # merged, before D2 turned them into definitions (and dropped the externs that named a pool's strings,
 # E122E's). It is read from that commit, so the map stays reproducible while src/ moves on.
 DECLARATIONS_AT = "1e6507c"
+
+
+def at_d0(path: str) -> str:
+    """A file as it was at DECLARATIONS_AT, else as it is (no git)."""
+    import subprocess
+    try:
+        return subprocess.run(["git", "show", "%s:%s" % (DECLARATIONS_AT, path)], cwd=ROOT, capture_output=True,
+                              check=True).stdout.decode("latin-1")
+    except (OSError, subprocess.CalledProcessError):
+        return (ROOT / path).read_text()
 
 
 def source_files() -> list[tuple[str, str]]:
