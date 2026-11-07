@@ -23,7 +23,8 @@ sound and state.
 | M4 the MCGA driver | done 2026-11-05 (section "M4"): `MCGA.OVL` in C (`port/drivers/`, 40 exports), entered with its argument bytes, the same as the original on every direct call and every golden call tested. Next: step D, then M5 |
 | D the program's data as C | done 2026-11-06 (section "Step D"): D0 the data map (`re/datamap.toml`, 34 modules); D1 the tools; D2 every module's data as definitions in `src/`, the data of all 34 modules proven by `make match`, `make rebuild` of both programs as before; D3 tc2c writes the port's image from them (`make port-image`: 64,446 bytes the same as EOB.EXE's). Left: the naming round for the 126 address names D2 kept (100 are E0CF7's screen-list nodes), with its independent review |
 | M5 the replay | done 2026-11-07 (section "Step M5"): `make port-replay` plays `boot-title` headless from the port's own image, all four checkpoints the oracle's (the state view and the golden's screens); the interrupts and checkpoints keyed by the game's accesses (the human, 2026-11-07); the program's start in `port/start.c`; the assembly units' code-segment data in the image (`port/asmdata.json`) |
-| M6 and M7 | not started (section "Order of work") |
+| M6 the other goldens | started 2026-11-07 (section "Step M6"): `boot-adlib` is the oracle's at every checkpoint; interrupts also placed by the library's file calls; `new-party` and `mouse-party` wait on Westwood's far data in `src/` and on placing the interrupts that come during computation |
+| M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
 
@@ -607,6 +608,53 @@ units. `make port-image` checks them and that the port writes no other byte belo
 - `make port-golden` in `make check`, then `INTRO.EXE`.
 - The per-function test (`make port-hybrid`) still delivers its bench's interrupts after each access
   (`machine_replay` clear), as M2 and M3 left it.
+
+## Step M6: the other goldens (started 2026-11-07)
+
+`make port-replay NAME=...` on the other `EOB.EXE` goldens: `boot-title` and `boot-adlib` are the
+oracle's at every checkpoint; `new-party` and `mouse-party` reach every checkpoint at its place but
+differ there; `load-walk` needs the replay to serve a saved game (its `save` option).
+
+### The library's file calls place interrupts too
+
+After the title the game loads the character panel's files: thousands of the library's file reads and
+no access of its own (each access in that stretch is an interrupt handler's EOI). Keyed by accesses
+alone, every interrupt of the stretch waited in the port for the next wait, where it was delivered at
+once, while in the original it came during the loading; a routine that reads the tick counter there
+then saw an older count. So each interrupt is also recorded with the number of the library's file
+calls made before it (INT 21h with AH 3Ch to 44h, `interrupt_files` in the recording,
+`tools/oracle/cclock.py`), and the port delivers it once both counts are reached, before the next
+access or the next file call (`machine_library_file`, `port/runtime/irq.c`). The port's runtime library
+makes the same file calls as the Borland library, one for one (compared on `boot-title`, 3,075, and `new-party`, 4,265);
+its other calls differ (its `setvect` makes no DOS call, its heap grows in other steps), which is why
+only the file calls count. The overlay manager's calls are left out on both sides, the library's
+`_chmod` it runs through the library's overlay module OVRHALT (0000:5028 to 0000:5098, by
+`build/re/rtl_compare.json`) included.
+
+### Finding where a replay leaves the oracle
+
+`tools/port/replay.py --probe-file F,...` compares the port's view and the oracle's just before the
+library's file call F, and `--probe-access A,...` just before access A: at either the two are at the
+same instruction with the same interrupts delivered, so any difference is the port's. (`--probe K`, at
+interrupt K, compares only where both are at a wait.) `TC_TRACE=file` on `eob-port-headless --replay`
+writes the port's accesses, file calls and interrupts in the form of the oracle's.
+
+### What `new-party` and `mouse-party` still need
+
+1. **Westwood's far data in `src/`.** The load module has 22 data segments outside DGROUP, from 1F1D
+   to 20F5 (about 8 KB, `build/re/eob.json`: the panels' rectangles and icon definitions, the button
+   table, the camp strings, the cell bytes, the CGA sheet maps, ...); `src/` declares them `extern
+   far` at their addresses (`gPanelIconDefs`, 2084:0000) and `make rebuild` still generates them from
+   the original's bytes (`tools/rebuild/rebuild.py`, `far_objects`). Step D converted DGROUP only, so
+   the port's image has zeros there: its `BuildIconTable` reads widths of 0 and makes none of the 10
+   cells the original makes. With those segments filled from the original's bytes, as an experiment
+   (not committed), both sessions differ only in the item below. They are program data, so they belong
+   in `src/` as definitions, as DGROUP's are (decision C): a step D for the far segments.
+2. **Interrupts during computation with no access and no file call.** At the character panel the
+   original draws the panel while ticks come; the port, with nothing to place them by, delivers them in
+   the panel's wait loop, after `DrawRowList` has read the tick counter, so the selection frame
+   (`gSelectFrameStep`, ds:54F4) is 5 steps ahead in both sessions. Accesses and file calls cannot
+   place these: something that counts within computation is needed (decision pending with the human).
 
 ## Order of work
 

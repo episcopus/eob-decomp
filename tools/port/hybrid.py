@@ -137,7 +137,7 @@ INSNS_FN = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_uint32)
 
 class Event(ctypes.Structure):
     """machine.h's machine_event"""
-    _fields_ = [("at", ctypes.c_uint32), ("access", ctypes.c_uint32), ("kind", ctypes.c_uint8),
+    _fields_ = [("at", ctypes.c_uint32), ("access", ctypes.c_uint32), ("files", ctypes.c_uint32), ("kind", ctypes.c_uint8),
                 ("scancode", ctypes.c_uint8), ("cond", ctypes.c_uint16), ("buttons", ctypes.c_uint16),
                 ("x", ctypes.c_uint16), ("y", ctypes.c_uint16)]
 
@@ -147,10 +147,11 @@ def event(rec: list) -> Event:
     condition, buttons, x, y]) as the machine's."""
     at, access, *rest = rec
     if not rest:
-        return Event(at, access, 0)
+        return Event(at=at, access=access, kind=0)
     if rest[0] == "irq1":
-        return Event(at, access, 1, rest[1] & 0xFF)
-    return Event(at, access, 2, 0, *rest[1:5])
+        return Event(at=at, access=access, kind=1, scancode=rest[1] & 0xFF)
+    cond, buttons, x, y = rest[1:5]
+    return Event(at=at, access=access, kind=2, cond=cond, buttons=buttons, x=x, y=y)
 
 
 def components(m) -> list:

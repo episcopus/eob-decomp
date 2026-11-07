@@ -16,12 +16,12 @@
      cmdline <the command tail, its leading space included>
      mouse 0|1
      adlib 0|1
-     irq0 <access>
-     irq1 <access> <scancode>
-     mouse_event <access> <condition> <buttons> <x> <y>
+     irq0 <access> [<file calls>]
+     irq1 <access> <scancode> [<file calls>]
+     mouse_event <access> <condition> <buttons> <x> <y> [<file calls>]
      time <access> <instructions>
      ltime <library access> <instructions>
-     checkpoint <name> <interrupts> <accesses> */
+     checkpoint <name> <interrupts> <accesses> [<file calls>] */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,7 +36,7 @@
 
 static struct {
     char name[64];
-    u32 events, accesses;
+    u32 events, accesses, files;   /* files ~0: any */
 } cps[MAX_CP];
 static unsigned n_cp, next_cp;
 static const char *dumps;
@@ -58,7 +58,8 @@ static void dump(const char *name)
 static void point(u32 events, u32 accesses, int idle)
 {
     (void)idle;
-    while (next_cp < n_cp && cps[next_cp].events == events && cps[next_cp].accesses == accesses) {
+    while (next_cp < n_cp && cps[next_cp].events == events && cps[next_cp].accesses == accesses &&
+           (cps[next_cp].files == 0xFFFFFFFFu || cps[next_cp].files == machine_files)) {
         dump(cps[next_cp].name);
         printf("replay: %s after %lu interrupts and %lu accesses\n", cps[next_cp].name, (unsigned long)events,
                (unsigned long)accesses);
@@ -69,7 +70,9 @@ static void point(u32 events, u32 accesses, int idle)
         fflush(stdout);
         exit(0);
     }
-    if (events > cps[next_cp].events || (events == cps[next_cp].events && accesses > cps[next_cp].accesses)) {
+    if (events > cps[next_cp].events || (events == cps[next_cp].events && accesses > cps[next_cp].accesses) ||
+        (events == cps[next_cp].events && accesses == cps[next_cp].accesses && cps[next_cp].files != 0xFFFFFFFFu &&
+         machine_files > cps[next_cp].files)) {
         printf("replay: %s not reached: its place is after %lu interrupts and %lu accesses, the port is at %lu "
                "and %lu\n", cps[next_cp].name, (unsigned long)cps[next_cp].events,
                (unsigned long)cps[next_cp].accesses, (unsigned long)events, (unsigned long)accesses);
@@ -102,17 +105,20 @@ int replay_run(const char *script, const char *game_dir, const char *dump_dir)
         if (strncmp(line, "cmdline ", 8) == 0) {
             snprintf(cmd, sizeof cmd, "%s", line + 8);
         } else if (sscanf(line, "mouse %d", &mouse) == 1 || sscanf(line, "adlib %d", &adlib) == 1) {
-        } else if (sscanf(line, "irq0 %lu", &a) == 1) {
+        } else if ((d = 0, sscanf(line, "irq0 %lu %lu", &a, &d)) >= 1) {
             e.access = (u32)a;
+            e.files = (u32)d;
             e.kind = MACHINE_IRQ0;
             machine_event_push(&e);
-        } else if (sscanf(line, "irq1 %lu %lu", &a, &b) == 2) {
+        } else if ((d = 0, sscanf(line, "irq1 %lu %lu %lu", &a, &b, &d)) >= 2) {
             e.access = (u32)a;
+            e.files = (u32)d;
             e.kind = MACHINE_IRQ1;
             e.scancode = (u8)b;
             machine_event_push(&e);
-        } else if (sscanf(line, "mouse_event %lu %lu %lu %lu %lu", &a, &b, &c, &x, &y) == 5) {
+        } else if ((d = 0, sscanf(line, "mouse_event %lu %lu %lu %lu %lu %lu", &a, &b, &c, &x, &y, &d)) >= 5) {
             e.access = (u32)a;
+            e.files = (u32)d;
             e.kind = MACHINE_MOUSE;
             e.cond = (u16)b;
             e.buttons = (u16)c;
@@ -123,7 +129,7 @@ int replay_run(const char *script, const char *game_dir, const char *dump_dir)
             machine_time_push((u32)a, (u32)b);
         } else if (sscanf(line, "ltime %lu %lu", &a, &b) == 2) {
             machine_library_time_push((u32)a, (u32)b);
-        } else if (sscanf(line, "checkpoint %63s %lu %lu", name, &c, &d) == 3) {
+        } else if ((x = 0xFFFFFFFFul, sscanf(line, "checkpoint %63s %lu %lu %lu", name, &c, &d, &x)) >= 3) {
             if (n_cp == MAX_CP) {
                 fprintf(stderr, "replay: more than %d checkpoints\n", MAX_CP);
                 return 2;
@@ -131,6 +137,7 @@ int replay_run(const char *script, const char *game_dir, const char *dump_dir)
             snprintf(cps[n_cp].name, sizeof cps[n_cp].name, "%s", name);
             cps[n_cp].events = (u32)c;
             cps[n_cp].accesses = (u32)d;
+            cps[n_cp].files = (u32)x;
             n_cp++;
         } else if (line[0] != 0 && line[0] != '#') {
             fprintf(stderr, "replay: %s: cannot read the line: %s\n", script, line);
@@ -140,6 +147,7 @@ int replay_run(const char *script, const char *game_dir, const char *dump_dir)
     fclose(f);
     if (getenv("TC_TRACE") != NULL) {
         machine_trace = fopen(getenv("TC_TRACE"), "w");
+        tc_hot_watch = 1;
     }
     machine_boot("EOB.EXE", (const u8 *)cmd, (u16)strlen(cmd), mouse, adlib);
     machine_replay = 1;

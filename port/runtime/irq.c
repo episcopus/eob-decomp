@@ -42,6 +42,7 @@ static u32 time_count, time_cap, time_next;
 static machine_time_mark *ltimes;
 static u32 ltime_count, ltime_cap, ltime_next;
 u32 machine_library_accesses;
+u32 machine_files;
 static int delivering;
 
 #ifdef TC_HYBRID
@@ -57,6 +58,7 @@ void machine_events_reset(void)
     time_count = time_next = 0;
     ltime_count = ltime_next = 0;
     machine_library_accesses = 0;
+    machine_files = 0;
     machine_cclock = 0;
     machine_accesses = 0;
     delivering = 0;
@@ -114,7 +116,7 @@ u32 machine_events_delivered(void) { return event_next; }
 
 static int due(const machine_event *e)
 {
-    return e->at <= machine_cclock && e->access <= machine_accesses;
+    return e->at <= machine_cclock && e->access <= machine_accesses && e->files <= machine_files;
 }
 
 /* what the CPU and the interrupt controller do for the event, then its handler */
@@ -207,6 +209,18 @@ int machine_deliver_due(void)
     return n;
 }
 
+void machine_library_file(void)
+{
+    if (machine_replay && !delivering) {
+        while (event_next < event_count && due(&events[event_next])) {
+            point(0);
+            deliver_next();
+        }
+        point(0);
+    }
+    machine_files++;
+}
+
 void machine_access(void)
 {
     if (machine_replay && !delivering) {
@@ -268,4 +282,14 @@ void tc_spin_idle(void)
                 (unsigned long)events[event_next].access, (unsigned long)machine_accesses);
     }
     tc_fail(75, "a loop waits for an interrupt and none is left to come");
+}
+
+/* a read of a byte a handler writes, with the trace on: reported when an interrupt is due by the access
+   count but not delivered yet (the original may have taken it before this read) */
+void tc_hot_read(u32 a)
+{
+    if (!delivering && event_next < event_count && due(&events[event_next])) {
+        machine_trace_line("hot read %05lX with interrupt %lu due (kind %u), after %lu accesses", (unsigned long)a,
+                           (unsigned long)event_next + 1u, events[event_next].kind, (unsigned long)machine_accesses);
+    }
 }

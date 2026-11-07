@@ -49,13 +49,14 @@ def recording(name: str, clock: dict, golden: dict) -> str:
     args = run.command_line(golden["args"], "mouse" in opts, opts.get("sound"))
     lines = ["# %s, from tests/sessions/golden/%s.clock.json (tools/port/replay.py)" % (name, name),
              "cmdline  " + args.strip(), "mouse %d" % ("mouse" in opts), "adlib %d" % (opts.get("sound") == "adlib")]
-    for e in clock["interrupts"]:
+    files = clock.get("interrupt_files") or [0] * len(clock["interrupts"])
+    for e, f in zip(clock["interrupts"], files):
         if len(e) == 2:
-            lines.append("irq0 %d" % e[1])
+            lines.append("irq0 %d %d" % (e[1], f))
         elif e[2] == "irq1":
-            lines.append("irq1 %d %d" % (e[1], e[3]))
+            lines.append("irq1 %d %d %d" % (e[1], e[3], f))
         elif e[2] == "mouse":
-            lines.append("mouse_event %d %d %d %d %d" % (e[1], *e[3:7]))
+            lines.append("mouse_event %d %d %d %d %d %d" % (e[1], *e[3:7], f))
         else:
             raise SystemExit("%s: an interrupt of kind %r" % (name, e[2]))
     lines += ["time %d %d" % (a, i) for a, i in clock["times"]]
@@ -84,7 +85,10 @@ def ranges(a: bytes, b: bytes, base: int, limit: int = 12) -> list[str]:
             while j < n and (a[j] != b[j] or (j + 1 < n and a[j + 1] != b[j + 1])):
                 j += 1
             lin = base + i
-            out.append("%05X..%05X (%d bytes) port %s oracle-view" % (lin, base + j, j - i, a[i:min(j, i + 8)].hex()))
+            ds = lin - state.DGROUP * 16
+            where = " (ds:%04X)" % ds if 0 <= ds < 0x10000 else ""
+            out.append("%05X..%05X%s (%d bytes) port %s, oracle %s" % (lin, base + j, where, j - i, a[i:min(j, i + 8)].hex(),
+                                                                       b[i:min(j, i + 8)].hex()))
             i = j
         i += 1
     return out
@@ -191,12 +195,176 @@ def views(name: str) -> None:
     print("%s: the oracle's views in %s" % (name, out))
 
 
+def probe(name: str, port: str, ks: list[int], by_access: bool = False) -> None:
+    """Where between two checkpoints the port leaves the oracle: the port's view and the oracle's just
+    before interrupt K is delivered (K interrupts delivered, as many accesses made as the recording has
+    before it), for each K; the first K whose views differ is after the divergence. The views go to
+    build/port/replay/<name>/probe/."""
+    import tempfile
+    from oracle import run
+    from oracle.cclock import CClock
+    from oracle.input import Script
+    clock = json.loads((GOLDEN / ("%s.clock.json" % name)).read_text())
+    golden = json.loads((GOLDEN / ("%s.json" % name)).read_text())
+    work = WORK / name
+    out = work / "probe"
+    if out.exists():
+        shutil.rmtree(out)
+    out.mkdir(parents=True)
+    if by_access:
+        # just before access A: the interrupts recorded before it delivered on both sides
+        places = {}
+        for acc in ks:
+            places[sum(1 for e in clock["interrupts"] if e[1] <= acc - 1)] = acc - 1
+        ks = sorted(places)
+    else:
+        places = {k: clock["interrupts"][k][1] for k in ks}
+    text = recording(name, clock, golden).split("\n")
+    text = [l for l in text if not l.startswith("checkpoint ")]
+    text += ["checkpoint probe-%d %d %d" % (k, k, places[k]) for k in sorted(ks)]
+    rec = work / "probe.txt"
+    rec.write_text("\n".join(text) + "\n")
+    gd = game_dir(work / "game")
+    subprocess.run([port, "--replay", str(rec), str(gd), str(out)], capture_output=True, text=True)
+    oracle = {}
+    build = run.build_machine
+
+    def build_and_clock(*a, **k):
+        m = build(*a, **k)
+        cc = CClock(m)
+        deliver = m.deliver_interrupt          # the clock's: a hardware interrupt adds an event
+
+        def at_delivery(n, clear_if=True):
+            k = len(cc.events)
+            v = state.view(bytes(m.uc.mem_read(0, state.TOP))) if k in places and k not in oracle else None
+            r = deliver(n, clear_if)
+            if v is not None and len(cc.events) == k + 1:
+                oracle[k] = v
+            return r
+        if by_access:
+            want = {a: k for k, a in places.items()}
+            read, write = m.port_read, m.port_write
+
+            def look():
+                k = want.get(cc.accesses)
+                if k is not None and k not in oracle and len(cc.events) == k:
+                    oracle[k] = state.view(bytes(m.uc.mem_read(0, state.TOP)))
+
+            def port_read(p_, size):
+                look()
+                return read(p_, size)
+
+            def port_write(p_, size, v):
+                look()
+                return write(p_, size, v)
+            m.port_read, m.port_write = port_read, port_write
+            for n_, fn in list(m.services.items()):
+                def service(mach, fn=fn):
+                    look()
+                    return fn(mach)
+                m.services[n_] = service
+        else:
+            m.deliver_interrupt = at_delivery
+        return m
+    run.build_machine = build_and_clock
+    try:
+        txt = (SESSIONS / ("%s.keys" % name)).read_text()
+        opts = Script(txt).options
+        with tempfile.TemporaryDirectory() as tmp:
+            run.run_session(txt, out=Path(tmp), max_insns=int(opts.get("insns", 60_000_000)),
+                            mouse="mouse" in opts, sound=opts.get("sound"))
+    finally:
+        run.build_machine = build
+    for k in sorted(ks):
+        p = out / ("probe-%d.bin" % k)
+        if not p.exists():
+            print("%s: probe %d: the port did not reach it" % (name, k))
+            continue
+        mine = state.view(p.read_bytes()[:0xB0000])
+        same = mine == oracle.get(k)
+        print("%s: %d interrupts delivered, before access %d: %s" % (name, k, places[k] + 1, "the same" if same else "DIFFERS"))
+        if k in oracle:
+            (out / ("oracle-%d.bin" % k)).write_bytes(oracle[k])
+        if not same and k in oracle:
+            for line in ranges(mine, oracle[k], state.LOW, 12):
+                print("    " + line)
+
+
+def probe_files(name: str, port: str, fs: list[int]) -> None:
+    """The port's view and the oracle's just before the library's file call F (the oracle is run first,
+    for the interrupts and accesses at each place)."""
+    import tempfile
+    from oracle import run
+    from oracle.cclock import CClock
+    from oracle.input import Script
+    clock = json.loads((GOLDEN / ("%s.clock.json" % name)).read_text())
+    golden = json.loads((GOLDEN / ("%s.json" % name)).read_text())
+    work = WORK / name
+    out = work / "probe"
+    if out.exists():
+        shutil.rmtree(out)
+    out.mkdir(parents=True)
+    want = {f - 1 for f in fs}
+    found = {}
+    build = run.build_machine
+
+    def build_and_clock(*a, **k):
+        m = build(*a, **k)
+        cc = CClock(m)
+        f21 = m.services[0x21]
+
+        def svc(mach):
+            if cc.files in want and cc.files not in found and 0x3C <= (mach.get("ax") >> 8) <= 0x44:
+                found[cc.files] = (len(cc.events), cc.accesses, state.view(bytes(mach.uc.mem_read(0, state.TOP))))
+            return f21(mach)
+        m.services[0x21] = svc
+        return m
+    run.build_machine = build_and_clock
+    try:
+        txt = (SESSIONS / ("%s.keys" % name)).read_text()
+        opts = Script(txt).options
+        with tempfile.TemporaryDirectory() as tmp:
+            run.run_session(txt, out=Path(tmp), max_insns=int(opts.get("insns", 60_000_000)),
+                            mouse="mouse" in opts, sound=opts.get("sound"))
+    finally:
+        run.build_machine = build
+    text = [l for l in recording(name, clock, golden).split("\n") if not l.startswith("checkpoint ")]
+    text += ["checkpoint file-%d %d %d %d" % (f + 1, found[f][0], found[f][1], f) for f in sorted(found)]
+    rec = work / "probe.txt"
+    rec.write_text("\n".join(text) + "\n")
+    gd = game_dir(work / "game")
+    r = subprocess.run([port, "--replay", str(rec), str(gd), str(out)], capture_output=True, text=True)
+    for f in sorted(found):
+        p = out / ("file-%d.bin" % (f + 1))
+        if not p.exists():
+            print("%s: before file call %d: the port did not reach it (%s)" % (name, f + 1, r.stdout.strip().split("\n")[-1]))
+            continue
+        mine = state.view(p.read_bytes()[:0xB0000])
+        same = mine == found[f][2]
+        print("%s: before file call %d (%d interrupts, %d accesses): %s" % (name, f + 1, found[f][0], found[f][1],
+                                                                             "the same" if same else "DIFFERS"))
+        if not same:
+            for line in ranges(mine, found[f][2], state.LOW, 12):
+                print("    " + line)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--port", default=str(ROOT / "build/port/eob-port-headless"))
     ap.add_argument("--views", action="store_true", help="write the oracle's views first, to name what differs")
+    ap.add_argument("--probe", default="", help="K,K,...: compare the views just before interrupt K (bisecting)")
+    ap.add_argument("--probe-access", default="", help="A,A,...: compare the views just before access A")
+    ap.add_argument("--probe-file", default="", help="F,F,...: compare the views just before the library's file call F")
     ap.add_argument("names", nargs="*", default=["boot-title"])
     a = ap.parse_args(argv)
+    if a.probe_file:
+        for n in a.names:
+            probe_files(n, a.port, [int(f) for f in a.probe_file.split(",")])
+        return 0
+    if a.probe or a.probe_access:
+        for n in a.names:
+            probe(n, a.port, [int(k) for k in (a.probe or a.probe_access).split(",")], by_access=bool(a.probe_access))
+        return 0
     ok = True
     for n in a.names:
         if a.views:

@@ -149,6 +149,7 @@ enum { MACHINE_IRQ0, MACHINE_IRQ1, MACHINE_MOUSE };
 /* one interrupt, due at C-clock position `at` after `access` accesses of the game */
 typedef struct {
     u32 at, access;
+    u32 files;                                /* the library's file calls made before it (M6) */
     u8 kind;
     u8 scancode;                              /* IRQ 1: what port 60h reads */
     u16 cond, buttons, x, y;                  /* a mouse event */
@@ -175,7 +176,7 @@ extern int machine_replay;
    TC_TRACE=file): one line each, as tools/port/replay.py --trace writes the oracle's */
 extern void *machine_trace;
 void machine_trace_line(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
-extern void (*machine_point)(u32 events, u32 accesses, int idle);
+extern void (*machine_point)(u32 events, u32 accesses, int idle);   /* machine_files is the third count */
 u32 machine_events_delivered(void);
 
 void machine_events_reset(void);
@@ -185,6 +186,11 @@ void machine_time_push(u32 access, u32 insns);
 void machine_library_time_push(u32 access, u32 insns);
 extern u32 machine_library_accesses;
 void machine_library_access(void);
+/* The library's file calls (INT 21h, AH 3Ch to 44h): an interrupt is due once both the game's accesses
+   and these have reached its own (the oracle's `interrupt_files`); the ones due are delivered before
+   the next file call, as before the next access (M6). */
+extern u32 machine_files;
+void machine_library_file(void);
 u32 machine_events_left(void);
 
 /* An access of the game (machine_port_in/out, a service called through machine_int): counts it and
