@@ -23,6 +23,7 @@
 #include "tcport.h"
 #include "platform.h"
 #include "ported.h"   /* build/port/gen: the translated functions */
+#include "tclib.h"
 
 /* EOB.EXE: DGROUP is paragraph 212Eh of the load module (whitepaper 2.2). */
 #define EOB_DGROUP_PARA 0x212Eu
@@ -183,14 +184,38 @@ static int window_demo(void)
     return 0;
 }
 
+/* Step D3: the units' definitions written into an empty arena (tc2c_data), DGROUP written to `out`
+   (64 KB), for tools/port/image.py to compare with EOB.EXE's load module. The port's own image
+   starts so; no byte of EOB.EXE is read. */
+static int data_image(const char *out)
+{
+    FILE *f;
+    tc_load_seg = LOAD_SEG;
+    tc_ds = (u16)(LOAD_SEG + EOB_DGROUP_PARA);
+    tc2c_init();
+    tc2c_data();
+    tc_library_data();
+    f = fopen(out, "wb");
+    if (f == NULL || fwrite(tc_mem + (u32)tc_ds * 16u, 1, 0x10000u, f) != 0x10000u) {
+        fprintf(stderr, "eob-port: cannot write %s\n", out);
+        return 2;
+    }
+    fclose(f);
+    printf("eob-port: DGROUP %04X:0000 written to %s\n", tc_ds, out);
+    return 0;
+}
+
 int main(int argc, char **argv)
 {
+    if (argc == 3 && strcmp(argv[1], "--data-image") == 0) {
+        return data_image(argv[2]);
+    }
     if (argc == 3 && strcmp(argv[1], "--self-test") == 0) {
         return self_test(argv[2]);
     }
     if (argc == 2 && strcmp(argv[1], "--window") == 0) {
         return window_demo();
     }
-    fprintf(stderr, "usage: eob-port --self-test EOB.EXE | --window\n");
+    fprintf(stderr, "usage: eob-port --self-test EOB.EXE | --data-image OUT | --window\n");
     return 2;
 }

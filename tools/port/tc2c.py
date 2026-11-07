@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import tomllib
 import re
 import shutil
 import struct
@@ -272,20 +273,22 @@ def literal_bytes(value: str) -> bytes:
 
 def unit_literals(ast: dict) -> list[tuple[str, bytes]]:
     """The string literals of a unit that Turbo C keeps in its literal pool, in source order, as
-    (AST node id, bytes): all but those that initialise a char array (their bytes are the array's)."""
+    (AST node id, bytes): those used as pointers (clang decays them, ArrayToPointerDecay); a literal
+    that initialises a char array, a variable or a struct's field, is that array's bytes."""
     out = []
 
-    def walk(n, init_of_array=False):
+    def walk(n, decays=False):
         if not isinstance(n, dict):
             return
-        if n.get("kind") == "StringLiteral" and not init_of_array:
-            out.append((n["id"], literal_bytes(n["value"])))
-        if n.get("kind") == "VarDecl" and n.get("inner") and ctype(n["type"])[0] == "arr":
-            for c in n["inner"]:
-                walk(c, strip(c).get("kind") == "StringLiteral")
+        k = n.get("kind")
+        if k == "StringLiteral":
+            if decays:
+                out.append((n["id"], literal_bytes(n["value"])))
             return
+        through = k == "ParenExpr" and decays
+        here = k == "ImplicitCastExpr" and n.get("castKind") == "ArrayToPointerDecay"
         for c in n.get("inner", []) or []:
-            walk(c)
+            walk(c, here or through)
 
     walk(ast)
     return out
@@ -357,6 +360,10 @@ class Program:
             for m in re.finditer(r"^[^#/\n][^;\n]*?\b(\w+)\s*\([^;\n]*\)\s*;", h.read_text(), re.M):
                 self.header_funcs.add(m.group(1))
         self.literal_table = json.loads(LITERALS.read_text())["units"] if LITERALS.exists() else {}
+        # each module's initialised data, [start, end) in DGROUP (re/datamap.toml; step D3)
+        dm = ROOT / "re" / "datamap.toml"
+        self.spans = {m["id"]: (int(m["start"][3:], 16), int(m["end"][3:], 16))
+                      for m in tomllib.loads(dm.read_text())["module"]} if dm.exists() else {}
         self.runtime = set(re.findall(r"\btcl_(\w+)\s*\(", TCLIB_H.read_text())) if TCLIB_H.exists() else set()
         self.defs: dict[str, tuple] = {}      # function name -> type of its definition
         self.decls: dict[str, tuple] = {}     # function name -> the first declaration seen
@@ -1184,6 +1191,128 @@ class Unit:
             return ["tc_zero(%s, %d)" % (addr, self.size(t))]
         return [self.store(t, addr, self.rv(init))]
 
+    def image_of(self, t, init, out: bytearray, ptrs: list, off: int) -> None:
+        """A file-scope definition's initial value (step D3): its constant bytes into out at off, and
+        each far pointer that needs an address as (offset, expression), stored after the bytes."""
+        k = init["kind"]
+        s = strip(init)
+        if t[0] == "arr" and s["kind"] == "StringLiteral":
+            b = literal_bytes(s["value"])
+            n = self.size(t)
+            out[off:off + n] = (b + b"\0" * n)[:n]
+            return
+        if k == "InitListExpr":
+            items = init.get("inner", [])
+            if t[0] == "arr":
+                es = self.size(t[1])
+                for i, it in enumerate(items[:t[2]]):
+                    self.image_of(t[1], it, out, ptrs, off + i * es)
+                return
+            if t[0] == "struct":
+                offs, _size = self.layout(t[1])
+                fields = self.records[t[1]]["fields"]
+                if self.records[t[1]]["union"]:
+                    fields = fields[:1]
+                for (fid, _fn, ft), it in zip(fields, items):
+                    self.image_of(ft, it, out, ptrs, off + offs[fid][0])
+                return
+            self.fail("initialiser list for %r" % (t,))
+        if k == "ImplicitValueInitExpr":
+            return
+        n = self.size(t)
+        if t[0] == "int":
+            v = self.const(init)
+            out[off:off + n] = (v & ((1 << (8 * n)) - 1)).to_bytes(n, "little")
+            return
+        try:
+            v = self.const(init)                 # a null pointer, or a number cast to a pointer
+        except Unsupported:
+            v = None
+        except (KeyError, TypeError):
+            v = None
+        if v is not None:
+            out[off:off + n] = (v & ((1 << (8 * n)) - 1)).to_bytes(n, "little")
+            return
+        if n != 4:
+            self.fail("a near pointer with an address in an initialiser")
+        ptrs.append((off, self.rv(init)))
+
+    def data_definitions(self, ast: dict) -> list[str]:
+        """The unit's initialised data (step D3) as stores into the arena: Turbo C writes a module's
+        _DATA as its file-scope definitions and the templates of its functions' initialised local
+        arrays and structs, in source order, then its string literals, in source order; so the layout
+        runs from the start of the module's span (re/datamap.toml) and each definition's annotation
+        and each literal's recorded address must fall where it says. Far pointers, which need the load
+        segment, are stored after the bytes."""
+        span = self.prog.spans.get(self.name.lower())
+        items = []                                   # (address, size, bytes, pointers, what)
+        cur = span[0] if span else None
+
+        def place(at, t, init, what):
+            nonlocal cur
+            img, ptrs = bytearray(self.size(t)), []
+            self.image_of(t, init, img, ptrs, 0)
+            if cur is not None and at is not None and at != cur:
+                self.fail("%s is annotated ds:%04X, but the unit's data puts it at ds:%04X" % (what, at, cur))
+            at = cur if at is None else at
+            if at is None:
+                self.fail("%s: the unit has no span in re/datamap.toml" % what)
+            items.append((at, img, ptrs, what))
+            cur = at + len(img)
+
+        def templates(n):
+            if not isinstance(n, dict):
+                return
+            if n.get("kind") == "DeclStmt":
+                for d in n.get("inner", []):
+                    if (d.get("kind") == "VarDecl" and d.get("inner") and d.get("storageClass") not in ("static", "extern")
+                            and ctype(d["type"])[0] in ("arr", "struct")):
+                        self.line = d.get("loc", {}).get("line", self.line)
+                        place(None, ctype(d["type"]), d["inner"][0], "the template of %s" % d["name"])
+                return
+            for c in n.get("inner", []) or []:
+                templates(c)
+
+        for d in ast["inner"]:
+            if d.get("loc", {}).get("includedFrom") or d.get("isImplicit"):
+                continue
+            if d["kind"] == "FunctionDecl":
+                body = [x for x in d.get("inner", []) if x["kind"] == "CompoundStmt"]
+                if body:
+                    templates(body[0])
+                continue
+            if d["kind"] != "VarDecl" or d.get("storageClass") in ("extern",) or not d.get("inner"):
+                continue
+            name = d["name"]
+            if d.get("storageClass") == "static":
+                self.fail("static definition %s" % name)
+            if name not in self.data:
+                self.fail("definition %s has no ds annotation" % name)
+            self.line = d.get("loc", {}).get("line", self.line)
+            place(self.data[name], ctype(d["type"]), d["inner"][0], name)
+        whole = "/*@data */" in self.path.read_text(errors="replace")
+        if span is not None and whole:
+            for lid, b in unit_literals(ast):
+                at = self.literals.get(lid)
+                if at != cur:
+                    self.fail("the literal %r is at ds:%s, but the unit's pool puts it at ds:%04X"
+                              % (b, "%04X" % at if at is not None else "?", cur))
+                items.append((cur, bytearray(b + b"\0"), [], "a literal"))
+                cur += len(b) + 1
+            end = cur + (cur & 1)
+            if end != span[1]:
+                self.fail("the unit's data ends at ds:%04X, its span in re/datamap.toml at ds:%04X" % (end, span[1]))
+        blobs, body = [], []
+        for i, (at, img, ptrs, what) in enumerate(items):
+            sym = "tc2c_data_%s_%d" % (self.name, i)
+            rows = [", ".join("0x%02X" % x for x in img[k:k + 16]) for k in range(0, len(img), 16)]
+            blobs.append("/* ds:%04X: %s */\nstatic const u8 %s[%d] = {\n    %s\n};" % (
+                at, what, sym, len(img), ",\n    ".join(rows)))
+            body.append("    tc_put(TC_MKFP(tc_ds, 0x%04X), %s, %du);" % (at, sym, len(img)))
+            for o, e in ptrs:
+                body.append("    tc_st_u32(TC_MKFP(tc_ds, 0x%04X), (u32)%s);" % ((at + o) & 0xFFFF, e))
+        return blobs + ["", "void tc2c_data_%s(void)" % self.name, "{"] + body + ["}"]
+
     # -- the whole unit
     def proto(self, name: str, t, params: list[str] | None = None) -> str:
         if t[0] != "func":
@@ -1289,7 +1418,9 @@ class Unit:
             if a is not None:
                 init.append("    tc_code_register(%s, (tc_fn)%s, \"%s\");" % (a, name, name))
         init.append("}")
-        return "\n".join(head) + "\n" + "\n\n".join(bodies) + "\n\n" + "\n".join(init) + "\n"
+        data = self.data_definitions(ast)
+        return "\n".join(head) + "\n" + "\n\n".join(bodies) + "\n\n" + "\n".join(init) + "\n\n" + \
+            "\n".join(data) + "\n"
 
 
 def records_of(ast: dict) -> dict:
@@ -1463,13 +1594,31 @@ def main(argv=None) -> int:
     any_unit = units[0][0]
     tab = ["/* Generated by tools/port/tc2c.py: the translated units. */", '#include "tcport.h"', ""]
     tab += ["void tc2c_init_%s(void);" % n for n in done]
+    tab += ["void tc2c_data_%s(void);" % n for n in done]
     tab += ["", "const char *const tc2c_units[] = {%s};" % ", ".join('"%s"' % n for n in done),
             "const unsigned tc2c_unit_count = %d;" % len(done), "", "void tc2c_init(void)", "{"]
     tab += ["    tc2c_init_%s();" % n for n in done]
     tab += ["    /* the assembly routines in C (port/asm), at their original addresses */"]
     tab += ['    tc_code_register(TC_MKFP(tc_load_seg + 0x%04X, 0x%04X), (tc_fn)%s, "%s");' % (sg, of, n, n)
             for n, (sg, of, *_x) in sorted(prog.handwritten.items())]
-    tab += ["}"]
+    # the assembly units' data (step D3): each module of the data map whose file is assembly and defines
+    # its data, and E1948's driver segment at ds:88A0
+    import asmdata
+    asm_units = []
+    for mid, (lo, hi) in sorted(prog.spans.items(), key=lambda kv: kv[1]):
+        f = ROOT / "src" / (mid.upper() + ".ASM")
+        if f.exists() and re.search(r"^\s*;\s*@data\b", f.read_text(errors="replace"), re.M):
+            asm_units.append((mid.upper(), f, lo, hi, None))
+    asm_units.append(("E1948_SND", ROOT / "src" / "E1948.ASM", 0x88A0, 0x8A6C, "SND"))
+    try:
+        tab += ["}", ""] + asmdata.c_source(asm_units)
+    except asmdata.AsmDataError as e:
+        print("tc2c: unsupported: %s" % e, file=sys.stderr)
+        return 2
+    tab += ["", "/* step D3: the initial values of the units' definitions, at their DGROUP addresses */",
+            "void tc2c_data(void)", "{"]
+    tab += ["    tc2c_data_%s();" % n for n in done]
+    tab += ["    tc2c_data_asm();", "}"]
     (a.out / "units.c").write_text("\n".join(['#include "ported.h"'] + tab) + "\n")
 
     def kind(n):
@@ -1506,7 +1655,7 @@ def main(argv=None) -> int:
     hdr += ["", "/* called, defined by no translated unit (unported.c) */"]
     for name in missing:
         hdr.append("%s;" % any_unit.proto(name, decl_of(name)))
-    hdr += ["", "void tc2c_init(void);", "extern const char *const tc2c_units[];",
+    hdr += ["", "void tc2c_init(void);", "void tc2c_data(void);", "extern const char *const tc2c_units[];",
             "extern const unsigned tc2c_unit_count;", "", "#endif"]
     (a.out / "ported.h").write_text("\n".join(hdr) + "\n")
     stubs = ["/* Generated by tools/port/tc2c.py: functions the translated units call that no translated",

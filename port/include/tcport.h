@@ -97,6 +97,8 @@ static inline s32 tc_st_s32(farptr p, s32 v) { tc_st_u32(p, (u32)v); return v; }
    tc_copy returns dst: a struct assignment's value is its destination. */
 farptr tc_copy(farptr dst, farptr src, u16 n);
 void tc_zero(farptr dst, u16 n);
+/* host bytes into the arena, with its wrap: a definition's initial value (step D3, tc2c_data) */
+void tc_put(farptr dst, const u8 *src, u16 n);
 
 /* The arena stack. A function of src/ whose locals need memory (an array, a struct, a local whose
    address is taken) gets a frame of that many bytes below tc_ss:tc_sp, as Turbo C gives it one on

@@ -506,3 +506,28 @@ static void text_mode(const char *fn)
     err = dos_ptr(&r, path);
     return err ? ioerror((s16)err) : 0;
 }
+
+/* ---- the library's data in DGROUP (step D3) ----------------------------------------------------- */
+
+/* The initial values of the library variables the runtime's functions keep in DGROUP, as Turbo C++
+   1.00's library has them in a program's image: _openfd's flags for the five standard handles
+   (stdin O_RDONLY, stdout and stderr O_WRONLY, the three of them devices; stdaux O_RDWR and stdprn
+   O_WRONLY, binary) and FFFFh for the other 15, _fmode O_TEXT, rand's seed 1, tzset's EST5EDT
+   (18000 s west, a summer time) with tzname's two far pointers to its buffers. The port starts from
+   its own image (tc2c_data writes the program's data), so the runtime writes these;
+   tools/port/image.py compares them with EOB.EXE's. The rest of the library's data, and the start-up
+   code's, are not the runtime's: no function of the port reads them. */
+void tc_library_data(void)
+{
+    static const u16 std_fd[5] = {0x2001u, 0x2002u, 0x2002u, 0xA004u, 0xA002u};
+    u16 i;
+    for (i = 0; i < NFILE; i++) {
+        tc_st_u16(LIB((u16)(OPENFD + 2u * i)), i < 5 ? std_fd[i] : 0xFFFFu);
+    }
+    tc_st_u16(LIB(FMODE), F_TEXT);
+    tc_st_u32(LIB(RAND_SEED), 1u);
+    tc_st_u32(LIB(TZ_TIMEZONE), 5u * 3600u);
+    tc_st_u16(LIB(TZ_DAYLIGHT), 1);
+    tc_st_u32(LIB(0x8810u), TC_MKFP(tc_ds, TZ_NAMES));        /* tzname[0] */
+    tc_st_u32(LIB(0x8814u), TC_MKFP(tc_ds, TZ_NAMES + 4u));   /* tzname[1] */
+}

@@ -36,6 +36,7 @@ farptr tcl_ltoa(s32 value, farptr buf, s16 radix);
 s16 tcl_toupper(s16 c);
 
 /* port/runtime/tcdos.c: on the machine, or with the library's data in DGROUP */
+void tc_library_data(void);   /* the initial values of that data (step D3) */
 s16 tcl_rand(void);
 void tcl_srand(u16 seed);
 s16 tcl_getdisk(void);

@@ -1,7 +1,10 @@
 # The src/ units the portable build translates (tools/port/tc2c.py), one a line: every C unit of
 # EOB.EXE (M1). A function they call that no unit here defines (an assembly routine, a library
 # function the runtime does not have yet) is linked as a stub that stops the program
-# (build/port/gen/unported.c). Playbook 80.
+# (build/port/gen/unported.c). The data-only modules (D07C8, D1B82) have no function: tc2c
+# writes their definitions (step D3). Playbook 80.
+D07C8.C
+D1B82.C
 E07A9.C
 E07C8.C
 E082C.C

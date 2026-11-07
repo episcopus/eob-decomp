@@ -6,7 +6,7 @@ PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
 .PHONY: help setup doctor inputs overlays pak data emu2 test p0-check tc-install tc-check rtl-compare map match oracle-run golden test-slow \
 	match-gate check queue next claim locks unlock packet skeleton handoff handoffs handoff-done integrate review-pass worker progress \
-	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port port-literals port-hybrid handbook handbook-setup handbook-figs datamap data-skeleton
+	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port port-image port-literals port-hybrid handbook handbook-setup handbook-figs datamap data-skeleton
 
 help:
 	@echo "Phase 0:  setup doctor inputs overlays pak emu2 test p0-check"
@@ -88,6 +88,9 @@ port: overlays    ## Phase 7 (playbook 80): translate the units of port/units.tx
 port-hybrid: overlays  ## M2 (playbook 80): each translated function against the original, on the states the goldens reach [SESSION=name] [FUNC=name] [SAMPLES=3]
 	$(MAKE) --no-print-directory -f port/port.mk PY=$(PY) port-hybrid
 	$(PY) tools/port/hybrid.py $(if $(SESSION),--session $(SESSION)) $(if $(FUNC),--function $(FUNC)) $(if $(SAMPLES),--samples $(SAMPLES))
+
+port-image: port  ## step D3 (playbook 80): the port's data image, written from src/'s definitions, against EOB.EXE's
+	$(PY) tools/port/image.py
 
 port-literals: overlays  ## where the original keeps each string literal of port/units.txt (port/literals.json, from the matcher; needs Turbo C++)
 	$(PY) tools/port/literals.py
