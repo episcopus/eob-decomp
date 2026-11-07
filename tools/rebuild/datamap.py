@@ -115,22 +115,41 @@ def pools() -> dict[str, tuple[int, int, int]]:
     return out
 
 
+# The map is D0's: it was derived from the declarations of src/ as they stood when D0 and D1 were
+# merged, before D2 turned them into definitions (and dropped the externs that named a pool's strings,
+# E122E's). It is read from that commit, so the map stays reproducible while src/ moves on.
+DECLARATIONS_AT = "1e6507c"
+
+
+def source_files() -> list[tuple[str, str]]:
+    """(file name, text) of the EOB.EXE units of src/ at DECLARATIONS_AT, else of the working tree."""
+    import subprocess
+    try:
+        names = subprocess.run(["git", "ls-tree", "--name-only", DECLARATIONS_AT, "src/"], cwd=ROOT,
+                               capture_output=True, text=True, check=True).stdout.split()
+        return [(Path(n).name, subprocess.run(["git", "show", "%s:%s" % (DECLARATIONS_AT, n)], cwd=ROOT,
+                                              capture_output=True, check=True).stdout.decode("latin-1"))
+                for n in sorted(names) if Path(n).name.startswith("E")]
+    except (OSError, subprocess.CalledProcessError):
+        return [(f.name, f.read_text(errors="replace")) for f in sorted((ROOT / "src").glob("E*.*"))]
+
+
 def declared() -> dict[int, set]:
     """ds offset -> the EOB.EXE units of src/ that declare a global there"""
     out = collections.defaultdict(set)
-    for f in sorted((ROOT / "src").glob("E*.*")):
-        if f.suffix.upper() not in (".C", ".ASM"):
+    for name, text in source_files():
+        stem, suffix = name.rsplit(".", 1)
+        if suffix.upper() not in ("C", "ASM"):
             continue
         # every annotation, with or without text after the address (`/*@ ds:009E: records ... */`), as
-        # the matcher reads them; but not a definition's (step D2): the map is the evidence of the
-        # declarations, and a module's definitions are drafted from it (make data-skeleton)
-        text = f.read_text(errors="replace")
+        # the matcher reads them; but not a definition's (the pilots of D1): the map is the evidence of
+        # the declarations
         data = bool(re.search(r"(?:/\*|;)\s*@data\b", text))
         for line in text.splitlines():
             if data and "=" in line.split("/*")[0] and not line.lstrip().startswith("extern"):
                 continue
             for m in re.finditer(r"(?:/\*|;)\s*@\s*ds:([0-9A-Fa-f]{4})\b", line):
-                out[int(m.group(1), 16)].add(f.stem.lower())
+                out[int(m.group(1), 16)].add(stem.lower())
     return out
 
 
@@ -360,6 +379,14 @@ def build_map(lo: int, hi: int) -> dict:
     return {"order": order, "spans": spans, "bounds": bounds, "conflicts": conflicts, "pending": multi}
 
 
+# Boundaries D2 settled where the map had a free one: a template the next module's code addresses lies
+# in the stretch the default rule gave to the module before (the matcher proved the module with it).
+TEMPLATES = {
+    "eov6": (0x7F40, "CampLoop's template (its local counters[6]) at ds:7F40, which ovl6:000F loads "
+                     "(mov ax, 7F40h); make match proves eov5 and eov6 with it"),
+}
+
+
 def resolve(lo: int, hi: int) -> list[dict]:
     """The map: each module with initialised data, its [start, end) in link order covering [lo, hi)
     with no gap, how each end was placed, and what says so. A boundary no anchor settles has no
@@ -390,6 +417,8 @@ def resolve(lo: int, hi: int) -> list[dict]:
             at = max(at, (b["end"] + 1) & ~1)
             cuts[m2] = (at, "free", "no relocation between ds:%04X and ds:%04X; %s" % (
                 b["end"], limit, "the first name only %s declares" % m2 if own else "the stretch goes to %s" % m1))
+            if m2 in TEMPLATES and b["end"] <= TEMPLATES[m2][0] < limit:
+                cuts[m2] = (TEMPLATES[m2][0], "template", TEMPLATES[m2][1])
     # a module the map took to have no data, between a pool's end and the next module's names, that alone
     # declares a name there (E14EF's gHoverSelectsOption, ds:5D1A, after E1414's pool and before E1547's
     # names): the stretch from the pool's end to the next module's first name is its own
@@ -444,7 +473,8 @@ def write_toml(rows: list[dict], path: Path) -> None:
              "# link order, from the start-up code's _DATA to the library's. Written by `make datamap WRITE=1`",
              "# (tools/rebuild/datamap.py). start_by: settled (the previous module's pool ends there), settled [H]",
              "# (the same, the modules between taken to have no data), touching (the anchors meet), free (no",
-             "# relocation inside the stretch, so the image cannot tell; placed by the default rule).",
+             "# relocation inside the stretch, so the image cannot tell; placed by the default rule), template (a",
+             "# free one D2 settled: the next module's template starts there).",
              "# A module of the form dSSSS is a data-only module, from the empty code segment at SSSS. A module's",
              "# end is the next one's start: the pad byte after an odd end of a pool is counted with it.", ""]
     names = declared()

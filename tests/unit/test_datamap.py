@@ -64,7 +64,7 @@ def test_map_covers_the_program_data_without_gap_or_overlap():
 def test_map_settles_each_boundary_or_says_why_it_is_free():
     rows = _rows()
     for r in rows:
-        assert r["start_by"] in ("settled", "settled [H]", "touching", "free")
+        assert r["start_by"] in ("settled", "settled [H]", "touching", "free", "template")
     rel = [x - datamap.DGROUP * 16 for x in datamap.relocations(datamap.EXE.read_bytes())]
     for r in rows:                                    # a free boundary has no relocation the image could tell by
         if r["start_by"] == "free":

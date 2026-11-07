@@ -2,7 +2,8 @@
 # link order, from the start-up code's _DATA to the library's. Written by `make datamap WRITE=1`
 # (tools/rebuild/datamap.py). start_by: settled (the previous module's pool ends there), settled [H]
 # (the same, the modules between taken to have no data), touching (the anchors meet), free (no
-# relocation inside the stretch, so the image cannot tell; placed by the default rule).
+# relocation inside the stretch, so the image cannot tell; placed by the default rule), template (a
+# free one D2 settled: the next module's template starts there).
 # A module of the form dSSSS is a data-only module, from the empty code segment at SSSS. A module's
 # end is the next one's start: the pad byte after an odd end of a pool is counted with it.
 
@@ -220,19 +221,19 @@ notes = ["ds:71A7 is declared by eov5, not by this module"]
 [[module]]
 id = "eov5"
 start = "ds:7298"
-end = "ds:7F46"
-bytes = 3246
+end = "ds:7F40"
+bytes = 3240
 start_by = "touching"
 start_why = "eov4's last anchor ends at ds:7297"
 evidence = ["name ds:7298 declared only by eov5", "name ds:7B23 declared only by eov5", "name ds:7B2B declared only by eov5", "name ds:7B89 declared only by eov5", "name ds:7B94 declared only by eov5", "name ds:7B9F declared only by eov5", "name ds:7BA6 declared only by eov5", "name ds:7BB2 declared only by eov5", "name ds:7BBA declared only by eov5", "name ds:7BC2 declared only by eov5", "name ds:7BCA declared only by eov5", "name ds:7BD2 declared only by eov5", "name ds:7BDE declared only by eov5", "name ds:7BE6 declared only by eov5", "name ds:7BEE declared only by eov5", "name ds:7BF2 declared only by eov5", "name ds:7BFA declared only by eov5", "name ds:7C32 declared only by eov5", "name ds:7CB7 declared only by eov5", "name ds:7CBC declared only by eov5", "name ds:7D0E declared only by eov5", "name ds:7D77 declared only by eov5", "name ds:7D9E declared only by eov5", "name ds:7E43 declared only by eov5", "name ds:7E4B declared only by eov5", "name ds:7E53 declared only by eov5", "name ds:7E5C declared only by eov5", "name ds:7EDB declared only by eov5", "name ds:7EDD declared only by eov5", "name ds:7EEF declared only by eov5", "name ds:7EF7 declared only by eov5", "name ds:7EFF declared only by eov5", "name ds:7F07 declared only by eov5", "name ds:7F0F declared only by eov5", "name ds:7F18 declared only by eov5", "name ds:7F20 declared only by eov5", "name ds:7F27 declared only by eov5", "name ds:7F30 declared only by eov5", "name ds:7F38 declared only by eov5", "relocations ds:7B25-7C06 (26, a record of the run after eov4's code)"]
 
 [[module]]
 id = "eov6"
-start = "ds:7F46"
+start = "ds:7F40"
 end = "ds:7FBC"
-bytes = 118
-start_by = "free"
-start_why = "no relocation between ds:7F39 and ds:7F46; the stretch goes to eov5"
+bytes = 124
+start_by = "template"
+start_why = "CampLoop's template (its local counters[6]) at ds:7F40, which ovl6:000F loads (mov ax, 7F40h); make match proves eov5 and eov6 with it"
 evidence = ["pool ds:7F46-7FBC (5 literals)"]
 
 [[module]]
