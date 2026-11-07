@@ -9,7 +9,8 @@ relocated at the same segment (1000h). Compared:
   - E1948's driver segment, ds:88A0 to 8A6C (its own SNDDATA segment, src/E1948.ASM);
   - the uninitialised data, ds:8A6C to the end of the load module's DGROUP: zero in both;
   - the library variables the port's runtime keeps in DGROUP, which it writes itself
-(tc_library_data). The rest of the start-up code's data (ds:0000 to 008F) and of the library's
+(tc_library_data). And the code segments below DGROUP: the assembly units' data there (port/asmdata.json,
+tools/port/asmlist.py), each run the same as EOB.EXE's, and no other byte. The rest of the start-up code's data (ds:0000 to 008F) and of the library's
 (ds:84B2 to 88A0) is listed, not compared: no function of the port reads it. Exit 0 when every compared
 byte is the same.
 """
@@ -35,15 +36,42 @@ RUNTIME = [(0x8758, 0x8782, "_openfd, _fmode"), (0x8784, 0x8788, "rand's seed"),
            (0x8810, 0x8818, "tzname"), (0x8818, 0x881E, "timezone, daylight")]
 
 
-def original_dgroup() -> bytes:
+def original_image() -> bytes:
     mz = read_mz((ROOT / "eob/EOB.EXE").read_bytes())
     img = bytearray(mz["image"])
     for o, s in mz["relocs"]:
         p = s * 16 + o
         v = int.from_bytes(img[p:p + 2], "little")
         img[p:p + 2] = ((v + LOAD) & 0xFFFF).to_bytes(2, "little")
-    d = bytes(img[DGROUP * 16:DGROUP * 16 + 0x10000])
+    return bytes(img)
+
+
+def original_dgroup() -> bytes:
+    d = original_image()[DGROUP * 16:DGROUP * 16 + 0x10000]
     return d + b"\0" * (0x10000 - len(d))
+
+
+def code_segments(path: Path) -> int:
+    """The code segments the port writes (step M5): the assembly units' data of port/asmdata.json, each
+    run the same as EOB.EXE's, and nothing else (the port has no code bytes). How many differ."""
+    import json
+    ours, orig = path.read_bytes(), original_image()
+    runs = [(int(sg, 16) * 16 + int(of, 16), len(hx) // 2, u) for u, rows in
+            json.loads((ROOT / "port/asmdata.json").read_text())["units"].items() for sg, of, hx in rows]
+    bad, inside = 0, bytearray(len(ours))
+    for lin, n, u in runs:
+        inside[lin:lin + n] = b"\1" * n
+        if ours[lin:lin + n] != orig[lin:lin + n]:
+            bad += 1
+            print("DIFFER  %s's code-segment data at %05X (%d bytes)" % (u, lin + LOAD * 16, n))
+    stray = [i for i in range(len(ours)) if ours[i] and not inside[i]]
+    if stray:
+        bad += 1
+        print("DIFFER  the code segments hold %d bytes no assembly unit's data put there, the first at %05X"
+              % (len(stray), stray[0] + LOAD * 16))
+    print("port-image: the assembly units' data in their code segments, %d runs of %d bytes: %s" % (
+        len(runs), sum(n for _, n, _ in runs), "the same" if not bad else "%d differ" % bad))
+    return bad
 
 
 def main(argv=None) -> int:
@@ -72,6 +100,7 @@ def main(argv=None) -> int:
         print("not compared  ds:%04X-%04X: %s, but for the runtime's variables" % (lo, hi, what))
     n = sum(hi - lo for lo, hi, _ in ranges)
     print("port-image: %d ranges, %d bytes compared: %s" % (len(ranges), n, "the same" if not bad else "%d differ" % bad))
+    bad += code_segments(Path(a.out + ".code"))
     return 1 if bad else 0
 
 
