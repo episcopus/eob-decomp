@@ -65,6 +65,7 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 | `make port` | Phase 7: translate every C unit of `EOB.EXE` (`port/units.txt`) from `src/` (`tools/port/tc2c.py`), build `build/port/eob-port-headless` (no SDL) and `build/port/eob-port` (SDL3), check that only `port/platform/` uses SDL, run the self-test headless (playbook 80) |
 | `make port-image` | Step D3: the port's data image, written from `src/`'s definitions into an empty arena, against `EOB.EXE`'s (playbook 80) |
 | `make port-replay [NAME=boot-title] [VIEWS=1]` | M5: a golden played headless on the port from its own image, each checkpoint against the oracle's (playbook 80) |
+| `make port-play [SAVE=file]` | M7: the game in a window on the port (SDL3), from its own image |
 | `make port-asmdata` | The assembly units' data in their code segments, `port/asmdata.json`, from TASM's listings (needs Turbo Assembler) |
 | `make port-hybrid [SESSION=] [FUNC=] [SAMPLES=]` | Each translated function against the original on the states the goldens reach (playbook 80, M2) |
 | `make port-literals` | When `src/` changes a string literal: where the original keeps each one (`port/literals.json`, from the matcher; needs Turbo C++) |

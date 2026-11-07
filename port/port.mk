@@ -49,7 +49,7 @@ HYB := $(OUT)/hybrid
 HYB_C := $(GEN_C) $(GEN)/hybrid.c port/runtime/arena.c port/runtime/tclib.c $(LIB_C) port/runtime/hybrid.c $(MACHINE_C) $(ASM_C) \
 	$(DRV_C)
 HYB_O := $(patsubst %.c,$(HYB)/obj/%.o,$(HYB_C))
-CORE_C := port/runtime/arena.c port/runtime/tclib.c $(LIB_C) port/main.c port/start.c port/replay.c $(MACHINE_C) $(ASM_C) $(DRV_C)
+CORE_C := port/runtime/arena.c port/runtime/tclib.c $(LIB_C) port/main.c port/start.c port/replay.c port/live.c $(MACHINE_C) $(ASM_C) $(DRV_C)
 CORE_O := $(patsubst $(GEN)/%.c,$(OBJ)/gen/%.o,$(GEN_C)) $(patsubst %.c,$(OBJ)/%.o,$(CORE_C))
 
 .PHONY: port port-check port-boundary port-sdl port-hybrid FORCE

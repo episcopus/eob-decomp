@@ -6,7 +6,7 @@ PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
 .PHONY: help setup doctor inputs overlays pak data emu2 test p0-check tc-install tc-check rtl-compare map match oracle-run golden test-slow \
 	match-gate check queue next claim locks unlock packet skeleton handoff handoffs handoff-done integrate review-pass worker progress \
-	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port port-image port-replay port-asmdata port-literals port-hybrid handbook handbook-setup handbook-figs datamap data-skeleton
+	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port port-image port-replay port-play port-asmdata port-literals port-hybrid handbook handbook-setup handbook-figs datamap data-skeleton
 
 help:
 	@echo "Phase 0:  setup doctor inputs overlays pak emu2 test p0-check"
@@ -96,6 +96,9 @@ port-image: port  ## step D3 (playbook 80): the port's data image, written from 
 
 port-replay: port  ## M5 (playbook 80): play golden sessions headless on the port from its own image and compare their checkpoints [NAME=boot-title] [VIEWS=1]
 	$(PY) tools/port/replay.py $(if $(VIEWS),--views) $(if $(NAME),$(NAME),boot-title boot-adlib new-party mouse-party)
+
+port-play: port    ## M7 (playbook 80): play the game in a window on the port (SDL3) [SAVE=tests/sessions/fixtures/EOBDATA.SAV]
+	$(PY) tools/port/play.py $(if $(SAVE),--save $(SAVE))
 
 port-asmdata:      ## the assembly units' data in their code segments (port/asmdata.json, from TASM's listings; needs Turbo Assembler)
 	$(PY) tools/port/asmlist.py

@@ -172,6 +172,10 @@ extern u32 machine_cclock;     /* C-unit instructions run (not counted by the po
    delivered and before an access, with the events delivered and the accesses made so far; and at a
    wait with nothing due (`idle` 1), where a replay ends. */
 extern int machine_replay;
+/* Live play (M7, port/live.c): called where the machine looks for events, before an access or a file
+   call (`waiting` 0) and at a wait with none due (`waiting` 1, where it may sleep until one is): it
+   pushes what the host and the wall clock have produced since. Null in a replay. */
+extern void (*machine_more)(int waiting);
 /* a debugging trace of the game's accesses and the interrupts delivered (eob-port --replay with
    TC_TRACE=file): one line each, as tools/port/replay.py --trace writes the oracle's */
 extern void *machine_trace;

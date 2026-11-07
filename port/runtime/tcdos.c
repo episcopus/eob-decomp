@@ -534,3 +534,16 @@ void tc_library_data(void)
     tc_st_u32(LIB(0x8810u), TC_MKFP(tc_ds, TZ_NAMES));        /* tzname[0] */
     tc_st_u32(LIB(0x8814u), TC_MKFP(tc_ds, TZ_NAMES + 4u));   /* tzname[1] */
 }
+
+/* ---- PROCESS.H: exit ----------------------------------------------------------------------------- */
+
+/* exit(status): the program's end. The Borland library runs its atexit functions and its #pragma exit
+   ones (the overlay manager's and the start-up code's: vectors back, files closed), then DOS 4Ch with
+   the status; the game registers no atexit function, and the port has none of the library's own to
+   undo, so this is the DOS call, which ends the run (the machine stops, port/runtime/dos.c). */
+/*@ 0000:50F3 library */ void tcl_exit(s16 status)
+{
+    tc_regs r = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    r.ax = (u16)(0x4C00u | (u8)status);
+    dos(&r);
+}

@@ -3,9 +3,13 @@
    No window, no input, no sound: a run that needs none of them (the self-test, and later the
    per-function tests) links this instead of sdl_host.c, so the game, the runtime and the machine
    are built and run without SDL. It is poolrad's c/platform/null.c for this port. Time is a counter
-   that platform_sleep_ms advances, so a run never depends on the wall clock. The replay platform
-   (M5) is the third implementation: it answers from a recording of the original. */
+   that platform_sleep_ms advances, so a run never depends on the wall clock.
+
+   Input for a test of live play (M7): TC_NULL_INPUT lists scancodes (set 1, hexadecimal) each at a
+   time in milliseconds of that clock, "40000:50,40100:D0,41000:1C,41100:9C" (keypad 2 pressed and
+   released, then Enter); each comes from platform_poll_event once the clock has reached its time. */
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "platform.h"
 
@@ -31,7 +35,26 @@ void platform_present(const uint8_t pixels[320 * 200], const uint8_t dac[256][3]
 
 struct platform_event platform_poll_event(void)
 {
+    static const char *next;
+    static int started;
     struct platform_event e = {PLATFORM_EVENT_NONE, 0, 0, 0, 0};
+    char *end;
+    unsigned long at, code;
+    if (!started) {
+        started = 1;
+        next = getenv("TC_NULL_INPUT");
+    }
+    if (next == NULL || *next == 0) {
+        return e;
+    }
+    at = strtoul(next, &end, 10);
+    if (*end != ':' || at > now_ms) {
+        return e;
+    }
+    code = strtoul(end + 1, &end, 16);
+    next = *end == ',' ? end + 1 : end;
+    e.kind = PLATFORM_EVENT_SCANCODE;
+    e.scancode = (uint8_t)code;
     return e;
 }
 

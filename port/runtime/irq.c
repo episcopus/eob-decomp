@@ -20,6 +20,7 @@
 
 u32 machine_cclock;
 int machine_replay;
+void (*machine_more)(int waiting);
 void *machine_trace;
 
 void machine_trace_line(const char *fmt, ...)
@@ -77,6 +78,9 @@ static void *grow(void *p, u32 *cap, size_t size)
 
 void machine_event_push(const machine_event *e)
 {
+    if (event_next == event_count) {
+        event_next = event_count = 0;          /* all delivered: live play reuses the queue */
+    }
     if (event_count == event_cap) {
         events = grow(events, &event_cap, sizeof *events);
     }
@@ -211,6 +215,9 @@ int machine_deliver_due(void)
 
 void machine_library_file(void)
 {
+    if (machine_more != NULL && !delivering) {
+        machine_more(0);
+    }
     if (machine_replay && !delivering) {
         while (event_next < event_count && due(&events[event_next])) {
             point(0);
@@ -223,6 +230,9 @@ void machine_library_file(void)
 
 void machine_access(void)
 {
+    if (machine_more != NULL && !delivering) {
+        machine_more(0);
+    }
     if (machine_replay && !delivering) {
         /* what the oracle delivered after the previous access came before this one */
         while (event_next < event_count && due(&events[event_next])) {
@@ -248,6 +258,9 @@ void machine_wait(void)
     if (delivering) {
         tc_fail(75, "a handler waits for an interrupt (the machine delivers none inside a handler)");
     }
+    if (machine_more != NULL) {
+        machine_more(!(event_next < event_count && due(&events[event_next])));
+    }
     if (event_next < event_count && due(&events[event_next])) {
         point(0);
         deliver_next();
@@ -266,10 +279,20 @@ void machine_wait(void)
 /* A loop of src/ turned idle on memory a handler writes (tc_spin, tcport.h): in a replay, the next
    event due is delivered; with none due the original's loop ended by an interrupt the port has not
    reached by its accesses, so the replay has gone another way, or ends here (machine_point). */
+void tc_live_poll(void)
+{
+    if (machine_more != NULL && !delivering) {
+        machine_more(0);
+    }
+}
+
 void tc_spin_idle(void)
 {
     if (!machine_replay || delivering) {
         return;
+    }
+    if (machine_more != NULL) {
+        machine_more(!(event_next < event_count && due(&events[event_next])));
     }
     if (event_next < event_count && due(&events[event_next])) {
         point(0);

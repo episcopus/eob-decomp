@@ -152,8 +152,16 @@ typedef struct {
 } tc_loop;
 extern u32 tc_accesses;      /* the game's accesses (machine_access) */
 void tc_spin_idle(void);
+/* live play (M7): every 64K loop turns the machine looks at the host and the clock, so a long
+   computation with no access still sees time pass (tc_live_poll, irq.c) */
+extern u8 tc_live;
+extern u32 tc_turns;
+void tc_live_poll(void);
 static inline void tc_spin(tc_loop *l)
 {
+    if (tc_live && !(++tc_turns & 0xFFFFu)) {
+        tc_live_poll();
+    }
     if (l->turned && l->changes == tc_changes && l->accesses == tc_accesses && l->hot != tc_hot_reads) {
         tc_spin_idle();
     }
