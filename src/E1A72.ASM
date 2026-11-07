@@ -60,7 +60,7 @@
         ;                                              after EnterMapScreen and LockShowPointer
         ;                                              (0ACD:0EC8, E0ACD.C:886)
         EXTRN   gMouseButtonSeen:WORD              ; @ ds:8136: latched to 1 once any button has been seen;
-        ;                                              this unit never clears it, E1AAD.ASM:1356
+        ;                                              this unit never clears it, E1AAD.ASM:1395
         ;                                              sets it too and nothing in src/ clears it
         EXTRN   _gCursorX:WORD              ; @ ds:8138: the cursor (mouse pointer) x in pixels.
         ;                                              InitMouse sets it to the middle (1A72:00E6);
@@ -69,18 +69,18 @@
         ;                                              (1A72:0219); the pointer placer stores the
         ;                                              clamped position (1BF3:000E, E1BF3.ASM:35)
         ;                                              and the recorded-input glue stores it too
-        ;                                              (1AAD:0CF7, E1AAD.ASM:1352)
+        ;                                              (1AAD:0CF7, E1AAD.ASM:1391)
         EXTRN   _gCursorY:WORD              ; @ ds:813A: the cursor (mouse pointer) y in pixels,
         ;                                              the same writers as x: InitMouse (1A72:00EC),
         ;                                              the handler (1A72:021D), the placer
         ;                                              (E1BF3.ASM:44, 1BF3:0028) and the glue
-        ;                                              (1AAD:0D01, E1AAD.ASM:1355)
+        ;                                              (1AAD:0D01, E1AAD.ASM:1394)
         EXTRN   gMouseEventX:WORD              ; @ ds:813C: x of the event just handled, after the 640 wide
         ;                                              halving and the 13Fh clamp (1A72:0193-019B);
         ;                                              the keyboard glue queues it and gMouseEventY
-        ;                                              (E1AAD.ASM:1228 and :1232)
+        ;                                              (E1AAD.ASM:1267 and :1271)
         EXTRN   gMouseEventY:WORD              ; @ ds:813E: y of the event just handled; the keyboard glue
-        ;                                              queues it after gMouseEventX (E1AAD.ASM:1232)
+        ;                                              queues it after gMouseEventX (E1AAD.ASM:1271)
         EXTRN   gMouseXDoubled:WORD              ; @ ds:8144: 1 when the x that function 3 reads after the
         ;                                              reset is not 0A0h, which InitMouse reads as a
         ;                                              640 wide mode [H]
@@ -155,9 +155,22 @@
         ;                                              (17A6:0304; calls in 17A6:0446 and 17A6:04EE)
         EXTRN   gEgaRegShadowSeg:WORD              ; @ ds:8174: the same far pointer, segment (pushed first
         ;                                              at 1BBE:029F)
-        EXTRN   gHitTestX:WORD              ; @ ds:8026: scratch copy of gDrawnX made by IsMouseInRect
-        EXTRN   gHitTestY:WORD              ; @ ds:8028: scratch copy of gDrawnY made by IsMouseInRect
         EXTRN   gSavedInt3F:DWORD             ; @ ds:FC08: previous INT 3Fh vector, chained by 1A72:0006
+
+; @data
+; the data of e1a72, ds:8024 to ds:802A (6 bytes, no relocations), the original's bytes in address
+; order.
+
+; two bytes, 5Ch and 00h in the image, that no instruction of this unit reads and no file of src/
+; declares; named by their address until a reader is found.
+g8024 label byte ; ds:8024
+        db      5Ch, 00h
+
+        PUBLIC  _gHitTestX ; @ ds:8026: scratch copy of gDrawnX made by IsMouseInRect
+_gHitTestX     dw      0
+
+        PUBLIC  _gHitTestY ; @ ds:8028: scratch copy of gDrawnY made by IsMouseInRect
+_gHitTestY     dw      0
         .CODE
 
 ; 1A72:0006: the INT 3Fh handler main installs (07C8:008F, `setvect(0x3F, 1A72:0006)`; the old
@@ -519,16 +532,16 @@ L02B9:  cmp     word ptr [_gPointerBusy],0
         jne     L02B9
         inc     word ptr [_gPointerBusy]
         mov     ax,[_gDrawnX]
-        mov     [gHitTestX],ax
+        mov     [_gHitTestX],ax
         mov     ax,[_gDrawnY]
-        mov     [gHitTestY],ax
-        cmp     [gHitTestX],cx
+        mov     [_gHitTestY],ax
+        cmp     [_gHitTestX],cx
         jl      L02ED
-        cmp     [gHitTestX],si
+        cmp     [_gHitTestX],si
         jg      L02ED
-        cmp     [gHitTestY],dx
+        cmp     [_gHitTestY],dx
         jl      L02ED
-        cmp     [gHitTestY],di
+        cmp     [_gHitTestY],di
         jg      L02ED
         mov     ax,1
         jmp     short L02F0
