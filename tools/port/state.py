@@ -9,7 +9,8 @@ dump:
 
   - conventional memory from 0500h to A0000h, with these ranges masked (zero in the view):
   - the load module's code, 1000:0000 to DGROUP (the port has no code bytes; the assembly units' and
-    the library's variables kept in their code segments are masked with it for now);
+    the library's variables kept in their code segments are masked with it for now), but Westwood's far
+    data (1F1D:0000 to 20B5:0000, src/far/FARDATA.ASM), which is compared;
   - the start-up code's data in DGROUP (ds:0000 to 008F) but the words the port's far heap reads;
   - the library's data (ds:84B2 to 88A0) but the variables the port's runtime keeps there
     (tools/port/image.py, RUNTIME) and the heap's size word;
@@ -30,6 +31,8 @@ DGROUP = LOAD + 0x212E
 STACK = LOAD + 0x312D            # the stack segment (build/re/eob.json "stack"), up to the heap
 HEAP = 0x422E                    # the heap's first block: the end of the stack segment
 LOW, TOP = 0x500, 0xA0000
+# Westwood's far data, 1F1D:0000 to the overlay manager's data at 20B5:0000 (src/far/FARDATA.ASM): compared
+FAR_DATA = (LOAD + 0x1F1D, LOAD + 0x20B5)
 VGA = 0xA0000
 
 # the words of the start-up code's data the port's far heap reads (port/runtime/tcheap.c)
@@ -56,7 +59,7 @@ def masks(mem) -> list[tuple[int, int]]:
     """The linear ranges [a, b) the view leaves out, for memory `mem` (the overlay buffer's size is read
     from its heap header)."""
     ds = DGROUP * 16
-    out = [(LOAD * 16, ds)]
+    out = [(LOAD * 16, FAR_DATA[0] * 16), (FAR_DATA[1] * 16, ds)]
     out += [(ds + a, ds + b) for a, b in _holes(0x0000, 0x0090, C0_KEPT)]
     out += [(ds + a, ds + b) for a, b in _holes(0x84B2, 0x88A0, LIB_KEPT)]
     out += [(ds + a, ds + b) for a, b in STACK_SAVES]

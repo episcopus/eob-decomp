@@ -1648,8 +1648,21 @@ def main(argv=None) -> int:
             tab += ["/* %s, %s:%s */" % (unit, sg, of), "static const u8 %s[%d] = {" % (sym, len(b)),
                     "    " + ",\n    ".join(lines), "};"]
             blob.append("    tc_put(TC_MKFP(tc_load_seg + 0x%s, 0x%s), %s, %du);" % (sg, of, sym, len(b)))
-    tab += ["", "/* the assembly units' data in their code segments (port/asmdata.json) */", "void tc2c_data_code(void)",
-            "{"] + blob + ["}"]
+    # Westwood's far data (src/far/FARDATA.ASM, playbook 80, M6): each FAR_SSSS segment at SSSS:0000
+    farsrc = ROOT / "src" / "far" / "FARDATA.ASM"
+    if farsrc.exists():
+        for seg in re.findall(r"^(FAR_([0-9A-F]{4}))\s+SEGMENT\b", farsrc.read_text(errors="replace"), re.M):
+            b, ptrs, _ = asmdata.module_data(farsrc, 0, seg[0])
+            if ptrs:
+                print("tc2c: unsupported: far pointers in %s" % seg[0], file=sys.stderr)
+                return 2
+            sym = "tc2c_far_%s" % seg[1]
+            lines = [", ".join("0x%02X" % x for x in b[j:j + 16]) for j in range(0, len(b), 16)]
+            tab += ["/* src/far/FARDATA.ASM, %s:0000 */" % seg[1], "static const u8 %s[%d] = {" % (sym, len(b)),
+                    "    " + ",\n    ".join(lines), "};"]
+            blob.append("    tc_put(TC_MKFP(tc_load_seg + 0x%s, 0x0000), %s, %du);" % (seg[1], sym, len(b)))
+    tab += ["", "/* the assembly units' data in their code segments (port/asmdata.json) and Westwood's far data */",
+            "void tc2c_data_code(void)", "{"] + blob + ["}"]
     tab += ["", "/* step D3: the initial values of the units' definitions, at their DGROUP addresses */",
             "void tc2c_data(void)", "{"]
     tab += ["    tc2c_data_%s();" % n for n in done]
