@@ -105,6 +105,30 @@ extern void DamageMonster(struct Monster far *obj, int n); /*@ 08E6:0FBE */
 int MemberIs(int who, int mask);
 int GetCurrentItem(void);
 
+/*@data */
+/* the data of e0d1c, ds:547E to ds:5536 (184 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+signed char gOppositeSide[4] = { 2, 3, 0, 1 }; /*@ ds:547E */
+struct Row8 gSelectFrameRects[14] = { /*@ ds:5482 */
+    { 183, 1, 247, 52 }, { 255, 1, 319, 52 }, { 183, 53, 247, 104 }, { 255, 53, 319, 104 },
+    { 183, 105, 247, 156 }, { 255, 105, 319, 156 }, { 16, 63, 48, 96 }, { 80, 63, 112, 96 },
+    { 16, 127, 48, 160 }, { 80, 127, 112, 160 }, { 176, 66, 208, 97 }, { 208, 66, 240, 97 },
+    { 240, 66, 272, 97 }, { 272, 66, 304, 97 }
+};
+int gSelectFrameIndex = -1; /*@ ds:54F2 */
+int gSelectFrameStep = 0; /*@ ds:54F4 */
+signed char gConSaveBonus[20] = { /*@ ds:54F6 */
+    0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 2, 3,
+    3, 3, 4, 4, 4, 4, 5, 5
+};
+/* ds:550A: the colour row DrawItemIcon passes to gSetRemapTable for a colour icon when gGraphicsChoice
+   is 0 (CGA), instead of the icon's ITEMRMP row: the same 4 bytes as E07A9's gCgaIconRemap (ds:0090) */
+unsigned char gCgaItemRemap[4] = { 0x00, 0x55, 0x55, 0xFF }; /*@ ds:550A */
+/* ds:550E-5535: the string pool, "\x06\x06%s uses the power to turn undead!\x06\x0f\r" (TurnUndead's,
+   0D1C:0A43). E0DE8 reads gLauncherAmmoType at ds:552F + the item's type, a base inside this string
+   (its "dead"), so the table is read from a base below its start, as ds:FB34 was; E0DE8's data settles
+   where it begins, and this unit defines nothing at ds:552F. */
+/* ds:5535: the pad byte to the next module (word alignment) */
+
 /* 0D1C:0006: Returns 1 and sets gViewDirty when the cell is one of the first 15 cells the view shows
    (ds:A9C8), so a change there is redrawn. The value `value` is looked for in the 15 words at
    ds:A9C8; when
@@ -439,7 +463,7 @@ int GetCurrentItem(void);
 /* 0D1C:070F: draws the item icon of item record `n` (gItems) at (x, y), the far pointer
    gItemIcons[icon]. Colour-row path, Purpose unknown: when gPartySpellFlags bit 0 is set and the record's
    flags have 0x80, it first selects the icon's 16-byte colour row (gItemRemapTable + (icon << 4), or the
-   empty string at ds:550A when gGraphicsChoice is 0) through gSetRemapTable and draws through DrawShapeRemapped,
+   4-byte table gCgaItemRemap at ds:550A when gGraphicsChoice is 0) through gSetRemapTable and draws through DrawShapeRemapped,
    otherwise through DrawShape. Called by 0BD2 (three sites) and 1547:07E7. */
 /*@ 0D1C:070F */ void DrawItemIcon(int mode, int n, int x, int y)
 {
@@ -450,7 +474,7 @@ int GetCurrentItem(void);
         if (gGraphicsChoice)
             gSetRemapTable(gItemRemapTable + (icon << 4));
         else
-            gSetRemapTable("");
+            gSetRemapTable(gCgaItemRemap);
         DrawShapeRemapped(mode, gItemIcons[icon], x, y, 0);
     } else {
         DrawShape(mode, gItemIcons[icon], x, y, 0);

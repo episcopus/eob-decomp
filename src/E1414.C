@@ -69,6 +69,49 @@ extern void ExpireSpellEffect(int a, int b); /*@ 0EF3:0D78 */
 extern void InsertListItem(void far *head, int key, int item, int sound); /*@ 0BD2:01D0 */
 extern int RemoveListItem(void far *head, int key, int item); /*@ 0BD2:02B9 */
 
+/*@data */
+/* the data of e1414, ds:5BA8 to ds:5D1A (370 bytes, 16 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+/* the table's handlers, all of this unit, defined after it: */
+void BlinkSelected(int unused);
+void MoveDDEffects(int unused);
+void UpdateMonsterGroup(int kind);
+void RunCharEffects(int who);
+void StepDoor(int who);
+void CheckFarTable(int unused);
+void DecayMemberState(void);
+void RandomiseMonsterOffsets(void);
+/* the 16 timed effects RunEffects walks: { handler, period, expiry, arg, sub, active }. Entry 12 is the
+   moving door (StepDoor): its arg, sub and active are the gDoorEffectCell (ds:5C74), gDoorMoveDir
+   (ds:5C76) and gDoorEffectActive (ds:5C77) that this unit, E122E and EOV3 declare. The last two
+   handlers take no argument, so they are cast to the table's type. */
+struct Effect gEffects[16] = { /*@ ds:5BA8 */
+    { BlinkSelected, 9, 0, 0, 0, 0 },
+    { MoveDDEffects, 3, 0, 0, 0, 1 },
+    { UpdateMonsterGroup, 20, 0, 0, 0, 1 },
+    { UpdateMonsterGroup, 20, 7, 1, 0, 1 },
+    { UpdateMonsterGroup, 20, 14, 2, 0, 1 },
+    { UpdateMonsterGroup, 20, 14, 3, 0, 1 },
+    { RunCharEffects, 50, 0, 0, 0, 0 },
+    { RunCharEffects, 50, 0, 1, 0, 0 },
+    { RunCharEffects, 50, 0, 2, 0, 0 },
+    { RunCharEffects, 50, 0, 3, 0, 0 },
+    { RunCharEffects, 50, 0, 4, 0, 0 },
+    { RunCharEffects, 50, 0, 5, 0, 0 },
+    { StepDoor, 5, 0, 0, 0, 0 },
+    { CheckFarTable, 10, 0, 0, 0, 1 },
+    { (void (far *)(int))DecayMemberState, 1080, 0, 0, 0, 1 },
+    { (void (far *)(int))RandomiseMonsterOffsets, 25, 0, 0, 0, 1 }
+};
+int gEffectCount = 16; /*@ ds:5CA8 */
+signed char gBlinkPhase = 0; /*@ ds:5CAA */
+unsigned char gNextPosByDir[16] = { /*@ ds:5CAB */
+    0x82, 0x83, 0, 1, 1, 0x80, 3, 0x82, 2, 3, 0x80, 0x81,
+    0x81, 0, 0x83, 2
+};
+/* ds:5CBB-5CDD: the code's (a literal or template, '%s no longer has giant strength.\r'): written by its function */
+/* ds:5CDD-5CFE: the code's (a literal or template, '%s feels the effects of poison!\r'): written by its function */
+/* ds:5CFE-5D1A: the code's (a literal or template, '%s is no longer paralyzed!\r'): written by its function */
+
 /* 1414:0000: the selected-character blink effect, entry 0 of the table (the period word at
    ds:5BAC is 9). It flips the phase gBlinkPhase; when the phase turns on it saves gMovingMember (the member
    being moved), replaces it with 0xFF, redraws that member's row through RedrawMember and restores

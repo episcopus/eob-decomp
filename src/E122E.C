@@ -71,7 +71,6 @@ extern void SaveLevelState(int level); /*@ 210C:002F */  /* overlay 3 entry, ovl
 extern void ResetLevel(void); /*@ 210C:007F */  /* overlay 3 entry, ovl3:19F7 */
 extern void NoOpAfterMapLoad(void); /*@ 2116:0043 */  /* overlay 4 entry, ovl4:2039, a no-op (src/EOV4.C) */
 extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int dstKind, int mode); /*@ 082C:051B */
-extern char gStrInvent[]; /*@ ds:5BA1 */        /* the "INVENT" screen name (122E:1AAB) */
 extern unsigned char far gCgaMapInvent[]; /*@ 2067:0000 */ /* the sheet at segment 2067 (src/E0ACD.C) */
 extern void LockHidePointer(void); /*@ 1BBE:0307 */
 extern void LockShowPointer(void); /*@ 1BBE:0332 */
@@ -137,9 +136,30 @@ extern int gPartyCell; /*@ ds:FBCA */        /* the party's map cell: MoveParty 
                                                 level's start cell here */
 extern int gStepCount; /*@ ds:F540 */               /* counts the party's steps (MoveParty) */
 extern char gWallTypeFlags[]; /*@ ds:194B */             /* per wall type: 1 passable, 8 door, 0x10 open, 0x20 closed */
-extern char gStrNewline[]; /*@ ds:5AB5 */        /* a carriage return, drawn on every step (122E:0001) */
-extern char gStrCannotPryDoor[]; /*@ ds:5B78 */        /* "No one is able to pry this door open." (122E:0847) */
 void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its callers */
+
+/*@data */
+/* the data of e122e, ds:59B0 to ds:5BA8 (504 bytes, 33 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+int gForceDoorRoll[20] = { /*@ ds:59B0 */
+    1, 1, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7,
+    7, 8, 8, 9, 10, 11, 12, 13
+};
+char gDoorFirstWallType[32] = { /*@ ds:59D8 */
+    0, 0, 0, 3, 3, 3, 3, 3, 8, 8, 8, 8,
+    8, 13, 13, 13, 13, 13, 18, 18, 18, 18, 18, 0,
+    0, 0, 0, 0, 0, 0, 30, 31
+};
+char gDoorButtonIndex[32] = { /*@ ds:59F8 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0,
+    0, 0, 0, 0, 0, 0, 0, 3
+};
+/* ds:5A18-5A3F: DispatchWallHandler's template, its 10 far handler pointers (122E:0896) */
+/* ds:5A40-5A47: gLaunchPositions, defined after DispatchWallHandler (its template comes first) */
+/* ds:5A48-5A4C: ShowTextOp's template, its 5-byte control buffer (122E:0FDC) */
+/* ds:5A4D-5AB4: the template of the 26 far opcode handlers (122E:1DA8, RunCellScript) */
+/* ds:5AB5-5BA7: the string pool, from "\r" (MoveParty's) to "INVENT", in source order */
+/* ds:5BA8: no pad byte (the pool ends on an even offset) */
 
 /* 122E:0001: moves the party to map cell `cell`: runs AlertNearbyMonsters around the move, runs the old
    cell's script on leaving (mode 2) and the new cell's on entering (mode 1), counts the step,
@@ -158,7 +178,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     gStepCount++;
     gPickViewPos = (char)0xff;
     gViewDirty = 1;
-    DrawText(gStrNewline);
+    DrawText("\r");   /* ds:5AB5, the first literal of the pool */
     UpdateDDEffects();
 }
 /* 122E:0055: hit-test the click regions of object kind `kind` against the last click. Only the
@@ -473,7 +493,7 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
 {
     if (IsMouseInRect(0x28, 0x10, 0x88, 0x58)) {
         if (gWallTypeFlags[gMaze[id * 9 + slot]] & 0x20) {
-            DrawText(gStrCannotPryDoor);
+            DrawText("No one is able to pry this door open.\r");   /* ds:5B78 */
             return 1;
         }
     }
@@ -509,6 +529,10 @@ void RunCellScript(int cell, int mode);  /* forward: 1DA8 comes after its caller
     gViewDirty = 1;
     return result;
 }
+
+/* the launch kinds, indexed by two script bytes as v2 * 2 + v3 (122E:0C4D). Defined here, after
+   DispatchWallHandler, because its bytes follow that function's template (ds:5A18) */
+char gLaunchPositions[8] = { 2, 3, 0, 2, 1, 0, 3, 1 }; /*@ ds:5A40 */
 
 /* 122E:0933: set the trigger gWallTrigger to the click 0x40 and run DispatchWallHandler on the wall
    the party faces in the cell ahead (StepCell). QUIRK 122E:0933: the argument is raised by 0x3c and
@@ -1238,7 +1262,7 @@ done:
    when gPanelMode is
    nonzero and RedrawPartyPanel(gDirectAction) when gFlag is nonzero. It reads a byte, a word and a byte,
    stores the word as gPartyCell and the byte as gPartyDir (unless 0xFF), resets and saves the level,
-   runs ovl3:0A7C, loads the INVENT screen (gStrInvent) with the 2067:0000 sheet, runs ovl4:2039,
+   runs ovl3:0A7C, loads the INVENT screen ("INVENT", ds:5BA1) with the 2067:0000 sheet, runs ovl4:2039,
    moves the party to its cell and stops the script driver (gScriptDone). Returns 0 as an int; the driver's
    handler table declares long and casts the result to int (see RunCellScript). */
 /*@ 122E:1AAB */ int LoadLevelOp(char far *script)
@@ -1262,7 +1286,7 @@ done:
     ResetLevel();
     SaveLevelState(gCurLevel);
     LoadLevel(v1);
-    LoadScreenImage(gStrInvent, (char far *)gCgaMapInvent, 5, 3, 2);
+    LoadScreenImage("INVENT", (char far *)gCgaMapInvent, 5, 3, 2);
     NoOpAfterMapLoad();
     MoveParty(id);
     gScriptDone = 1;
