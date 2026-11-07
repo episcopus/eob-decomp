@@ -21,6 +21,9 @@ u8 tc_hot_watch;
 
 /* a loop's idle turn outside a replay (the self-test, the per-function test): nothing to deliver */
 __attribute__((weak)) void tc_spin_idle(void) {}
+u8 tc_live;
+u32 tc_turns;
+__attribute__((weak)) void tc_live_poll(void) {}
 /* the replay's trace of reads of handler-written bytes (irq.c); nothing outside it */
 __attribute__((weak)) void tc_hot_read(u32 a) { (void)a; }
 

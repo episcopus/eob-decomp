@@ -51,6 +51,8 @@ s16 tcl_write(s16 fd, farptr buf, u16 len);
 s32 tcl_lseek(s16 fd, s32 offset, s16 whence);
 s32 tcl_filelength(s16 fd);
 s16 tcl_remove(farptr path);
+/* PROCESS.H (tcdos.c): the program's end, DOS 4Ch */
+void tcl_exit(s16 status);
 
 /* port/runtime/tcheap.c: the far heap */
 farptr tcl_farmalloc(u32 size);

@@ -8,6 +8,7 @@
      eob-port[-headless] --self-test EOB.EXE   run the checks below; exit 0 when they pass
      eob-port --window                       open the SDL3 window and show a test frame (Escape closes it)
      eob-port[-headless] --replay REC DIR OUT play a golden's recording (port/replay.c, tools/port/replay.py)
+     eob-port --play GAME_DIR [--no-mouse] [--adlib]   play the game in a window (port/live.c)
 
    The checks are for the skeleton units, src/E0CF7.C and src/E1658.C: each BuildList links its
    table's records into a list at gList (ds:FB48) through ListAdd; the list must be the table's
@@ -225,6 +226,20 @@ int main(int argc, char **argv)
     if (argc == 5 && strcmp(argv[1], "--replay") == 0) {
         return replay_run(argv[2], argv[3], argv[4]);
     }
+    if (argc >= 3 && strcmp(argv[1], "--play") == 0) {
+        /* the launcher's choices: VGA (3), the mouse unless --no-mouse, no sound unless --adlib */
+        int i, mouse = 1, adlib = 0;
+        char cmd[32];
+        for (i = 3; i < argc; i++) {
+            if (strcmp(argv[i], "--no-mouse") == 0) {
+                mouse = 0;
+            } else if (strcmp(argv[i], "--adlib") == 0) {
+                adlib = 1;
+            }
+        }
+        snprintf(cmd, sizeof cmd, " 3 %c %c homie 3", adlib ? '1' : '4', mouse ? '1' : '0');
+        return live_run(argv[2], cmd, mouse, adlib);
+    }
     if (argc == 3 && strcmp(argv[1], "--data-image") == 0) {
         return data_image(argv[2]);
     }
@@ -235,6 +250,6 @@ int main(int argc, char **argv)
         return window_demo();
     }
     fprintf(stderr, "usage: eob-port --self-test EOB.EXE | --data-image OUT | --replay RECORDING GAME_DIR DUMP_DIR"
-                    " | --window\n");
+                    " | --play GAME_DIR [--no-mouse] [--adlib] | --window\n");
     return 2;
 }
