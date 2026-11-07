@@ -52,6 +52,7 @@ PRELUDE = ROOT / "port" / "include" / "tc" / "prelude.h"
 SYSINC = ROOT / "port" / "include" / "tc" / "sys"  # the library headers, in place of Turbo C's own
 TCLIB_H = ROOT / "port" / "include" / "tclib.h"   # what the port's runtime provides
 LITERALS = ROOT / "port" / "literals.json"        # where each literal is (tools/port/literals.py)
+ASMDATA = ROOT / "port" / "asmdata.json"          # the assembly units' code-segment data (tools/port/asmlist.py)
 ASM_C = ROOT / "port" / "asm"                     # the assembly routines, hand-written in C (M3)
 # the library functions the runtime writes on the machine (M3): each definition marked with the library
 # routine's address in EOB.EXE, `/*@ 0000:XXXX library */`, so the per-function test calls it beside the
@@ -1092,18 +1093,25 @@ class Unit:
                 self.block(inner[2], depth)
         elif k == "WhileStmt":
             c, body = n["inner"]
-            self.emit(depth, "while (%s)" % self.rv(c))
+            lp = self.loop(depth)
+            self.emit(depth, "while ((tc_spin(&%s), %s))" % (lp, self.rv(c)))
             self.block(body, depth)
+            self.emit(depth, "}")
         elif k == "DoStmt":
             body, c = n["inner"]
+            lp = self.loop(depth)
             self.emit(depth, "do")
             self.block(body, depth)
-            self.emit(depth, "while (%s);" % self.rv(c))
+            self.emit(depth, "while ((tc_spin(&%s), %s));" % (lp, self.rv(c)))
+            self.emit(depth, "}")
         elif k == "ForStmt":
             init, _condvar, c, inc, body = n["inner"]
-            parts = [self.rv(init) if init else "", self.rv(c) if c else "", self.rv(inc) if inc else ""]
+            lp = self.loop(depth)
+            parts = [self.rv(init) if init else "", "(tc_spin(&%s), %s)" % (lp, self.rv(c) if c else "1"),
+                     self.rv(inc) if inc else ""]
             self.emit(depth, "for (%s; %s; %s)" % tuple(parts))
             self.block(body, depth)
+            self.emit(depth, "}")
         elif k == "SwitchStmt":
             c, body = n["inner"][-2:]
             self.emit(depth, "switch (%s)" % self.rv(c))
@@ -1116,6 +1124,7 @@ class Unit:
             self.stmt(n["inner"][0], depth)
         elif k == "LabelStmt":
             self.emit(0, "%s_:" % n["name"])
+            self.emit(depth, "tc_spin(&lp_%s_);" % n["name"])
             self.stmt(n["inner"][0], depth)
         elif k == "GotoStmt":
             self.emit(depth, "goto %s_;" % self.labels[n["targetLabelDeclId"]])
@@ -1129,6 +1138,14 @@ class Unit:
             self.emit(depth, "%s;" % self.rv(n))
         else:
             self.fail("statement %s" % k)
+
+    def loop(self, depth: int) -> str:
+        """Opens a block holding a loop's tc_loop (tcport.h: the replay's waits, playbook 80, M5); the
+        caller closes it after the loop."""
+        self.loops += 1
+        lp = "lp%d_" % self.loops
+        self.emit(depth, "{ tc_loop %s = {0, 0, 0, 0};" % lp)
+        return lp
 
     def block(self, n, depth: int):
         if n["kind"] == "CompoundStmt":
@@ -1404,6 +1421,10 @@ class Unit:
                     v = self.vars[p["id"]]
                     if v[0] == "mem":
                         self.out.append("    %s;" % self.store(v[2], "tc_fp_add(fr_.base, 0x%X)" % v[1], pn))
+            # a label is where a backward goto loops: its tc_loop lives as long as the function
+            for lab in sorted(set(self.labels.values())):
+                self.out.append("    tc_loop lp_%s_ = {0, 0, 0, 0};" % lab)
+            self.loops = 0
             n_head = len(self.out)
             self.blocks = []
             self.stmt(body[0], 2)
@@ -1615,10 +1636,24 @@ def main(argv=None) -> int:
     except asmdata.AsmDataError as e:
         print("tc2c: unsupported: %s" % e, file=sys.stderr)
         return 2
+    # the assembly units' data in their code segments (port/asmdata.json, tools/port/asmlist.py: from
+    # TASM's listing of src/, each run checked against EOB.EXE when it was written)
+    code = json.loads(ASMDATA.read_text())["units"] if ASMDATA.exists() else {}
+    blob = []
+    for unit, rows in sorted(code.items()):
+        for k, (sg, of, hx) in enumerate(rows):
+            b = bytes.fromhex(hx)
+            sym = "tc2c_code_%s_%d" % (unit, k)
+            lines = [", ".join("0x%02X" % x for x in b[j:j + 16]) for j in range(0, len(b), 16)]
+            tab += ["/* %s, %s:%s */" % (unit, sg, of), "static const u8 %s[%d] = {" % (sym, len(b)),
+                    "    " + ",\n    ".join(lines), "};"]
+            blob.append("    tc_put(TC_MKFP(tc_load_seg + 0x%s, 0x%s), %s, %du);" % (sg, of, sym, len(b)))
+    tab += ["", "/* the assembly units' data in their code segments (port/asmdata.json) */", "void tc2c_data_code(void)",
+            "{"] + blob + ["}"]
     tab += ["", "/* step D3: the initial values of the units' definitions, at their DGROUP addresses */",
             "void tc2c_data(void)", "{"]
     tab += ["    tc2c_data_%s();" % n for n in done]
-    tab += ["    tc2c_data_asm();", "}"]
+    tab += ["    tc2c_data_asm();", "    tc2c_data_code();", "}"]
     (a.out / "units.c").write_text("\n".join(['#include "ported.h"'] + tab) + "\n")
 
     def kind(n):

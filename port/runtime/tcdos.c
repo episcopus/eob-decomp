@@ -39,7 +39,7 @@
 
 static void dos(tc_regs *r)
 {
-    machine_int(0x21, r);
+    machine_library_int(0x21, r);
 }
 
 /* 0 for A: */
@@ -249,6 +249,9 @@ static u16 cmp_flags(u8 a, u8 b)
         tc_fail(74, "UNIMPLEMENTED in the port's runtime: int86 with INT %02Xh", (unsigned)intno);
     }
     r.flags = cmp_flags((u8)intno, (u8)intno < 0x25u ? 0x25u : 0x26u);
+    /* the library's int86 runs its INT from a stub it writes on the stack (an INT n, then a RETF), so
+       the oracle counts the call with the game's accesses, not the library's (tools/oracle/cclock.py:
+       the INT's return address is in the stack segment) */
     machine_int((u8)intno, &r);
     tc_st_u16(tc_fp_add(out, 0), r.ax);
     tc_st_u16(tc_fp_add(out, 2), r.bx);

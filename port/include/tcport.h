@@ -58,12 +58,41 @@ static inline farptr tc_fp_add(farptr p, u16 delta)
    oracle's, so the arena follows it. Stores return the value stored, so an assignment stays an
    expression. */
 #define TC_NEXT(lin) (((lin) + 1u) & 0xFFFFFu)
-static inline u8 tc_ld_u8(farptr p) { return tc_mem[TC_LINEAR(p)]; }
-static inline s8 tc_ld_s8(farptr p) { return (s8)tc_mem[TC_LINEAR(p)]; }
+
+/* What the replay's waits look at (playbook 80, M5, "The replay's clock"): how many stores changed a
+   byte of the arena, and how many loads read a byte an interrupt handler wrote (tc_hot: a bit for
+   each byte a store made while tc_in_handler was set). A loop whose last turn changed nothing and
+   read such a byte is waiting for an interrupt (tc_spin). */
+extern u32 tc_changes;
+extern u32 tc_hot_reads;
+extern u8 tc_in_handler;
+extern u8 tc_hot[TC_MEM_SIZE / 8u];
+/* marks n bytes from p as written by a handler before one has written them (port/start.c) */
+void tc_hot_range(farptr p, u16 n);
+static inline u8 tc_ld_byte(u32 a)
+{
+    if (tc_hot[a >> 3] & (1u << (a & 7u))) {
+        tc_hot_reads++;
+    }
+    return tc_mem[a];
+}
+static inline void tc_st_byte(u32 a, u8 v)
+{
+    if (tc_mem[a] != v) {
+        tc_mem[a] = v;
+        tc_changes++;
+    }
+    if (tc_in_handler) {
+        tc_hot[a >> 3] |= (u8)(1u << (a & 7u));
+    }
+}
+
+static inline u8 tc_ld_u8(farptr p) { return tc_ld_byte(TC_LINEAR(p)); }
+static inline s8 tc_ld_s8(farptr p) { return (s8)tc_ld_byte(TC_LINEAR(p)); }
 static inline u16 tc_ld_u16(farptr p)
 {
     u32 a = TC_LINEAR(p);
-    return (u16)(tc_mem[a] | ((u16)tc_mem[TC_NEXT(a)] << 8));
+    return (u16)(tc_ld_byte(a) | ((u16)tc_ld_byte(TC_NEXT(a)) << 8));
 }
 static inline s16 tc_ld_s16(farptr p) { return (s16)tc_ld_u16(p); }
 /* a long or a far pointer is two words, as the compiled code moves it (`mov ax,[bx]`, `mov dx,[bx+2]`:
@@ -74,13 +103,13 @@ static inline u32 tc_ld_u32(farptr p)
 }
 static inline s32 tc_ld_s32(farptr p) { return (s32)tc_ld_u32(p); }
 
-static inline u8 tc_st_u8(farptr p, u8 v) { tc_mem[TC_LINEAR(p)] = v; return v; }
-static inline s8 tc_st_s8(farptr p, s8 v) { tc_mem[TC_LINEAR(p)] = (u8)v; return v; }
+static inline u8 tc_st_u8(farptr p, u8 v) { tc_st_byte(TC_LINEAR(p), v); return v; }
+static inline s8 tc_st_s8(farptr p, s8 v) { tc_st_byte(TC_LINEAR(p), (u8)v); return v; }
 static inline u16 tc_st_u16(farptr p, u16 v)
 {
     u32 a = TC_LINEAR(p);
-    tc_mem[a] = (u8)v;
-    tc_mem[TC_NEXT(a)] = (u8)(v >> 8);
+    tc_st_byte(a, (u8)v);
+    tc_st_byte(TC_NEXT(a), (u8)(v >> 8));
     return v;
 }
 static inline s16 tc_st_s16(farptr p, s16 v) { tc_st_u16(p, (u16)v); return v; }
@@ -105,6 +134,28 @@ void tc_put(farptr dst, const u8 *src, u16 n);
    SS; the frame goes when the function returns (tc2c declares it with the cleanup attribute). The
    frames' contents and places are not the original's (its stack also holds return addresses and
    saved registers), so comparisons with the oracle mask the stack (playbook 80). */
+/* A loop of src/: tc2c gives each one of these and calls tc_spin before each test of its condition
+   (and at each label, which a backward goto makes a loop). When the turn just ended changed no byte,
+   made no access and read a byte an interrupt handler wrote, the loop is spinning on what only an
+   interrupt can change, as the original's did while it waited: tc_spin_idle has the machine deliver
+   the next interrupt due (irq.c). The first test of a loop is not a turn. */
+typedef struct {
+    u32 changes, hot, accesses;
+    u8 turned;
+} tc_loop;
+extern u32 tc_accesses;      /* the game's accesses (machine_access) */
+void tc_spin_idle(void);
+static inline void tc_spin(tc_loop *l)
+{
+    if (l->turned && l->changes == tc_changes && l->accesses == tc_accesses && l->hot != tc_hot_reads) {
+        tc_spin_idle();
+    }
+    l->turned = 1;
+    l->changes = tc_changes;
+    l->hot = tc_hot_reads;
+    l->accesses = tc_accesses;
+}
+
 extern u16 tc_ss;
 extern u16 tc_sp;
 typedef struct {

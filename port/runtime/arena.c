@@ -12,6 +12,14 @@ u16 tc_load_seg;
 u16 tc_ds;
 u16 tc_ss;
 u16 tc_sp;
+u32 tc_changes;
+u32 tc_hot_reads;
+u32 tc_accesses;
+u8 tc_in_handler;
+u8 tc_hot[TC_MEM_SIZE / 8u] = {0};
+
+/* a loop's idle turn outside a replay (the self-test, the per-function test): nothing to deliver */
+__attribute__((weak)) void tc_spin_idle(void) {}
 
 void (*tc_fail_hook)(int code, const char *msg);
 
@@ -247,4 +255,13 @@ int tc_load_program(const char *path, u16 load_seg, u16 ds_para)
     tc_sp = 0x1000u;
     free(file);
     return 0;
+}
+
+void tc_hot_range(farptr p, u16 n)
+{
+    u16 i;
+    for (i = 0; i < n; i++) {
+        u32 a = TC_LINEAR(tc_fp_add(p, i));
+        tc_hot[a >> 3] |= (u8)(1u << (a & 7u));
+    }
 }
