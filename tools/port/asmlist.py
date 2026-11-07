@@ -86,10 +86,12 @@ def code_data(src: Path, unit: dict) -> list[tuple[int, int, bytes]]:
             continue
         off = l[8:12] if re.fullmatch(r"[0-9A-F]{4}", l[8:12]) else None
         field, source = l[14:37].strip(), l[37:].split(";")[0].strip()
-        if re.match(r"\.CODE\b", source, re.I):
+        # the directives as src/ writes them, upper case: a long comment the listing wraps onto the next
+        # line can begin with "end" (E_TEXT.ASM, before its command table at 0000:4F94)
+        if re.match(r"\.CODE\b", source):
             in_code = True
             continue
-        if re.match(r"(\.DATA\b|\.FARDATA\b|\w+\s+SEGMENT\b|END\b)", source, re.I):
+        if re.match(r"(\.DATA\b|\.FARDATA\b|\w+\s+SEGMENT\b|END(\s|$))", source):
             in_code = False
             continue
         if not in_code or off is None or not DATA.match(source):
