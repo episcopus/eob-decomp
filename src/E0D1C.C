@@ -124,9 +124,8 @@ signed char gConSaveBonus[20] = { /*@ ds:54F6 */
    is 0 (CGA), instead of the icon's ITEMRMP row: the same 4 bytes as E07A9's gCgaIconRemap (ds:0090) */
 unsigned char gCgaItemRemap[4] = { 0x00, 0x55, 0x55, 0xFF }; /*@ ds:550A */
 /* ds:550E-5535: the string pool, "\x06\x06%s uses the power to turn undead!\x06\x0f\r" (TurnUndead's,
-   0D1C:0A43). E0DE8 reads gLauncherAmmoType at ds:552F + the item's type, a base inside this string
-   (its "dead"), so the table is read from a base below its start, as ds:FB34 was; E0DE8's data settles
-   where it begins, and this unit defines nothing at ds:552F. */
+   0D1C:0A43). E0DE8's code addresses ds:552F + the item's type, a base inside this string (its
+   "dead"): the table is E0DE8's gLauncherAmmoType at ds:5536, indexed by the type less 7. */
 /* ds:5535: the pad byte to the next module (word alignment) */
 
 /* 0D1C:0006: Returns 1 and sets gViewDirty when the cell is one of the first 15 cells the view shows

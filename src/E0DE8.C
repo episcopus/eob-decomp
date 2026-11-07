@@ -25,8 +25,8 @@ extern signed char gViewRelativePos[]; /*@ ds:1A2B */   /* by gPartyDir, a cell 
 extern signed char gClassSlotCount[]; /*@ ds:115F */   /* a byte table indexed by a class, used by 0B45 */
 extern signed char gClassBaseBits[]; /*@ ds:1231 */   /* a byte table indexed by the class classIndex (:725;
                                                 src/E0BD2.C:154) */
-extern signed char gLauncherAmmoType[]; /*@ ds:552F */   /* a byte table indexed by the item's m02 (UseItemByKind
-                                                :432) */
+extern signed char gLauncherAmmoType[]; /*@ ds:5536 */   /* the ammunition kind of each launcher, indexed by the
+                                                item's m02 less 7 (m02 7 to 14; UseItemByKind) */
 extern signed char gArmourSlots[]; /*@ ds:553E */   /* the four items slot indexes ComputeArmourClass walks
                                                 (:719) */
 extern signed char gConSaveBonus[]; /*@ ds:54F6 */   /* byte table indexed by constitution; used by 0D1C:059B
@@ -94,7 +94,7 @@ void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with 
 
 /*@data */
 /* the data of e0de8, ds:5536 to ds:55E6 (176 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
-unsigned char g5536[8] = { 0x10, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x12 }; /*@ ds:5536 */
+signed char gLauncherAmmoType[8] = { 16, -1, -1, -1, -1, -1, -1, 18 }; /*@ ds:5536 */
 signed char gArmourSlots[5] = { 17, 0, 1, 18, 19 }; /*@ ds:553E */
 /* ds:5543-55B0: the code's (a literal or template, 'All of your party has been defeated.  Th'): written by its function */
 /* ds:55B0-55DA: the code's (a literal or template, '\x06\x01%s has gained a level of experience.\x06\x0f'): written by its function */
@@ -325,7 +325,7 @@ fail:
 }
 
 /* 0DE8:05BB: picks the item for the action `slot` (an index into gItems) and runs it. The
-   item's m02 indexes gLauncherAmmoType to a `kind`; kind 0x10 takes the first of items[0] and items[1] whose own
+   item's m02, less 7, indexes gLauncherAmmoType to a `kind`; kind 0x10 takes the first of items[0] and items[1] whose own
    m02 is 0x10 (clearing that slot), else the special items[16] slot (pulled through RemoveListItem,
    with no m02 test); otherwise it scans all 27 slots for the first whose item m02 equals `kind`
    (clearing it and redrawing with RedrawMember when the slot is below 2). A found item is
@@ -341,7 +341,7 @@ fail:
     int i;
 
     m02 = gItems[slot].type;
-    kind = gLauncherAmmoType[m02];
+    kind = gLauncherAmmoType[m02 - 7];   /* the code indexes ds:552F, the table less 7 */
     item = 0;
     if (kind == 0x10) {
         item = gChars[who].items[0];
