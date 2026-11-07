@@ -1479,10 +1479,21 @@ def main(argv=None) -> int:
     placed, cursor = {}, c0_end
     copy_of = {c.path.stem.upper(): c for c in copies}
     spans = data_spans(program)
+    eob_spans = data_spans("EOB.EXE") if program != "EOB.EXE" else {}
+
+    def twin_place(stem: str) -> int | None:
+        """A twin's whole data (an EOB.EXE file with /*@data */ linked into INTRO.EXE): where the twin
+        proof's address map puts the start of its EOB.EXE span."""
+        c = copy_of[stem]
+        if not c.whole_data or stem not in eob_spans or not c.unit.get("twin"):
+            return None
+        return space.ds(eob_spans[stem], True, c.unit["twin"])
+
     for o, l, stem in mine:
         if stem in ovl:
             continue
         at = spans.get(stem) if copy_of[stem].whole_data else None
+        at = twin_place(stem) if at is None else at
         at = by_template(copy_of[stem], pimg[pdg * 16:], odata, o, l) if at is None else at
         at = locate(pimg[pdg * 16:], odata, cursor, o, o + l) if at is None else at
         if at is None:

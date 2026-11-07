@@ -210,7 +210,10 @@ unsigned char gBuiltinPalette[16] = { /*@ ds:3057 */
 char gFont8Name[] = "Font8.fnt"; /*@ ds:3067: a named array, not a literal: the code's two uses share it */
 unsigned char g3071[3] = { 0x00, 0x00, 0x00 }; /*@ ds:3071 */
 char far *gOverlayFiles[5] = { "cga.ovl", "tga.ovl", "ega.ovl", "mcga.ovl", "vga.ovl" }; /*@ ds:3074 */
-unsigned char g3088[10] = { 0xCB, 0x02, 0x45, 0x4F, 0x42, 0x2E, 0x45, 0x58, 0x45, 0x00 }; /*@ ds:3088 */
+/* the overlay manager's buffer size in paragraphs (2CBh, about 11 KB): the program defines the
+   library's _ovrbuffer itself, so TLINK does not link the library's default (OVRBUFF) */
+unsigned _ovrbuffer = 0x02CB; /*@ ds:3088 */
+char g308A[8] = "EOB.EXE"; /*@ ds:308A */
 unsigned char gStartupDone = 0x00; /*@ ds:3092 */
 char gFontErrorText[] = "\r\nUnable to load font "; /*@ ds:3093: before the pool, so an array */
 char gReinstallText[] = ". Reinstall program.\r\n"; /*@ ds:30AA */
