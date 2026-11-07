@@ -697,6 +697,12 @@ SDL3), from the port's own image, in a game directory made of the pinned files o
 mouse unless `--no-mouse`, no sound unless `--adlib` (the game's own arguments, " 3 4 1 homie 3").
 The port's DOS keeps the game's writes in memory: a game saved in the window is gone when it closes.
 
+The program is `build/port/eob-port` of the checkout `make port-play` runs in (the main checkout's
+`<your clone>/build/port/eob-port`; a worktree has its own `build/`), and the game
+directory `build/port/play/game` beside it. It says where it plays from when it starts and how it
+ended when it stops. `make port` builds only what changed: tc2c and `make overlays` write a file only
+when its text changes, and the objects depend on the generated files, not on the translation's stamp.
+
 ### How the live machine runs (`port/live.c`)
 
 The program is the replay's (`port/start.c`, then `Main`), and the machine delivers the interrupts the

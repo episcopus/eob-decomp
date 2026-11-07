@@ -29,6 +29,7 @@ def main(argv=None) -> int:
     gd = game_dir(ROOT / "build" / "port" / "play" / "game", a.save)
     exe = ROOT / "build" / "port" / "eob-port"
     args = [str(exe), "--play", str(gd)] + (["--no-mouse"] if a.no_mouse else []) + (["--adlib"] if a.adlib else [])
+    print("port-play: %s %s" % (exe.relative_to(ROOT), " ".join(args[2:])), flush=True)
     os.execv(str(exe), args)
 
 

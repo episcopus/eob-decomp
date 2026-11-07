@@ -113,12 +113,19 @@ def manifest(data: bytes, extract: str | None = None) -> tuple[dict, list[str]]:
         pos = end
         if extract:
             os.makedirs(extract, exist_ok=True)
-            open(os.path.join(extract, "ovl%02d.bin" % n), "wb").write(code)
+            write_if_changed(os.path.join(extract, "ovl%02d.bin" % n), code)
     if any(body[pos:]):
         errors.append("non-zero bytes after the last overlay")
     m["overlay_code_bytes"] = sum(o["code_bytes"] for o in m["overlays"])
     m["overlay_entries"] = sum(o["entry_count"] for o in m["overlays"])
     return m, errors
+
+
+def write_if_changed(path: str, data: bytes) -> None:
+    """Writes only a file whose bytes change, so what depends on it (make port) is not remade."""
+    if os.path.exists(path) and open(path, "rb").read() == data:
+        return
+    open(path, "wb").write(data)
 
 
 def summary(m: dict) -> str:
@@ -140,7 +147,7 @@ def main(argv=None) -> int:
     m["path"] = a.exe
     if a.out:
         os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
-        json.dump(m, open(a.out, "w"), indent=1)
+        write_if_changed(a.out, json.dumps(m, indent=1).encode())
     print("%s: %s; %s" % (os.path.basename(a.exe), summary(m),
                           "OK" if not errors else "%d ERRORS" % len(errors)))
     for e in errors:

@@ -99,6 +99,7 @@ static void more(int waiting)
             memset(&e, 0, sizeof e);
             if (p.kind == PLATFORM_EVENT_QUIT) {
                 platform_quit();
+                fprintf(stderr, "eob-port: the window was closed\n");
                 exit(0);
             }
             if (p.kind == PLATFORM_EVENT_SCANCODE) {
@@ -145,9 +146,7 @@ static void ended(int code, const char *msg)
 {
     platform_quit();
     if (code == 76) {
-        if (machine_exit_code != 0) {
-            fprintf(stderr, "eob-port: the game ended with %d\n", machine_exit_code);
-        }
+        fprintf(stderr, "eob-port: the game ended (exit code %d)\n", machine_exit_code);
         exit(machine_exit_code > 0 ? machine_exit_code : 0);
     }
     fprintf(stderr, "eob-port: %s\n", msg);
@@ -162,6 +161,7 @@ int live_run(const char *game_dir, const char *cmdline, int mouse_on, int adlib)
         return 2;                               /* no window, and not the headless smoke test */
     }
     platform_set_game_dir(game_dir);
+    fprintf(stderr, "eob-port: playing the game in %s (Exit to DOS, or close the window, to quit)\n", game_dir);
     tc_fail_hook = ended;
     machine_events_reset();
     machine_boot("EOB.EXE", (const u8 *)cmdline, (u16)strlen(cmdline), mouse_on, adlib);
