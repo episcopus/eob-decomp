@@ -95,7 +95,7 @@ port-image: port  ## step D3 (playbook 80): the port's data image, written from 
 	$(PY) tools/port/image.py
 
 port-replay: port  ## M5 (playbook 80): play golden sessions headless on the port from its own image and compare their checkpoints [NAME=boot-title] [VIEWS=1]
-	$(PY) tools/port/replay.py $(if $(VIEWS),--views) $(if $(NAME),$(NAME),boot-title)
+	$(PY) tools/port/replay.py $(if $(VIEWS),--views) $(if $(NAME),$(NAME),boot-title boot-adlib new-party mouse-party)
 
 port-asmdata:      ## the assembly units' data in their code segments (port/asmdata.json, from TASM's listings; needs Turbo Assembler)
 	$(PY) tools/port/asmlist.py

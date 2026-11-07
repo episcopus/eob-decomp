@@ -280,7 +280,7 @@ class CClock:
         from port import state
         mem = bytes(self.m.uc.mem_read(0, state.TOP))
         ega = self.m.ega
-        return state.digest(mem), (state.screen(bytes(ega.vga), bytes(ega.dac)) if ega.mode == 0x13 else None)
+        return state.digest(mem), (state.screen(bytes(ega.vga), bytes(ega.dac), mem) if ega.mode == 0x13 else None)
 
     def mark(self) -> None:
         """A checkpoint now: its place in the recording and the port's view here, and (at the next

@@ -123,14 +123,17 @@ def replay(name: str, port: str) -> bool:
         raw = p.read_bytes()
         mem, dac, mode = raw[:0xB0000], raw[0xB0000:0xB0000 + 768], raw[0xB0000 + 768]
         ours = state.digest(mem)
-        scr = state.screen(mem[0xA0000:0xA0000 + 64000], dac) if mode == 0x13 else None
-        want_scr = images.get(cp) or screen
+        scr = state.screen(mem[0xA0000:0xA0000 + 64000], dac, mem) if mode == 0x13 else None
+        whole = state.screen(mem[0xA0000:0xA0000 + 64000], dac) if mode == 0x13 else None
         bad = []
         if ours != digest:
             bad.append("state")
-        if want_scr is not None and scr != want_scr:
+        if screen is not None and scr != screen:
             bad.append("screen (mode %02Xh)" % mode)
-        print("%s: %-16s %s" % (name, cp, "the same" if not bad else "DIFFERS: " + ", ".join(bad)))
+        note = ""
+        if not bad and images.get(cp):
+            note = " (the golden's screenshot too)" if whole == images[cp] else " (the screenshot but its tick-driven animations, tools/port/state.py)"
+        print("%s: %-16s %s%s" % (name, cp, "the same" if not bad else "DIFFERS: " + ", ".join(bad), note))
         if bad:
             ok = False
             if "state" in bad:
