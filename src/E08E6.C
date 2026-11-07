@@ -100,6 +100,47 @@ extern int TickBandageCountdown(struct CharRec far *who); /*@ 0EF3:18A2 */
 extern void ReportLostItem(int who); /*@ 0BD2:000E */
 void ResolveMonsterMelee(struct Monster far *obj);   /* forward: 05EA reaches it before its definition */
 
+/*@data */
+/* the data of e08e6, ds:31F2 to ds:337A (392 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+char gFrontLeftPosByDir[4] = { 0, 1, 3, 2 }; /*@ ds:31F2 */
+char gPosSearchOrder[8] = { 0, 1, 2, 3, 0, 2, 1, 3 }; /*@ ds:31F6 */
+int gDirSearchRight[8] = { 7, -6, 5, -4, 3, -2, 1, 0 }; /*@ ds:31FE */
+int gDirSearchLeft[8] = { -7, 6, -5, 4, -3, 2, -1, 0 }; /*@ ds:320E */
+int gDirSearchLeftFirst = 0; /*@ ds:321E */
+signed char gBossSpellModes[3] = { 2, 10, 11 }; /*@ ds:3220 */
+signed char gBossSpellSounds[3] = { 98, 83, 64 }; /*@ ds:3223 */
+signed char gSpellSequenceModes[9] = { 0, 0, 0, 0, 0, 2, 2, 5, 6 }; /*@ ds:3226 */
+signed char gSpellSequenceSounds[5] = { 0, 85, 85, 85, 85 }; /*@ ds:322F */
+signed char gTurnForMode5To6[3] = { 98, 98, 31 }; /*@ ds:3234 */
+signed char gTurnForMode1To3[4] = { 98, 2, -1, 1 }; /*@ ds:3237 */
+signed char gMonsterFrontPos[16] = { /*@ ds:323B */
+    1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0
+};
+signed char gAttackSideByDir[16] = { /*@ ds:324B */
+    2, 3, 0, 1, 1, 2, 3, 0, 0, 1, 2, 3, 3, 0, 1, 2
+};
+signed char gAttackTargetOrder[48] = { /*@ ds:325B */
+    1, 0, 3, 2, 5, 4, 0, 1, 2, 3, 4, 5, 5, 3, 1, 4, 2, 0, 1, 3, 5, 0, 2, 4, 4, 5, 2, 3, 0, 1, 5, 4,
+    3, 2, 1, 0, 0, 2, 4, 1, 3, 5, 4, 2, 0, 5, 3, 1
+};
+signed char gRightSidePosByDir[16] = { /*@ ds:328B */
+    0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0
+};
+char gTargetPosOrder[32] = { /*@ ds:329B */
+    2, 3, 0, 1, 3, 2, 1, 0, 0, 2, 1, 3, 2, 0, 3, 1, 1, 0, 3, 2, 0, 1, 2, 3, 3, 1, 0, 2, 1, 3, 2, 0
+};
+char gNearPosPair[8] = { 2, 3, 0, 2, 0, 1, 1, 3 }; /*@ ds:32BB */
+char gProjectileHitOrder[64] = { /*@ ds:32C3 */
+    4, 2, 1, 3, 4, 3, 0, 2, 4, 0, 3, 1, 4, 1, 2, 0, 4, 1, 2, 3, 4, 0, 3, 2, 4, 3, 0, 1, 4, 2, 1, 0,
+    4, 2, 1, 3, 4, 3, 0, 2, 4, 0, 3, 1, 4, 1, 2, 0, 4, 1, 2, 3, 4, 0, 3, 2, 4, 3, 0, 1, 4, 2, 1, 0
+};
+/* ds:3303-332F: the code's (a literal or template, '%s is hit by a cause serious wounds spel'): written by its function */
+/* ds:332F-335C: the code's (a literal or template, 'The party is hit with a psychic mind bla'): written by its function */
+/* ds:335C-3366: the code's (a literal or template, 'paralyzed'): written by its function */
+/* ds:3366-336F: the code's (a literal or template, 'poisoned'): written by its function */
+/* ds:336F-3379: the code's (a literal or template, 'paralyzed'): written by its function */
+/* ds:3379: the pad byte to the next module (word alignment) */
+
 /* 08E6:000B: make a monster flee, unless its mode is 7, 8 or 0xa: set the mode to 0, face it away
    from the party ((DirectionFromPoints(cell, gPartyCell) ^ 4) >> 1) and set m16 bit 3, which makes
    StepMonsterToward (0430) head away from its target. Called by 0EF3:1702 CastFear. */

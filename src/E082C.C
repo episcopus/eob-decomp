@@ -99,6 +99,18 @@ extern int WaitGameKey(void); /*@ 1AAD:053A */
 /* siblings of this file called before they are defined */
 void DrawShadowText(char far *text, int x, int y, int colour, int colour2);
 
+/*@data */
+/* the data of e082c, ds:31AC to ds:31F2 (70 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+char gCursorChar = 32; /*@ ds:31AC */
+unsigned char g31AD[2] = { 0x00, 0x00 }; /*@ ds:31AD */
+/* ds:31AF-31B5: the code's (a literal or template, '%s.%s'): written by its function */
+/* ds:31B5-31B9: the code's (a literal or template, 'CPS'): written by its function */
+/* ds:31B9-31BD: the code's (a literal or template, 'EGA'): written by its function */
+/* ds:31BD-31C5: the code's (a literal or template, '%lu:%lu'): written by its function */
+/* ds:31C5-31E9: the code's (a literal or template, 'HEAP CORRUPT!! (free memory) = %lu\n'): written by its function */
+/* ds:31E9-31F1: the code's (a literal or template, '%s%d.%s'): written by its function */
+/* ds:31F1: the pad byte to the next module (word alignment) */
+
 /* 082C:000B: the interactive text-field editor. Draws the string `text` at (x, y) (x in 8-pixel
    cells, y in lines) with the character under the cursor, then loops: it waits for a key
    (1AAD:038E) while blinking the cursor every two ticks through gCursorOn and the tick counter

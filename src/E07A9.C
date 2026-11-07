@@ -287,6 +287,14 @@ extern void TranslateImage(void far *src, void far *dst, void far *xlat, int mod
    (8,8) when item > 0 and (0,0) otherwise, and the far pointer gItemIcons[item] in both cases (see below). */
 extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0002 */
 
+/*@data */
+/* the data of e07a9, ds:0090 to ds:009E (14 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+/* ds:0090: the colour row SetMouseItem passes to gSetRemapTable for a colour icon when gGraphicsChoice
+   is 0 (CGA, the first of gOverlayFiles' drivers, src/E07C8.C) instead of the icon's ITEMRMP row */
+unsigned char gCgaIconRemap[4] = { 0x00, 0x55, 0x55, 0xFF }; /*@ ds:0090 */
+/* ds:0094-009D: the string pool, " taken.\r" (SetMouseItem's) */
+/* ds:009D: the pad byte to the next module (word alignment) */
+
 /* 07A9:000A: the start-up routine called from `main` (07C8:017F passes argc, argv through). The name
    is the registry's and covers only its first part, the five far allocations below; besides them it
    loads the sound driver, the item tables, the font and the ITEMRMP icons, and its last call runs
@@ -370,12 +378,11 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
             if (gGraphicsChoice)
                 gSetRemapTable(gItemRemapTable + (item << 4));   /* the icon's 16-byte colour row */
             else
-                /* QUIRK 07A9:0184: when gGraphicsChoice == 0 the argument is the one-byte literal at
-                   ds:0090, a dummy. gGraphicsChoice only chooses the ITEMRMP name, "VGA" (ds:6790) when
-                   it is 3 and "EGA" (ds:6794) otherwise (ovl2:0432..0446); the ITEMRMP read
-                   itself (ovl2:047F) has no branch on gGraphicsChoice. Why gGraphicsChoice == 0 gets the dummy is
-                   Purpose unknown. */
-                gSetRemapTable("");
+                /* when gGraphicsChoice == 0 (CGA) the row is the fixed 4-byte table at ds:0090,
+                   {0, 55h, 55h, FFh}, not a row of ITEMRMP. gGraphicsChoice otherwise only chooses the
+                   ITEMRMP name, "VGA" (ds:6790) when it is 3 and "EGA" (ds:6794) otherwise
+                   (ovl2:0432..0446). What the CGA driver does with the 4 bytes is Purpose unknown. */
+                gSetRemapTable(gCgaIconRemap);
             TranslateImage(gItemIcons[item], gRemappedIcon, gRemapTable, gGraphicsChoice);
             /* gItemIcons[0x59] is gRemappedIcon (0xDDE4 + 0x59 * 4 = 0xDF48), the same pointer just passed
                as the second argument: the translated icon image shown by 1BB1:0002 as the mouse

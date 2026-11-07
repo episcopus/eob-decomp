@@ -58,6 +58,11 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
    original stops at 0xFA00 rather than 0xFFFF is not evidenced. */
 #define MEMALLOC_FILL_CHUNK 0xFA00L
 
+/*@data */
+/* the data of e19bc, ds:7FEC to ds:8024 (56 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+/* ds:7FEC-8023: the code's (a literal or template, 'Memory Allocation Error! Press any key t'): written by its function */
+/* ds:8023: the pad byte to the next module (word alignment) */
+
 /* 19BC:0007: allocate a far block of `size` bytes. It asks farmalloc for one extra byte (or 16
    for a MEMALLOC_ALIGNED request) and retries: first the retry EvictFile(0, EVICT_ANY) is tried,
    then the failure hook at ds:810A (AllocationFailure once main has installed it); only when both

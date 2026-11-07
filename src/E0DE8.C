@@ -92,6 +92,15 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 void DamageCharacter(int who, int what);  /* forward: 01FF reaches it with a far call */
 void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with a far call */
 
+/*@data */
+/* the data of e0de8, ds:5536 to ds:55E6 (176 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+unsigned char g5536[8] = { 0x10, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x12 }; /*@ ds:5536 */
+signed char gArmourSlots[5] = { 17, 0, 1, 18, 19 }; /*@ ds:553E */
+/* ds:5543-55B0: the code's (a literal or template, 'All of your party has been defeated.  Th'): written by its function */
+/* ds:55B0-55DA: the code's (a literal or template, '\x06\x01%s has gained a level of experience.\x06\x0f'): written by its function */
+/* ds:55DA-55E5: the code's (a literal or template, '%s is %s!\r'): written by its function */
+/* ds:55E5: the pad byte to the next module (word alignment) */
+
 /* 0DE8:0007: the to-hit roll of character `who` against monster `obj`. It derives an attack bonus
    from the item record `slot` (an index into gItems; its m02 item type index selects the m0B
    weapon value when it is 1..3), adds either the attacker's strength to-hit bonus

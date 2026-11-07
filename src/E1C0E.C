@@ -130,6 +130,56 @@ extern int gFileHandles[];               /*@ ds:FEEA: DOS handle or SLOT_FREE pe
 extern long gSlotOffsets[];              /*@ ds:FEC2: the record's start offset per slot */
 extern long gSlotLengths[];              /*@ ds:FF0C: the record's length per slot */
 
+/*@data */
+/* the data of e1c0e, ds:8196 to ds:8484 (750 bytes, 20 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+char far *gErrorText[20] = { /*@ ds:8196 */
+    "Could not create the file on disk.",
+    "Illegal MODE in Open_File.",
+    "Could not find",
+    "Too many files open.",
+    "Trying to close unopened file.",
+    "Trying to read unopened file.",
+    "Trying to write unopened file.",
+    "Trying to seek unopened file.",
+    "Illegal starting position in Seek_File.",
+    "Trying to write a resident file.",
+    "Trying to Get_Resident_Index on unknown file.",
+    "You are exiting with open files.",
+    "A fatal disk error has occurred. Now returning to DOS.",
+    "File name not listed in FileData[].",
+    "File length does not match size listed in FileData[].",
+    "Internal Error in File_Exists().",
+    "Trying to Alloc a 0 sized file entry.",
+    "Failure in sort code for resident files.",
+    "\r ",
+    "\r\n"
+};
+void far *gMsgBuf = 0; /*@ ds:81E6 */
+unsigned char gSearchAllDrives = 1; /*@ ds:81EA */
+/* ds:81EB-820E: the string pool, "Could not create the file on disk." (a table's literal) */
+/* ds:820E-8229: the string pool, "Illegal MODE in Open_File." (a table's literal) */
+/* ds:8229-8238: the string pool, "Could not find" (a table's literal) */
+/* ds:8238-824D: the string pool, "Too many files open." (a table's literal) */
+/* ds:824D-826C: the string pool, "Trying to close unopened file." (a table's literal) */
+/* ds:826C-828A: the string pool, "Trying to read unopened file." (a table's literal) */
+/* ds:828A-82A9: the string pool, "Trying to write unopened file." (a table's literal) */
+/* ds:82A9-82C7: the string pool, "Trying to seek unopened file." (a table's literal) */
+/* ds:82C7-82EF: the string pool, "Illegal starting position in Seek_File." (a table's literal) */
+/* ds:82EF-8310: the string pool, "Trying to write a resident file." (a table's literal) */
+/* ds:8310-833E: the string pool, "Trying to Get_Resident_Index on unknown file." (a table's literal) */
+/* ds:833E-835F: the string pool, "You are exiting with open files." (a table's literal) */
+/* ds:835F-8396: the string pool, "A fatal disk error has occurred. Now returnin..." (a table's literal) */
+/* ds:8396-83BA: the string pool, "File name not listed in FileData[]." (a table's literal) */
+/* ds:83BA-83F0: the string pool, "File length does not match size listed in Fil..." (a table's literal) */
+/* ds:83F0-8411: the string pool, "Internal Error in File_Exists()." (a table's literal) */
+/* ds:8411-8437: the string pool, "Trying to Alloc a 0 sized file entry." (a table's literal) */
+/* ds:8437-8460: the string pool, "Failure in sort code for resident files." (a table's literal) */
+/* ds:8460-8463: the string pool, "\r " (a table's literal) */
+/* ds:8463-8466: the string pool, "\r\n" (a table's literal) */
+/* ds:8466-8473: the code's (a literal or template, 'Insert disk '): written by its function */
+/* ds:8473-8483: the code's (a literal or template, 'into any drive.'): written by its function */
+/* ds:8483: the pad byte to the next module (word alignment) */
+
 /* 1C0E:000C: resize the file in handle slot `index` to `size` bytes and return 1 when that
    succeeded, 0 when the slot is loaded in memory (nothing to resize) or chsize failed. The packet
    found no direct caller in the EXE; the name rests on the chsize call (0000:5E41). */

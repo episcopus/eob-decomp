@@ -200,6 +200,29 @@ void ShutdownGame(void);
 int ExitHook(void);
 int AllocationFailure(void);
 
+/*@data */
+/* the data of e07c8, ds:3056 to ds:31AC (342 bytes, 5 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+unsigned char gOverlayCacheUp = 0x00; /*@ ds:3056 */
+unsigned char gBuiltinPalette[16] = { /*@ ds:3057 */
+    0x00, 0x05, 0x03, 0x02, 0x0A, 0x0E, 0x0C, 0x06, 0x04, 0x0B, 0x09, 0x01,
+    0x00, 0x08, 0x07, 0x0F
+};
+char gFont8Name[] = "Font8.fnt"; /*@ ds:3067: a named array, not a literal: the code's two uses share it */
+unsigned char g3071[3] = { 0x00, 0x00, 0x00 }; /*@ ds:3071 */
+char far *gOverlayFiles[5] = { "cga.ovl", "tga.ovl", "ega.ovl", "mcga.ovl", "vga.ovl" }; /*@ ds:3074 */
+unsigned char g3088[10] = { 0xCB, 0x02, 0x45, 0x4F, 0x42, 0x2E, 0x45, 0x58, 0x45, 0x00 }; /*@ ds:3088 */
+unsigned char gStartupDone = 0x00; /*@ ds:3092 */
+char gFontErrorText[] = "\r\nUnable to load font "; /*@ ds:3093: before the pool, so an array */
+char gReinstallText[] = ". Reinstall program.\r\n"; /*@ ds:30AA */
+/* ds:30EA-30F0: the code's (a literal or template, 'homie'): written by its function */
+/* ds:30F0-3114: the code's (a literal or template, '\r\nNot enough memory to run program.'): written by its function */
+/* ds:3114-311F: the code's (a literal or template, 'eobpal.col'): written by its function */
+/* ds:311F-3139: the code's (a literal or template, '\r\nMemory chain corrupt!\r\n'): written by its function */
+/* ds:3139-3154: the code's (a literal or template, '\r\nCould not load overlay "'): written by its function */
+/* ds:3154-317A: the code's (a literal or template, '".  Press a key to return to DOS...\r\n'): written by its function */
+/* ds:317A-3184: the code's (a literal or template, 'FONT6.FNT'): written by its function */
+/* ds:3184-31AC: the code's (a literal or template, '\r\nAllocation failure, returning to DOS!'): written by its function */
+
 /* 07C8:0001: main. Reads the four arguments the launcher passes (graphics, sound and mouse, all one
    character, and the five-letter "homie" marker) and the video mode to restore, installs the
    INT 3Fh handler (keeping the old vector in ds:FC08) and the exit and allocation failure hooks,
@@ -367,7 +390,7 @@ int AllocationFailure(void);
         break;
     }
     gClearPage();
-    gFont8x8 = LoadFont("Font8.fnt");
+    gFont8x8 = LoadFont(gFont8Name);
     gFont6x6 = LoadFont("FONT6.FNT");
     if (!gFont8x8 || !gFont6x6)
         goto font_error;
@@ -411,9 +434,9 @@ int AllocationFailure(void);
     goto done;
 font_error:
     SetVideoMode(7);              /* index 7 restores gRestoreMode (the argv[5] mode) */
-    PrintString("\r\nUnable to load font ");
-    PrintString("Font8.fnt");   /* the message is a fixed string: it names Font8.fnt even when the 6x6 font was the one that failed */
-    PrintString(". Reinstall program.\r\n");
+    PrintString(gFontErrorText);
+    PrintString(gFont8Name);   /* the message is a fixed string: it names Font8.fnt even when the 6x6 font was the one that failed */
+    PrintString(gReinstallText);
     WaitGameKey();
     return 0;
 fail:

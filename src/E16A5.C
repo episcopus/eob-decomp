@@ -82,6 +82,23 @@ extern int gMatchedNodeKey;            /*@ ds:FC82: the dispatcher writes which 
                                 an action mode (src/E0ACD.C) */
 extern int gRightButtonMasks[];          /*@ ds:5DF2: words 1..4 the gRightButtonMode redraw masks */
 
+/*@data */
+/* the data of e16a5, ds:5DE0 to ds:5E22 (66 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+struct Node far *gLastNode = 0; /*@ ds:5DE0 */
+struct Node far *gPressedNode = 0; /*@ ds:5DE4 */
+int gListActive = 1; /*@ ds:5DE8 */
+int gLeftButtonMasks[4] = { 0, 256, 512, 1024 }; /*@ ds:5DEA */
+int gRightButtonMasks[15] = { /*@ ds:5DF2 */
+    2048, 4096, 8192, 16384, -32768, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+int gHitX = 0; /*@ ds:5E10 */
+int gHitY = 0; /*@ ds:5E12 */
+unsigned char g5E14[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00 }; /*@ ds:5E14 */
+int gLeftButtonMode = 0; /*@ ds:5E1C */
+int gRightButtonMode = 0; /*@ ds:5E1E */
+char gNodeListChanged = 0; /*@ ds:5E20 */
+/* ds:5E21: the pad byte to the next module (word alignment) */
+
 /* 16A5:0009: read one pending key event and dispatch it to the node list `head`. 1AAD:0409 says
    a key is ready and 1AAD:0588 reads it; the event gets the 0x8000 tag. A letter 'A' to 'Z' is
    folded to its lower-case code (bit 8 cleared, bit 5 set). The dispatcher is always called, with

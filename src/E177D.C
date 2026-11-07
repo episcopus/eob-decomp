@@ -134,6 +134,17 @@ extern int Distance(int x, int y); /*@ 17A6:0F61 */
 /* forward declaration: PlaySoundDefault (177D:00F3) calls it before its definition below */
 void PlaySoundAtCell(int sound, int cell);
 
+/*@data */
+/* the data of e177d, ds:5E22 to ds:5E44 (34 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+int gCurSound = 0; /*@ ds:5E22 */
+int gCurAttenuation = 0; /*@ ds:5E24 */
+int gPrevSound = 0; /*@ ds:5E26 */
+int gSoundLevel = -1; /*@ ds:5E28 */
+int gSoundReg1 = -1; /*@ ds:5E2A */
+/* ds:5E2C-5E36: the code's (a literal or template, 'adlib.dat'): written by its function */
+/* ds:5E36-5E43: the code's (a literal or template, 'pcgamesn.dat'): written by its function */
+/* ds:5E43: the pad byte to the next module (word alignment) */
+
 /* 177D:000A: opens the driver file chosen by gSoundCard (adlib.dat when 0, pcgamesn.dat
    otherwise), reads its 120-byte sound map into gSoundMap and its 32C8h data block into segment
    0000 (_TEXT) at offset 0416 (GetDriverBlock returns cs:0416), closes the file and fixes the block's

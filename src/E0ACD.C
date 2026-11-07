@@ -163,6 +163,18 @@ extern void DrawViewFrame(int full); /*@ 2116:005C */    /* overlay 4 entry, ovl
 extern void NoOpAfterMapLoad(void); /*@ 2116:0043 */    /* overlay 4 entry, ovl4:2039, a no-op (src/EOV4.C) */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
+/*@data */
+/* the data of e0acd, ds:36B0 to ds:37B4 (260 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+int gHandSplitY[6] = { 24, 24, 80, 80, 136, 136 }; /*@ ds:36B0 */
+/* ds:36BC-36CF: ClickFloorItem's two local tables (stepOffset, slotKind), so the definitions after
+   them follow that function */
+/* ds:3752-376A: the code's (a literal or template, "You can't go that way.\r"): written by its function */
+/* ds:376A-378C: the code's (a literal or template, "%s isn't capable of eating food!\r"): written by its function */
+/* ds:378C-37A4: the code's (a literal or template, 'You may only eat food!\r'): written by its function */
+/* ds:37A4-37AC: the code's (a literal or template, 'PLAYFLD'): written by its function */
+/* ds:37AC-37B3: the code's (a literal or template, 'INVENT'): written by its function */
+/* ds:37B3: the pad byte to the next module (word alignment) */
+
 /* 0ACD:0008: draws "You can't go that way.", plays the bump sound and drops any pending key. The
    fallback of the movement keys (04F8..05FF) when StepIfOpen finds the way closed. */
 /*@ 0ACD:0008 */ void MoveBlocked(void)
@@ -549,6 +561,22 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     }
     return 1;
 }
+
+/* the data after ClickFloorItem's templates (ds:36D0 to 3751) */
+signed char gSlotNeighbours[108] = { /*@ ds:36D0 */
+    18, 1, 25, 11, 21, 23, 21, 0, 14, 3, 4, 3,
+    15, 2, 5, 2, 2, 5, 6, 19, 3, 16, 7, 4,
+    4, 7, 8, 20, 5, 17, 9, 6, 6, 9, 10, 22,
+    7, 18, 11, 8, 8, 11, 12, 23, 9, 0, 13, 10,
+    10, 13, 14, 24, 11, 25, 15, 12, 12, 15, 2, 15,
+    13, 14, 3, 14, 25, 19, 17, 5, 16, 20, 18, 7,
+    17, 22, 0, 9, 24, 4, 20, 16, 19, 6, 22, 17,
+    1, 24, 1, 26, 20, 8, 23, 18, 22, 10, 24, 1,
+    23, 12, 19, 21, 0, 26, 16, 13, 0, 21, 16, 25
+};
+signed char gFrontPosByDir[8] = { 0, 1, 1, 3, 3, 2, 2, 0 }; /*@ ds:373C */
+signed char gMemberSide[6] = { 0, 1, 0, 1, 0, 1 }; /*@ ds:3744 */
+int gViewPosAhead[4] = { 0, 0, 1, 1 }; /*@ ds:374A */
 
 /* 0ACD:0753: advances gMapPhase, wrapping above 2 to 1, then moves the selected row
    gCursorSlot (step 2 passes it to NoOpAfterCursorMove with 9, otherwise NoOpBeforeCursorMove).

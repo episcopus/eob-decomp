@@ -93,6 +93,45 @@ extern char far *gClassNames[]; /*@ ds:11DD */     /* the class names */
 extern char far *gBaseClassNames[]; /*@ ds:1219 */     /* the per-class-slot names (GetClassSlotByte index) */
 extern char far *gAlignmentNames[]; /*@ ds:1240 */     /* the alignment names */
 
+/*@data */
+/* the data of e1547, ds:5D1C to ds:5DE0 (196 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+signed char gHpBarColours[3] = { 3, 5, 8 }; /*@ ds:5D1C */
+unsigned char gMemberFrameX[2] = { 8, 0x50 }; /*@ ds:5D1F */
+signed char gMemberFrameY[3] = { 2, 54, 106 }; /*@ ds:5D21 */
+signed char gHpLineX[2] = { 23, 95 }; /*@ ds:5D24 */
+unsigned char gHpLineY[3] = { 0x2E, 0x62, 0x96 }; /*@ ds:5D26 */
+signed char gFoodBarColours[3] = { 3, 5, 8 }; /*@ ds:5D29 */
+signed char gPortraitX[2] = { 8, 80 }; /*@ ds:5D2C */
+signed char gPortraitY[3] = { 11, 63, 115 }; /*@ ds:5D2E */
+signed char gHandSlotX[2] = { 40, 112 }; /*@ ds:5D31 */
+unsigned char gHandSlotY[6] = { 0x0B, 0x1B, 0x3F, 0x4F, 0x73, 0x83 }; /*@ ds:5D33 */
+unsigned gInfoBoxLeft[3] = { 0x00B3, 0x0110, 0x012D }; /*@ ds:5D39 */
+unsigned char gInfoBoxTop[3] = { 0x24, 0x33, 0x33 }; /*@ ds:5D3F */
+unsigned gInfoBoxRight[3] = { 0x010F, 0x012C, 0x013E }; /*@ ds:5D42 */
+unsigned char gInfoBoxBottom[3] = { 0xA5, 0xA5, 0x93 }; /*@ ds:5D48 */
+signed char gMemberBlockCol[2] = { 1, 10 }; /*@ ds:5D4B */
+signed char gMemberScreenCol[2] = { 23, 32 }; /*@ ds:5D4D */
+signed char gMemberBlockY[3] = { 2, 54, 106 }; /*@ ds:5D4F */
+/* ds:5D52-5D55: the code's (a literal or template, 'HP'): written by its function */
+/* ds:5D55-5D61: the code's (a literal or template, '%3d of %-3d'): written by its function */
+/* ds:5D61-5D66: the code's (a literal or template, 'MISS'): written by its function */
+/* ds:5D66-5D6B: the code's (a literal or template, 'HACK'): written by its function */
+/* ds:5D6B-5D71: the code's (a literal or template, "CAN'T"): written by its function */
+/* ds:5D71-5D77: the code's (a literal or template, 'REACH'): written by its function */
+/* ds:5D77-5D7A: the code's (a literal or template, 'NO'): written by its function */
+/* ds:5D7A-5D7F: the code's (a literal or template, 'AMMO'): written by its function */
+/* ds:5D7F-5D82: the code's (a literal or template, '%d'): written by its function */
+/* ds:5D82-5D8B: the code's (a literal or template, 'Swapping'): written by its function */
+/* ds:5D8B-5D90: the code's (a literal or template, 'DEAD'): written by its function */
+/* ds:5D90-5D9C: the code's (a literal or template, 'UNCONSCIOUS'): written by its function */
+/* ds:5D9C-5DAA: the code's (a literal or template, 'POISON (SLOW)'): written by its function */
+/* ds:5DAA-5DB3: the code's (a literal or template, 'POISONED'): written by its function */
+/* ds:5DB3-5DBD: the code's (a literal or template, 'PARALYZED'): written by its function */
+/* ds:5DBD-5DCC: the code's (a literal or template, 'CHARACTER INFO'): written by its function */
+/* ds:5DCC-5DD8: the code's (a literal or template, 'ARMOR CLASS'): written by its function */
+/* ds:5DD8-5DDC: the code's (a literal or template, 'EXP'): written by its function */
+/* ds:5DDC-5DE0: the code's (a literal or template, 'LVL'): written by its function */
+
 extern char *itoa(int value, char *string, int radix); /*@ 0000:62AA */
 extern void SetFont(char far *font); /*@ 1A47:0169 */
 extern void DrawShadowText(char far *text, int x, int y, int color, int extra); /*@ 082C:0898 */

@@ -86,6 +86,10 @@ extern int WaitKeyEvent(void); /*@ 1AAD:05D3: read a key; returned unfiltered. S
                                   the mask clears; src/EOV0.C:1211 and src/EOV3.C:710 discard it */
 extern void WaitFrames(int n); /*@ 1A16:000B */
 
+/*@data */
+/* the data of e14ef, ds:5D1A to ds:5D1C (2 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+int gHoverSelectsOption = 1; /*@ ds:5D1A */
+
 /* 14EF:0007: the index of the n-th (zero-based) selectable entry, as the bit number of the n-th set
    bit of `mask` scanning from bit `shift` up, minus shift (the result is an index counted from
    shift). The two loops first skip n set bits, then advance to the next set bit. A set mask bit
