@@ -244,13 +244,13 @@ _RunOverlayRequest PROC FAR
         add     sp,6
 ; The failure test after MemRealloc (`or ax,dx; je short fail` at 1C00:00B0 to 00B2) does not see a
 ; failed realloc of this 0x20 block: MemRealloc's 0x20 path does `blk = realloc(...)` and then
-; returns MK_FP(FP_SEG(blk) + 1, 0) (E19BC.C:142 to 145), so a NULL comes back as 0001:0000,
+; returns MK_FP(FP_SEG(blk) + 1, 0) (E19BC.C:147 to 145), so a NULL comes back as 0001:0000,
 ; non-zero: the test falls through, the code stores the segment 1 at 8190h and calls the pointer at
 ; 0001:AX. Shrinking a block is not expected to fail [H].
         or      ax,dx
         je      short fail
         mov     ds:[8190h],dx
-; MemRealloc's DX (the new block's segment, FP_SEG(blk) + 1 on the 0x20 path, E19BC.C:142 to 145)
+; MemRealloc's DX (the new block's segment, FP_SEG(blk) + 1 on the 0x20 path, E19BC.C:147 to 145)
 ; is stored at 8190h at 1C00:00B4, so the second `lcall [818Eh]` (1C00:00C0) calls the pointer the
 ; entry returned, whose offset is the entry's AX (818Eh) and whose segment is MemRealloc's result
 ; (8190h); its target is read through the request segment (see above), and the segment can differ
@@ -285,7 +285,7 @@ _RunOverlayRequest PROC FAR
 ; and a non-zero value disables the handler: the INT 33h handler body skips all work on non-zero
 ; (its `cmp [gMouseDisabled],0; jne` at 1A72:0185) and
 ; HidePointer and ShowPointer do nothing on non-zero (E1BBE.ASM:89-90, 178), while SetMouseItem
-; (07A9:010C, its `if (!gMouseDisabled)` test at 07A9:0148: `cmp [814A],0; je`) and E14EF.C:227
+; (07A9:010C, its `if (!gMouseDisabled)` test at 07A9:0148: `cmp [814A],0; je`) and E14EF.C:231
 ; run their pointer work only when it is zero. Clearing it after a driver overlay has loaded and the
 ; pointer the entry returned has run therefore turns the handler and the pointer on [H]. This clear
 ; is not the last word: after start-up returns 1, when gStartupDone is set (E07C8.C:152), Main sets the
@@ -305,7 +305,7 @@ succeeded: xor  ax,ax
 ; frees it. That is not observable, because the caller prints the message, waits for a key
 ; (lcall 1AAD:053A at 07C8:01DA) and returns to Main through the shared epilogue of StartupGame at
 ; 07C8:0575 (pop si, pop bp, retf; 07C8:0265 to 0277, 01D2 to 01E1); Main then runs ShutdownGame
-; (E07C8.C:160, 07C8:058A), which ends in exit(0) (E07C8.C:345), so the block is never used again.
+; (E07C8.C:160, 07C8:058A), which ends in exit(0) (E07C8.C:368), so the block is never used again.
 ; The failure path pops ds then si (1C00:00DE, 00DF), the reverse of the success path above: `pop
 ; ds` takes the word pushed as si (1C00:006B) and `pop si` takes the word pushed as ds (1C00:006A),
 ; so ds and si swap values. It is harmless, because the epilogue pops at 1C00:00E3 to 00E6 restore

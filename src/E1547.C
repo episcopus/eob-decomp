@@ -151,7 +151,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    DrawRect in `colour` (6 or 3 by video mode); when only `hatch` holds a DrawRect in colour 5;
    when both hold the border alternates, each row in `colour` for `outline` and 5 for `hatch`. What
    the individual effectFlags bits mean is not established (mDF is the penalty counter, mE0 a countdown:
-   src/E0DE8.C:563-566, src/E0EF3.C:39). Called by RedrawMember (0991) only. The flag tests read
+   src/E0DE8.C:572-575, src/E0EF3.C:39). Called by RedrawMember (0991) only. The flag tests read
    effectFlags as a long, so they take the `mov ax,es:[bx+0xE3]; and ax,K; or ax,0` form (the long bit test
    at 0D1C:0B17). */
 /*@ 1547:0009 */ void DrawMemberFrame(int who)
@@ -249,7 +249,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    ratio bar (DrawRatioBar) of hp + 10 against maxHp + 10 (the +10 keeps the bar visible at negative
    hit points), the colour picked by a wound state: 1 when (maxHp + 10) / 3 exceeds hp + 10, 2 when
    hp + 10 is 10 or less (hp at or below 0), else 0; when gBarGraphsOn is 0 it prints "%3d of %-3d" (hp,
-   maxHp) instead. Called by RedrawMember (0991) and HealCharacter (0DE8:0ADB, src/E0DE8.C:592). */
+   maxHp) instead. Called by RedrawMember (0991) and HealCharacter (0DE8:0ADB, src/E0DE8.C:601). */
 /*@ 1547:033F */ void DrawMemberHp(int member)
 {
     int state;
@@ -305,7 +305,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    status bit 0 (alive) is set and the member is the selected gInventoryMember. The bar is at (0xfa, 0x19): value
    food (the food value) against 100, 51 wide, 5 tall, the colour picked by a hunger state (the lower
    the food value the hungrier: 1 below 0x21, 2 below 0x14, else 0). Called from RedrawMember (0991),
-   EatFood (0ACD:07E0, src/E0ACD.C:577) and DecayMemberState (1414:0C82, src/E1414.C:657). */
+   EatFood (0ACD:07E0, src/E0ACD.C:605) and DecayMemberState (1414:0C82, src/E1414.C:657). */
 /*@ 1547:04A0 */ void DrawMemberFood(int member)
 {
     struct CharRec far *rec;
@@ -334,7 +334,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    returns; when effectFlags bit 2 is set and gPanelMode is 0 it fills the portrait in colour 0xC and returns;
    otherwise it draws the member's own portrait pointer (rec + 0x33) and, at hp below 1, the
    wounded overlay gUnconsciousIcon. Called by RedrawMember (0991) and DamageCharacter (0DE8:09B9,
-   src/E0DE8.C:573). The effectFlags bit test reads it as a long, so it takes the `and ax,4; or ax,0` form
+   src/E0DE8.C:582). The effectFlags bit test reads it as a long, so it takes the `and ax,4; or ax,0` form
    (the long bit test at 0D1C:0B17). */
 /*@ 1547:0544 */ void DrawMemberPortrait(int who)
 {
@@ -378,7 +378,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    y + 1), -2 "HACK", -3 "CAN'T"+"REACH", -4 "NO"+"AMMO", anything else the decimal `result`. It
    draws `name` centred (indent 0x10 - strlen*6/2) at (x + indent, y + 5), or `name` at (x + indent,
    y + 2) and `suffix` at (x + indent, y + 9) when the suffix is set. Called by DrawHandSlot (07E7)
-   only. `result` is what UseItem (0DE8:0763, src/E0DE8.C:499) stored in the record's lastAction[slot]. */
+   only. `result` is what UseItem (0DE8:0763, src/E0DE8.C:508) stored in the record's lastAction[slot]. */
 /*@ 1547:0642 */ void DrawActionLabel(int x, int y, int result)
 {
     char name[6];
@@ -433,7 +433,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    item icon through DrawItemIcon, or the empty-slot icon gEmptySlotIcons[slot] through DrawShape,
    and then, in that else branch only, draws the highlight icon gHandShadeIcon when the slot's m1E bit is
    set, or CanUseHand(who, slot) returns 0, or hp is 0 or below, or status bit 2 (paralyzed) is set.
-   Called by RedrawMember (0991) and RemoveCarriedItems (0D1C:01CA, src/E0D1C.C:294). */
+   Called by RedrawMember (0991) and RemoveCarriedItems (0D1C:01CA, src/E0D1C.C:318). */
 /*@ 1547:07E7 */ void DrawHandSlot(char who, char slot)
 {
     int item;
@@ -472,9 +472,9 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    panel) draws the stat panel with the class, race and alignment names, the six stat lines, armor
    class, EXP/LVL and the per-class slot lines. The name colour and text attribute come from status
    bits 1 and 2 (8/6), otherwise 0xc/0xf; status bit 0 is the alive bit, bit 1 poisoned and bit 2
-   paralyzed (E1414.C:476-477 clears them at the end of the effect; E0DE8.C:558 keeps only bit 0
+   paralyzed (E1414.C:519-520 clears them at the end of the effect; E0DE8.C:567 keeps only bit 0
    at death). Called by several screens with the member index (for example PickOrSwapMember, 0ACD:0264,
-   while moving a member, src/E0ACD.C:302). */
+   while moving a member, src/E0ACD.C:314). */
 /*@ 1547:0991 */ void RedrawMember(int who)
 {
     struct CharRec far *rec;

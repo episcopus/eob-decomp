@@ -21,7 +21,7 @@
 #define SCREEN_ROWS 0xC8                                /* 200 rows */
 #define COLUMN_MASK 0xFFF8u
 
-/* the DGROUP variables (src/E1BBE.ASM:30-140) */
+/* the DGROUP variables (src/E1BBE.ASM:30-182) */
 #define gRestoreRect 0x804Eu
 #define gRestoreDrawState 0x80A2u
 #define gSaveDrawState 0x80AAu

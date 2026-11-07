@@ -1329,7 +1329,7 @@ char gStrCastOk[5] = "ok\r"; /*@ ds:59AB */
    +0x0F long and which 0D1C:0BAB does not reject, roll 1d20 and clear the object's type when the
    roll is under the value 0A72:0006 gives for that record. The +2 byte is passed as
    GetSavingThrowTarget's `limit` argument, which 0A72:0006 clamps to gSaveMaxLevel[index]
-   (src/E0A72.C:73-80). Reached through a table (the packet finds no direct caller). The threshold
+   (src/E0A72.C:65-70). Reached through a table (the packet finds no direct caller). The threshold
    is a local and the clear uses &gMonsters[i], not the walking pointer. */
 /*@ 0EF3:1702 */ void CastFear(void)
 {
@@ -1614,7 +1614,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 
 /* 0EF3:1DC0: set every member's +0x23 food byte to 100. The field is the hunger/food value
    EatFood clamps at 100 (src/E0ACD.C:108, :623); 0BD2 case 5 makes the same write
-   (src/E0BD2.C:746). */
+   (src/E0BD2.C:798). */
 /*@ 0EF3:1DC0 */ void CastCreateFood(void)
 {
     int i;

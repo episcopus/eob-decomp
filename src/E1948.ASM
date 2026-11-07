@@ -5,8 +5,8 @@
 ; note's period from a table (PC speaker or Tandy), programs the pitch (1948:0316) and turns the
 ; voice on or off (1948:02C7 / 1948:02F1). _StartSound (1948:0418) starts a sound for PlaySound
 ; (177D:0070) and PlaySoundAtCell (177D:0106); the driver is selected by gTandyOn (ds:8A67): 1 is
-; Tandy, 0 is the PC speaker (StartupGame installs and selects it, src/E07C8.C:345-351; PlaySound
-; starts sounds through StartSound at src/E177D.C:194 and PlaySoundAtCell at src/E177D.C:285).
+; Tandy, 0 is the PC speaker (StartupGame installs and selects it, src/E07C8.C:368-374; PlaySound
+; starts sounds through StartSound at src/E177D.C:205 and PlaySoundAtCell at src/E177D.C:296).
 ;
 ; The driver keeps its state in a segment that is an alias of DGROUP at 88A0h: the code sets DS to
 ; 29B8h itself (the value the install and every entry set), and DGROUP is 212Eh (whitepaper 2.2), so
@@ -601,10 +601,10 @@ _SetVoicePitch ENDP
 ; silence (voice index 3) writes the SN76489 noise channel, because
 ; the latch's channel bits 6-5 are 3 [H]; no path sets gVoiceCount to 4, so voice 3 is never played.
 ; It also sets gVoiceSilent for all four voices in the loop (1948:0352), so a call during a song
-; flags every voice: the live resume callers start a sound straight after (src/E177D.C:189 and 278)
+; flags every voice: the live resume callers start a sound straight after (src/E177D.C:200 and 278)
 ; and the next tick's start path clears voices 0 to 2 (1948:0050 to 0086, the startVoice loop at
 ; 1948:007C clears gVoiceSilent at 0086; voice 3 is never started), but the shutdown caller of
-; _SoundDriverSilenceToOneVoice (src/E07C8.C:374) does not, so its flags end the song at the next
+; _SoundDriverSilenceToOneVoice (src/E07C8.C:397) does not, so its flags end the song at the next
 ; tick (see gVoiceSilent).
 ; Called by the install routine on Tandy (1948:0377), _SoundDriverResume (1948:0458),
 ; _SoundDriverUninstall (1948:03DA) and _SoundDriverSilenceToOneVoice (1948:046B).
@@ -645,10 +645,10 @@ _SetOneVoice ENDP
 ; without loading its count (_SetVoicePitch loads it, 1948:0316), remembers port 61h in
 ; gPort61Save and sets the output up for Tandy (_SetThreeVoices, 1948:03D2) or the PC speaker
 ; (_SetOneVoice, 1948:03CC) by gTandyOn (1948:03C5). Called by StartupGame after the sound card
-; choice (src/E07C8.C:345 and 348). At both call sites gTandyOn is still 0 while the install runs
-; (the Tandy case sets it to 1 only afterwards, src/E07C8.C:349), so from StartupGame the install
-; takes its one-voice branch and the three voices come from _SoundDriverResume (src/E07C8.C:351); the
-; Tandy branch is reached only if a PlaySound call set gTandyOn to 1 first (src/E177D.C:188).
+; choice (src/E07C8.C:368 and 348). At both call sites gTandyOn is still 0 while the install runs
+; (the Tandy case sets it to 1 only afterwards, src/E07C8.C:372), so from StartupGame the install
+; takes its one-voice branch and the three voices come from _SoundDriverResume (src/E07C8.C:374); the
+; Tandy branch is reached only if a PlaySound call set gTandyOn to 1 first (src/E177D.C:199).
         PUBLIC  _SoundDriverInstall     ; @ 1948:0377
 _SoundDriverInstall PROC FAR
         push    bp
@@ -703,7 +703,7 @@ _SoundDriverInstall ENDP
 ; 1948:03DA: remove the driver. Restores the saved BIOS INT 8 vector (cs:oldInt8Off/oldInt8Seg)
 ; and programs PIT channel 0 to mode 3 with divisor 0 (65536, about 18.2 Hz, the BIOS divisor);
 ; on Tandy it silences the three voices before _SetOneVoice restores port 61h. Called by
-; ShutdownGame (src/E07C8.C:368 and 376, the gSoundCard 1 and 2 cases).
+; ShutdownGame (src/E07C8.C:391 and 376, the gSoundCard 1 and 2 cases).
         PUBLIC  _SoundDriverUninstall   ; @ 1948:03DA
 _SoundDriverUninstall PROC FAR
         push    bp
@@ -746,7 +746,7 @@ _SoundDriverUninstall ENDP
 ; whitepaper 4.4 (docs/design/WHITEPAPER.md:177) gives the block only as u16 offsets, and
 ; src/E177D.C:121-122 words it as a driver routine (StartSound's parameter is named `routine` at
 ; src/E177D.C:130); the two units disagree, to decide at merge. Called by PlaySound (177D:0070,
-; src/E177D.C:194) and PlaySoundAtCell (177D:0106, src/E177D.C:285). Argument: a far pointer at
+; src/E177D.C:205) and PlaySoundAtCell (177D:0106, src/E177D.C:296). Argument: a far pointer at
 ; [bp+6] offset, [bp+8] segment.
         PUBLIC  _StartSound             ; @ 1948:0418
 _StartSound PROC FAR
@@ -795,14 +795,14 @@ _StopSound ENDP
 
 ; 1948:0458: set up the three-voice output (_SetThreeVoices), which sets gVoiceCount to 3 and flags
 ; all four voices silent (1948:034A). A resume during a song flags every voice, but the game never
-; stops a song that way: the live callers start a sound straight after the resume (src/E177D.C:189
+; stops a song that way: the live callers start a sound straight after the resume (src/E177D.C:200
 ; and 278, each followed by StartSound at 194 and 285), and the next tick's start path restarts
 ; voices 0 to 2 and clears their flags (1948:0050 to 0086, startVoice at 1948:007C, its flag clear
 ; at 0086; voice 3 is never started). The stop needs a resume with no start request after it, and no
-; caller in src/ makes one during a song (StartupGame's resume, src/E07C8.C:351, also has none, but
+; caller in src/ makes one during a song (StartupGame's resume, src/E07C8.C:374, also has none, but
 ; no song is playing then). The live resume calls in src/E177D.C are 189 in PlaySound and 278 in
-; PlaySoundAtCell; 185 and 274 sit on the gTandyOn = 0 direction that E177D.C:164-166 and 228-231
-; call dead. StartupGame calls it once after the Tandy install (src/E07C8.C:348 to 351).
+; PlaySoundAtCell; 185 and 274 sit on the gTandyOn = 0 direction that E177D.C:175-177 and 228-231
+; call dead. StartupGame calls it once after the Tandy install (src/E07C8.C:371 to 351).
         PUBLIC  _SoundDriverResume      ; @ 1948:0458
 _SoundDriverResume PROC FAR
         push    bp
@@ -828,7 +828,7 @@ _SoundDriverResume ENDP
 ; gVoiceSilent, so it plays its next note after the silence, and the count then clears gPlaying with
 ; that tone still on. Nothing silences it again, because the uninstall that follows skips its Tandy
 ; step when gTandyOn is 0 (1948:0406). Only used on the way out: ShutdownGame's Tandy case calls it
-; just before gTandyOn = 0 and _SoundDriverUninstall (src/E07C8.C:374-376), and nothing resumes the
+; just before gTandyOn = 0 and _SoundDriverUninstall (src/E07C8.C:397-399), and nothing resumes the
 ; output afterwards. The uninstall follows at once and removes the handler, but a tick can still run
 ; before it.
         PUBLIC  _SoundDriverSilenceToOneVoice       ; @ 1948:046B

@@ -228,7 +228,7 @@ unsigned char gCgaItemRemap[4] = { 0x00, 0x55, 0x55, 0xFF }; /*@ ds:550A */
     return -1;
 }
 /* 0D1C:0163: Tests whether character who wears, in item slot 25 or 26, an item of type 0x2F with
-   the given power value (1, 2 or 3 by the callers); EOV1.C:678 reads value 1 as a ring of wizardry
+   the given power value (1, 2 or 3 by the callers); EOV1.C:725 reads value 1 as a ring of wizardry
    [H]. Over the last two of the 27 word slots of gChars[who].items (25
    and 26), returns 1 when one of them holds an item (an index into gItems) whose
    type is 0x2F and whose value equals `fieldB`, otherwise 0. Slots 25 and 26 are the only two

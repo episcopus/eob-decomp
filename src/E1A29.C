@@ -32,7 +32,7 @@ extern int gRegionBottom;        /*@ ds:FE44 */  /* selected region's bottom lin
    0BF2 to 0C2F copies the game's imports and writes its exports). Their first argument is the
    destination page, which the driver turns into a segment through gPageSegs (MCGA.OVL 0B3F).
    This unit calls each of them once from its own front end (for example 1A29:0082 `lcall
-   [0x80a6]`), DrawShape calls ds:80C2 (1A29:0044); ShowPointer (1BBE:00ED, src/E1BBE.ASM:252-258)
+   [0x80a6]`), DrawShape calls ds:80C2 (1A29:0044); ShowPointer (1BBE:00ED, src/E1BBE.ASM:294-300)
    also calls ds:80C2, at 1BBE:01F4, with page 0. gSetRegion below is called once, in SelectRegion
    (1A29:01DB `lcall [0x80b6]`). */
 extern void (far *gDrawShape)(int page, void far *src, int x, int y);        /*@ ds:80C2 */
@@ -51,7 +51,7 @@ void SelectRegion(int region);
    one, then calls the driver with x and y offset by the region's origin: its left edge in pixels
    for x, its top line for y. The mouse pointer
    bypasses this front end: ShowPointer (1BBE:00ED) calls the driver pointer ds:80C2 directly at
-   1BBE:01F4 (`mov ax, 0` at 1BBE:01F0; src/E1BBE.ASM:252-258), passing the shape record
+   1BBE:01F4 (`mov ax, 0` at 1BBE:01F0; src/E1BBE.ASM:294-300), passing the shape record
    ([816E]:[8170], gPointerShapeOff and gPointerShapeSeg, re/renames.toml) as `src` at the
    unclipped absolute position gShapeX/gShapeY, with no region origin added, and page 0. This front end is called from 20 functions (9 in the resident code, 11 in the
    overlays; for example 082C:063B, the `lcall 1A29:000F` at 082C:0675), which pass
@@ -69,7 +69,7 @@ void SelectRegion(int region);
    (ds:80A6, driver export 24), whose MCGA body (mcga.ovl 1639) writes each pixel then decrements
    DI (mcga.ovl 17F7 to 17FA). Identical to 1A29:000F otherwise (null check, lazy region select,
    region-relative x and y). Callers use it for the negative-delta side of wall faces
-   (src/EOV4.C:653, :684, :791) and for negative icon indexes (CastBurningHands, 0EF3:0F99, src/E0EF3.C:925). */
+   (src/EOV4.C:869, :684, :791) and for negative icon indexes (CastBurningHands, 0EF3:0F99, src/E0EF3.C:1022). */
 /*@ 1A29:004D */ void DrawShapeFlipped(int page, void far *src, int x, int y, int region)
 {
     if (!src)
@@ -97,7 +97,7 @@ void SelectRegion(int region);
    remap buffer (mcga.ovl 030C) and swaps the nibbles of each pixel pair (the table at mcga.ovl
    00F6). Identical to 1A29:000F otherwise (null check, lazy region select, region-relative x and
    y). Its only caller picks it for sprite < 0 after gSetRemapTable, where the unremapped branch
-   picks DrawShapeFlipped (src/EOV4.C:580-589); the mirroring rests on that pairing and the nibble
+   picks DrawShapeFlipped (src/EOV4.C:796-805); the mirroring rests on that pairing and the nibble
    swap. */
 /*@ 1A29:00C9 */ void DrawShapeFlippedRemapped(int page, void far *src, int x, int y, int region)
 {

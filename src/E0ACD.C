@@ -22,7 +22,7 @@ extern signed char gInventoryMember; /*@ ds:A99A */    /* the selected character
 extern char gCursorSlot; /*@ ds:F51A */           /* the selected action row: 0..2 in the action menu
                                                (StepActionRow 0ACD:03CD wraps it) and 0x10 for the
                                                character's own item list (0ACD:0A61 and 0BA6; the same
-                                               tests at src/E122E.C:471 and :485) (src/E0D1C.C) */
+                                               tests at src/E122E.C:491 and :485) (src/E0D1C.C) */
 extern char gPanelMode; /*@ ds:FB44 */           /* a mode byte: 0, 1 and 2 gate the action handlers
                                                (src/E0D1C.C) */
 extern int gMatchedNodeKey; /*@ ds:FC82 */            /* an action mode: 0, 1 and 2 pick the branches of the
@@ -106,7 +106,7 @@ extern int gHandSplitY[]; /*@ ds:36B0 */          /* a per-slot word (screen row
 extern int gHitY; /*@ ds:5E12 */            /* the y the hit test uses (the walk is 16A5:00BD, src/E16A5.C) */
 extern unsigned gLeftButtonMode; /*@ ds:5E1C */       /* the left-button mode word: ClickHandSlot (0ACD:0415)
                                                takes its low seven bits, 1 selects SwapSelectedItem,
-                                               anything else UseItemSlot (src/E1658.C); src/E16A5.C:506
+                                               anything else UseItemSlot (src/E1658.C); src/E16A5.C:523
                                                tests gLeftButtonMode for the left button, gRightButtonMode for the right */
 extern signed char gSlotNeighbours[]; /*@ ds:36D0 */  /* a per-row four-byte action table (09EF) */
 extern signed char gFrontPosByDir[]; /*@ ds:373C */  /* a table with two entries per page: 0A61 reads
@@ -144,7 +144,7 @@ struct Node;    /* the screen list node 16A5:005A walks (src/E16A5.C) */
 /* 16A5:005A is void in src/E16A5.C, but its last statement leaves DispatchNodeEvent's result in AX
    and this unit consumes it, so it is declared int here. DispatchNodeEvent (16A5:00BD) returns the
    key a node took, the key itself when no node takes it (`if (result == 0) result = key;`) or 0 for
-   a mouse-only call (src/E16A5.C:185 to 188 and :523 to 524). */
+   a mouse-only call (src/E16A5.C:202 to 188 and :523 to 524). */
 extern int DispatchKeyWait(struct Node far *head); /*@ 16A5:005A */
 extern void DrawMemberFood(int who); /*@ 1547:04A0 */
 extern void RunCellScript(int cell, int mode); /*@ 122E:1DA8 */
@@ -158,7 +158,7 @@ extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int ds
 extern void SetFont(char far *font); /*@ 1A47:0169 */
 void EnterMapScreen(void);
 void ResetMapScreen(void);
-extern void LoadLevel(int level); /*@ 210C:007A */   /* overlay 3 entry, ovl3:0A7C (src/EOV3.C:540) */
+extern void LoadLevel(int level); /*@ 210C:007A */   /* overlay 3 entry, ovl3:0A7C (src/EOV3.C:618) */
 extern void DrawViewFrame(int full); /*@ 2116:005C */    /* overlay 4 entry, ovl4:1F51 (src/EOV4.C) */
 extern void NoOpAfterMapLoad(void); /*@ 2116:0043 */    /* overlay 4 entry, ovl4:2039, a no-op (src/EOV4.C) */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */

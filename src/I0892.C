@@ -21,7 +21,7 @@
 
 #define INT3F_VECTOR 0x3F
 /* LargestFreeBlock returns bytes; below 0xFDE8 (65000) even the largest page has no room (the same
-   check and constant as EOB.EXE's main, src/E07C8.C:238-240). */
+   check and constant as EOB.EXE's main, src/E07C8.C:261-263). */
 #include "EOB.H"
 #define PALETTE_SIZE 0x300
 #define VGA_SCREEN_SEG 0xA000
@@ -74,7 +74,7 @@ extern unsigned char gStartupDone;              /*@ ds:1A34: set to 1 by Startup
                                              (:0817); main runs the overlay when it is set (:0151) */
 extern int gRestoreMode;                        /*@ ds:232C: the video mode in force before StartupGame
                                              changes it, GetVideoMode's result (:024B; INT 10h AH=0Fh,
-                                             src/E1DDD.C:36-41), itoa'd into gRestoreModeArg (:01BA) and handed
+                                             src/E1DDD.C:49-54), itoa'd into gRestoreModeArg (:01BA) and handed
                                              to EOB.EXE as argv[5], which restores it on exit
                                              (src/E07C8.C:67-69) */
 extern int gMemTopSeg;                   /*@ ds:28C4: the segment where DOS memory ends, stored by
@@ -171,7 +171,7 @@ extern int CloseFileHandle(int handle);          /*@ 0000:549D */
    handle the INT 3Fh handler (09E1:0000) keeps and reopens to read the overlay (it stores the
    _open result at 09E1:00A9; the name pointer it pushes before the _open is ds:1A2A, the string
    "INTRO.EXE", at 09E1:0063, :007F and :0098); EOB's twin does the
-   same at src/E1A72.ASM:169-171 and :252-254. Main closes it through CloseFileHandle (0000:549D)
+   same at src/E1A72.ASM:182-184 and :252-254. Main closes it through CloseFileHandle (0000:549D)
    before the hand-off (:018E). What the bytes after the handle hold is not known. */
 extern unsigned far gOverlayFileHandle;                  /*@ 0E6C:00B8 */
 

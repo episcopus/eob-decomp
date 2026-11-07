@@ -69,7 +69,7 @@ extern int GetArmourClassBase(char m15); /*@ 0A72:019D */
 extern int RollHitPoints(char classIndex, char m17, char countA, char countB, char countC); /*@ 0A72:01AE */
 extern int MaxHitPoints(char classIndex, char m17, char countA, char countB, char countC); /*@ 0A72:02B3 */
 extern int MinHitPoints(char classIndex, char m17, char countA, char countB, char countC); /*@ 0A72:03A4 */
-extern int gHpMaxOrAttackTarget; /*@ ds:DCA4 */ /* the max hit points ovl0:135D recomputes through MaxHitPoints (0A72:02B3); src/E0DE8.C:132 gives the same byte a char meaning (a conflict left to E0DE8.C) */
+extern int gHpMaxOrAttackTarget; /*@ ds:DCA4 */ /* the max hit points ovl0:135D recomputes through MaxHitPoints (0A72:02B3); src/E0DE8.C:141 gives the same byte a char meaning (a conflict left to E0DE8.C) */
 extern int gHpMinOrHitFlag; /*@ ds:DD10 */ /* the min hit points ovl0:135D recomputes through MinHitPoints (0A72:03A4); src/E08E6.C also uses the byte as a 0/1 damage flag (08E6:0E48 clears it, 08E6:0FBE sets it to 1) */
 extern struct Node far *FindNode(struct Node far *head, unsigned key); /*@ 1658:01A2 */
 extern char gFmtStrengthOnEntry[]; /*@ ds:6227 */ /* a value format ovl0:135D uses (Purpose unknown) */

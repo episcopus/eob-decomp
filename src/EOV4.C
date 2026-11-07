@@ -438,7 +438,7 @@ extern unsigned char gViewBlockMap[]; /*@ ds:ADB0 */  /* the view pixel buffer (
 
 /* ovl4:042C: returns 1 when `slot` is nonzero and bit 3 of its ds:194B flag byte is clear, else 0.
    The callers use it to choose between the slot's own ds:EF6A record and a second record; bit 3
-   itself is read with other meanings in src/E1414.C:321 and src/EOV3.C:1012. Called by BuildViewBlockMap
+   itself is read with other meanings in src/E1414.C:364 and src/EOV3.C:1012. Called by BuildViewBlockMap
    at ovl4:0563 and ovl4:05D8. */
 /*@ ovl4:042C */ int IsSlotLive(int slot)
 {
@@ -683,8 +683,8 @@ extern void far *gScratchBuf; /*@ ds:DCFC */    /* start-up far allocation, 4096
 extern int gGraphicsChoice; /*@ ds:8102 */  /* the graphics choice: 0 CGA, 1 Tandy, 2 EGA, 3 MCGA/VGA, 4 VGA (re/globals.toml ds:8102; src/E07C8.C:42-45) */
 extern int gPartyCell; /*@ ds:FBCA */        /* the current map cell id (src/E08E6.C) */
 extern void (far *gSetRemapTable)(char far *map); /*@ ds:80D2 */  /* the far colour-table callback (src/E07A9.C) */
-extern char gHitFlashRemap[]; /*@ ds:1CD3 */  /* a 16-byte colour row the colour callback ds:80D2 is passed (src/E08E6.C:110, :752) */
-extern char gHitFlashRemapCga[]; /*@ ds:1CE3 */  /* the 16-byte colour row ds:80D2 is passed when gGraphicsChoice is 0 (src/E08E6.C:111, :750) */
+extern char gHitFlashRemap[]; /*@ ds:1CD3 */  /* a 16-byte colour row the colour callback ds:80D2 is passed (src/E08E6.C:151, :752) */
+extern char gHitFlashRemapCga[]; /*@ ds:1CE3 */  /* the 16-byte colour row ds:80D2 is passed when gGraphicsChoice is 0 (src/E08E6.C:152, :750) */
 extern void BlitSpriteEga(void far *src, void far *dst); /*@ 17A6:1715 */
 extern void BlitSpriteCga(void far *src, void far *dst); /*@ 17A6:11CD */
 extern void BlitSpriteDefault(void far *src, void far *dst); /*@ 17A6:0FFA */
@@ -902,7 +902,7 @@ extern struct ViewWallRec gViewWalls[]; /*@ ds:E06A */
         }
     }
 }
-extern struct SlotSize far *gDoorShapes[]; /*@ ds:FB5E */  /* per column, a far size record (ovl3:031A frees and clears the entries, src/EOV3.C:356-358; src/EOV2.C:155 and src/EOV3.C:143 declare it long, but the ->width use here needs a far pointer) */
+extern struct SlotSize far *gDoorShapes[]; /*@ ds:FB5E */  /* per column, a far size record (ovl3:031A frees and clears the entries, src/EOV3.C:434-436; src/EOV2.C:155 and src/EOV3.C:143 declare it long, but the ->width use here needs a far pointer) */
 extern struct SlotPos gDoorButtons[]; /*@ ds:A99C */
 extern signed char gDoorShapeSet[]; /*@ ds:716E */   /* per wall type, a column base (this unit) */
 extern signed char gDoorYLevels1to3[]; /*@ ds:70F0 */   /* per index y base, level 1..3 (this unit) */

@@ -344,7 +344,7 @@ unsigned char gNextPosByDir[16] = { /*@ ds:5CAB */
    counter) has passed, call its handler with its argument; when the handler leaves the entry
    active, re-arm it with expiry = gGameTicks + period (the expiry is taken from the current tick, not
    the old expiry). Finally runs 08E6:1410. An entry the handler disarms (active 0) is left alone.
-   Called by RunMapLoop (src/E0ACD.C:890) on every pass of its for (;;) loop, after PollMapInput,
+   Called by RunMapLoop (src/E0ACD.C:918) on every pass of its for (;;) loop, after PollMapInput,
    with no condition. */
 /*@ 1414:04E7 */ void RunEffects(void)
 {

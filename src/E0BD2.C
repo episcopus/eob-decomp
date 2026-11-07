@@ -217,8 +217,8 @@ signed char gWandSpells[7] = { 0, 18, 24, 40, 13, -1, 4 }; /*@ ds:38FA */
 
 /* 0BD2:01D0: inserts the item `item` into the circular list whose head word is `head`, stamping it
    with the list's owner key `key` and the tag `tag` (+5; `level` becomes gCurLevel, or -1 when the
-   key is negative). The key is a list owner: a map cell (E0ACD.C:568, E0D1C.C:362, 0BD2:07DE), an
-   object's id (E08E6.C:807) or 0xFFFE for a character's own pack (E0ACD.C:780, :851, 0BD2:0BA0).
+   key is negative). The key is a list owner: a map cell (E0ACD.C:596, E0D1C.C:386, 0BD2:07DE), an
+   object's id (E08E6.C:848) or 0xFFFE for a character's own pack (E0ACD.C:808, :851, 0BD2:0BA0).
    An empty list becomes `item` alone, linked to itself. Otherwise `item` is spliced in between the
    old head and its predecessor, the tail of the item walk: the new item's nextLink becomes the old head
    (the tail's forward link) and its prevLink becomes the tail, so only the old head's prevLink and the
@@ -490,8 +490,8 @@ next:
 /* 0BD2:07DE: reserves one of the ten effect records at ds:DD2C (returning 0 when all are live),
    queues `item` at the map record gMazeItems + `volume` * 9 through 0BD2:01D0 with the tag `kind | 4`,
    fills the record from the arguments, plays sound 0x0B (0x1A when `type` is 7), and returns 1.
-   `volume` is the item's map cell (most callers pass gPartyCell, E0ACD.C:434, :769, E0DE8.C:406;
-   E122E.C:728 passes the script's id), `page` is gPartyDir, `kind` is the per-page action kind and
+   `volume` is the item's map cell (most callers pass gPartyCell, E0ACD.C:446, :769, E0DE8.C:415;
+   E122E.C:752 passes the script's id), `page` is gPartyDir, `kind` is the per-page action kind and
    `type` is the item's m02. QUIRK 0BD2:07DE: rec->m02 is stored 1 twice (the second store is in the original). */
 /*@ 0BD2:07DE */ int AddDDEffect(int who, int item, int volume, int kind, int page, int type)
 {
@@ -704,7 +704,7 @@ next:
 /* 0BD2:0D2D: applies the effect of the item just taken from slot `slot` of character `who`. It
    clears the slot through 0BD2:0106 (the item's m0B selects the effect), plays sound 0x0A and
    dispatches on m0B: 1 sets the strength score m0D to 0x16 and arms a timed giant-strength effect
-   (ApplyCharEffect(who, ..., 7, 1); 7 is the giant-strength effect type, E1414.C:05ED stores it as
+   (ApplyCharEffect(who, ..., 7, 1); 7 is the giant-strength effect type, E1414.C:5ED stores it as
    the type byte and the 07CA runner prints "%s no longer has giant strength" and restores m0D/strengthPct
    from m0E/m10 when it runs out), 2 and 3 heal by a dice roll, 4 poisons through 0DE8:101A, 5 sets
    food to 100, 6 and 8 run the 0EF3 helpers, 7 sets effect flag 4. After the switch it announces

@@ -56,7 +56,7 @@ gMcbSeg       dw 0                      ; 0923:000E: MCB of the one-paragraph bl
 ; stores the end of DOS memory here (0923:01F0) and TrimMemoryToVideo reads it back (0923:02B3); i0892
 ; reads it at 0892:01D8, itoa's it into gMemTopArg (0892:01CF) and passes gMemTopArg as the last execl
 ; argument (src/I0892.C:271). That EOB.EXE then sets its own gMemTopSeg from atol of the number behind
-; gArgv (src/E07C8.C:311) is a hypothesis [H]: no file in src/ reads argv[6] (src/E07C8.C reads argv[1]
+; gArgv (src/E07C8.C:334) is a hypothesis [H]: no file in src/ reads argv[6] (src/E07C8.C reads argv[1]
 ; to argv[5], :229 to :235) and nothing in src/ or docs/ writes ds:8894 (src/E1990.ASM:23-26), so the
 ; link from this number to EOB's word is not shown, and the writer of ds:8894 is unknown.
 gMemTopSeg    equ 8084h

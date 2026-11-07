@@ -33,7 +33,7 @@ Names and comments never change the code: `make match` proves a renamed, comment
 - **Inside a function:** only where the code is not obvious: why, not what.
 - **Quirks:** every behaviour a port must keep although it looks wrong is marked `QUIRK <address>:` with what happens (dead code, unused results, off-by-ones). Never fixed.
 - **Placeholder globals** (`gFE6C`): their declaration carries a comment with what is known.
-- **Pointing at other code:** by its address (`1A72:0200`, `ovl3:0A7C`), which never moves, not by a line of another file of `src/` (`E1A72.ASM:200`), which moves whenever that file changes. A line of the same file is fine.
+- **Pointing at other code:** by its address (`1A72:0200`, `ovl3:0A7C`), which never moves, not by a line of another file of `src/` (`E1A72.ASM:213`), which moves whenever that file changes. A line of the same file is fine.
 
 ## What the tool checks (`make readability [UNIT=<id>]`; the gate is part of `make check`)
 

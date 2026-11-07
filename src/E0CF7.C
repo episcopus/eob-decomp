@@ -20,7 +20,7 @@ extern char gFlag; /*@ ds:F3B9 */ /* selects the "a" table set when nonzero (the
                                      far pointer at ds:80AE (0EF3:2269..227A) before the 1 store, so
                                      that path writes 1 too. Purpose unknown. */
 extern struct Node far *gList; /*@ ds:FB48 */ /* head of the screen node list walked by the key
-                                                 dispatcher DispatchKeyWait (E16A5.C:139-143,
+                                                 dispatcher DispatchKeyWait (E16A5.C:156-160,
                                                  16A5:005A); 0ACD:0E6C and overlays 0 and 1 pass it
                                                  at ds:FB48 too. See the ListAdd note below. */
 /* Table base addresses and record counts. The first entry of tables 1a, 1b, 2a, 2b, 3a and 3b is

@@ -949,7 +949,7 @@ unsigned char gSearchAllDrives = 1; /*@ ds:81EA */
    (1C0E:0E5B) also fails, freeing nothing; only a failed open (1C0E:15A0) or read (1C0E:162B)
    frees the copy and returns 0. The size-mismatch path (FatalError(0xe), 1C0E:15E2) also returns 0
    without freeing, which is consistent because FatalError never returns: it shuts the game down
-   through ShutdownGame, whose body ends in exit(0) (src/E07C8.C:478).
+   through ShutdownGame, whose body ends in exit(0) (src/E07C8.C:501).
    QUIRK 1C0E:144E: the own-file test is `entry->link > 0` (1C0E:1520, `jle` at 1C0E:1525), so
    every link <= 0 takes the alias branch: the alias is `gFiles[gFiles[index].link & LINK_INDEX]`
    (the link load at 1C0E:154C, the mask at 1C0E:1550), so with link 0 it is record 0 for every

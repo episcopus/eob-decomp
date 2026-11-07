@@ -25,7 +25,7 @@ struct ItemRecord {
     signed char type;        /* +4 (ds:8DD4): the item type */
     signed char cellPos;        /* +5 (ds:8DD5): 0BD2:01D0 stores its 4th argument in it and 02B9 matches it
                                against its `key`. No caller shows a sound (01D0's callers pass a
-                               slot kind, E0ACD.C:561-568, a roll, E08E6.C:807, or an effect kind | 4,
+                               slot kind, E0ACD.C:589-596, a roll, E08E6.C:848, or an effect kind | 4,
                                0BD2:07DE): the item's position in its cell, 8 a wall niche (122E:06D0) */
     int key;                /* +06: the key; -2 when the record is free (0EF3:0418) */
     int prevLink;                /* +8 (ds:8DD8): one link of the circular list; 0BD2:01D0 splices a
@@ -57,11 +57,11 @@ struct Region {
 struct CharRec {
     char index;                   /* +00: the character index ovl0:26C6 writes */
     unsigned char status;   /* +01: status bits: bit 0 alive, bit 1 poisoned, bit 2 paralyzed
-                               (src/E0DE8.C:558 keeps only bit 0 at death; src/E1414.C:476-477
+                               (src/E0DE8.C:567 keeps only bit 0 at death; src/E1414.C:519-520
                                clears bit 1 at the end of poison and bit 2 at the end of paralysis) */
     char name[0x0B];                            /* +02: the character's name, NUL padded */
     signed char strength;      /* +0D: the strength score, the base gStrHitBonus/strength and gStrDamageBonus/strength of 0A72:00CF
-                             and 0A72:0128; E122E.C:364 indexes gForceDoorRoll by it and
+                             and 0A72:0128; E122E.C:384 indexes gForceDoorRoll by it and
                              E0BD2.C:0D2D sets it to 0x16 for a strength item */
     signed char baseStrength;        /* +0E (src/E1414.C) */
     signed char strengthPct;   /* +0F: the exceptional strength percentile: 0A72:00CF and 0A72:0128
@@ -69,12 +69,12 @@ struct CharRec {
                              (FormatStrengthPercent) */
     signed char baseStrengthPct;        /* +10 (src/E1414.C) */
     signed char intelligence;        /* +11: INTELLIGENCE (ds:1195[1]), the first of the five stat bytes
-                               after strength (src/EOV0.C:442-444 formats intelligence, wisdom, dexterity, constitution, charisma) */
+                               after strength (src/EOV0.C:453-455 formats intelligence, wisdom, dexterity, constitution, charisma) */
     signed char m12;        /* +12 */
     signed char wisdom;         /* +13: the score ovl1:097A turns into a bonus-spell row (gClericWisdomBonus) */
     signed char m14;        /* +14 */
     signed char dexterity;     /* +15: one of the five further stat bytes drawn after the strength
-                             score (EOV0.C:442-444 formats intelligence, wisdom, dexterity, constitution, charisma); it indexes the
+                             score (EOV0.C:453-455 formats intelligence, wisdom, dexterity, constitution, charisma); it indexes the
                              per-stat tables ds:3474 (0A72:0181) and ds:349E (0A72:019D) */
     signed char m16;        /* +16 */
     signed char constitution;        /* +17: an index into gConSaveBonus (0D1C:059B); also the second argument of
@@ -97,9 +97,9 @@ struct CharRec {
                                and decremented each tick for a living member by DecayMemberState
                                (1414:0C82); unsigned (the code tests < 0x21, < 0x14) */
     signed char levels[3];     /* +24: the three class-slot levels: LevelUpSlot increments levels[slot]
-                             when a slot gains a level (E0DE8.C:650), E1547.C:570 reads it as
+                             when a slot gains a level (E0DE8.C:659), E1547.C:609 reads it as
                              `slotValue` and E1547.C:573-574 prints it as the slot's level-like byte
-                             (E1547.C:563-564), and 0A72:0522 reads element [0] */
+                             (E1547.C:602-603), and 0A72:0522 reads element [0] */
     unsigned long experience[3];         /* +27: the experience of each class slot, which ovl0:1BF2 sets */
     void far *portrait;     /* +33: a far pointer to the character's picture buffer, preserved by
                                    the record swap at 070E (the movmem destination there) */
@@ -113,7 +113,7 @@ struct CharRec {
     unsigned long timers[10]; /* +AD: 10 32-bit effect times (07CA, 0B2E, 0C2D, 05ED) */
     signed char mD5[10];      /* +D5: 10 effect type bytes, one per timers slot */
     signed char mDF;        /* +0DF: a descending penalty counter; when it runs out the armour class
-                               is recomputed (src/E0DE8.C:563-566, src/E0EF3.C:1179 "penalty byte") */
+                               is recomputed (src/E0DE8.C:572-575, src/E0EF3.C:1276 "penalty byte") */
     signed char mE0;        /* +0E0: a countdown (src/E0EF3.C:39) */
     char padE1;
     signed char mE2;        /* +E2: the damage-reduction value (DamageCharacter :573-576) */
@@ -263,7 +263,7 @@ struct Node {
     unsigned state;                              /* +2E: the on bit, the previous-on bit, others */
     int (far *callback30)(struct Node far *node); /* +30: optional callback, fired when asked; the
                                                     dispatcher is the only caller that uses its
-                                                    result (E16A5.C:475-476) */
+                                                    result (E16A5.C:492-493) */
     union NodeData data;        /* +34: two tile ids, or a button definition */
     unsigned defFlags;          /* +38: a copy of def->flags */
     char pad3A[2];
@@ -331,7 +331,7 @@ struct Effect {
     unsigned long expiry;     /* +08: the time the effect next runs (gGameTicks) */
     int arg;                        /* +0C: the handler's argument */
     char sub;                 /* +0E: the third argument ArmEffectWith stores (1, 0xffff or idx,
-                                 by caller; src/E122E.C:284, :307, :332) */
+                                 by caller; src/E122E.C:304, :307, :332) */
     char active;                    /* +0F: nonzero while the effect is armed */
 };
 
@@ -368,8 +368,8 @@ struct Cell4 {
 #define NODE_FLAG_OFF_5E1C 0x0100 /* with NODE_FLAG_ON clear: gLeftButtonMode gets 0x81 unless it is already 1 */
 #define NODE_FLAG_OFF_5E1E 0x1000 /* with NODE_FLAG_ON clear: gRightButtonMode gets 0x81 unless it is already 1 */
 #define NODE_STATE_ON   0x0001
-#define NODE_STATE_2    0x0002  /* set by DispatchNodeEvent (E16A5.C:316), cleared by 01E6, read
-                                   with the flags 0x20 test (E16A5.C:477-478) */
+#define NODE_STATE_2    0x0002  /* set by DispatchNodeEvent (E16A5.C:333), cleared by 01E6, read
+                                   with the flags 0x20 test (E16A5.C:494-495) */
 #define NODE_STATE_4    0x0004
 #define NODE_STATE_PREV 0x0008
 #define NODE_STATE_10   0x0010

@@ -12,7 +12,7 @@
 #include <dos.h>
 
 extern void farfree(void far *block); /*@ 0000:71EE */
-extern struct RectKind far *gDecorShapes[]; /*@ ds:EFD4, the per-kind size records (src/E122E.C:91) */
+extern struct RectKind far *gDecorShapes[]; /*@ ds:EFD4, the per-kind size records (src/E122E.C:90) */
 extern int gWallRecCount; /*@ ds:F538 */            /* the wall-record slot count DefineWallType advances; Reset by FreePtrTable */
 
 extern void LoadOverlayScreen(char far *name, int a, int b); /*@ 082C:05EC */
@@ -107,7 +107,7 @@ extern void (far *gDrawText)(char far *text, int a, int b, int c, int d); /*@ ds
 extern char gFileNameBuf[]; /*@ ds:FE6E */
 extern void WaitKeyEvent(void); /*@ 1AAD:05D3 */
 extern void ShutdownGame(void); /*@ 07C8:058A */
-extern struct SlotSize far *gDoorShapes[]; /*@ ds:FB5E (the per-column size records, src/E122E.C:106) */
+extern struct SlotSize far *gDoorShapes[]; /*@ ds:FB5E (the per-column size records, src/E122E.C:105) */
 
 extern struct SlotPos gDoorButtons[]; /*@ ds:A99C */
 extern void far *gLoadedMonsterShapes[]; /*@ ds:B802 */

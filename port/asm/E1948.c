@@ -23,7 +23,7 @@
 #define STB(off, v) tc_st_u8(V(off), (u8)(v))
 #define STW(off, v) tc_st_u16(V(off), (u16)(v))
 
-/* the driver segment's variables (src/E1948.ASM:34-128) */
+/* the driver segment's variables (src/E1948.ASM:36-144) */
 #define gChainReload     0x0006u
 #define gChainCount      0x0008u
 #define gSongBase        0x000Au

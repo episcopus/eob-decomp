@@ -35,7 +35,7 @@ typedef union {
 #include "EOB.H"
 
 /* the MemAlloc flag that returns a paragraph-aligned, offset-0 block: the bit is defined at
-   src/E19BC.C:46, and the block shape it gives is at src/E19BC.C:80-83 */
+   src/E19BC.C:46, and the block shape it gives is at src/E19BC.C:85-88 */
 /* work-buffer sizes of formats 1 and 2 (docs/design/WHITEPAPER.md:151); UNPACK_BUFFER_SIZE in
    src/E07A9.C:39 is the size of the shared buffer, a different thing that happens to equal format
    2's */
@@ -48,11 +48,11 @@ extern unsigned gBufSize; /*@ ds:812C: its size, formats 1 and 2 use it when lar
 extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
 /* FileRead and FileClose take the slot index FileOpen returned, not a DOS handle. FileRead reads
    through the slot's entry: its low bits are a DOS handle for a disk slot (HANDLE_MASK,
-   src/E1C0E.C:85, applied at src/E1C0E.C:297) or an index into memory for a slot held in memory
-   (FILE_IN_MEMORY, src/E1C0E.C:86, which src/E1C0E.C:288-289 hands to ReadFromMemory). FileClose
+   src/E1C0E.C:85, applied at src/E1C0E.C:347) or an index into memory for a slot held in memory
+   (FILE_IN_MEMORY, src/E1C0E.C:86, which src/E1C0E.C:338-339 hands to ReadFromMemory). FileClose
    reads gFileHandles[index] and closes the DOS handle unless the slot is in memory
-   (src/E1C0E.C:261, at 1C0E:03BB). FileRead returns the number of bytes read, up to len
-   (src/E1C0E.C:277, at 1C0E:0400). */
+   (src/E1C0E.C:311, at 1C0E:03BB). FileRead returns the number of bytes read, up to len
+   (src/E1C0E.C:327, at 1C0E:0400). */
 extern long FileRead(int index, char far *buf, unsigned long len); /*@ 1C0E:0400 */
 extern void FileClose(int index); /*@ 1C0E:03BB */
 extern void far *GetPageBuffer(int kind); /*@ 19EC:0002 */
@@ -70,17 +70,17 @@ void Unpack(char far *src, void far *dst);
    FileRead, FileClose.
    QUIRK 1B82:0009: the FileOpen result is not checked. The slot index is kept in SI (1B82:001F) and
    goes straight to FileRead with no test, and the count FileRead returns is discarded (1B82:002E).
-   FileOpen returns -1 on failure: the source has `return -1` in modes 1 to 3 (src/E1C0E.C:187, :201,
+   FileOpen returns -1 on failure: the source has `return -1` in modes 1 to 3 (src/E1C0E.C:237, :201,
    :231), and the disassembly's fall-through store is `mov ax,0xffff` at 1C0E:0121 (after the
    RetryFile call at 1C0E:0117 returns 0, `jne 0x127` at 1C0E:011F; the retry loop 1C0E:010C to 0137
    also returns there) with a second one at 1C0E:0198. FileRead with slot -1 reads gFileHandles[-1]
-   (src/E1C0E.C:285, FileRead at 1C0E:0400), one word before the table; when that word is SLOT_FREE
-   FileRead calls FatalError(5, 0) instead of reading (src/E1C0E.C:286-287). */
+   (src/E1C0E.C:335, FileRead at 1C0E:0400), one word before the table; when that word is SLOT_FREE
+   FileRead calls FatalError(5, 0) instead of reading (src/E1C0E.C:336-337). */
 /*@ 1B82:0009 */ void LoadFile(char far *name, void far *buf, unsigned len)
 {
     int slot;
 
-    slot = FileOpen(name, 1);   /* mode 1: read (src/E1C0E.C:166) */
+    slot = FileOpen(name, 1);   /* mode 1: read (src/E1C0E.C:216) */
     FileRead(slot, (char far *)buf, len);
     FileClose(slot);
 }
@@ -99,11 +99,11 @@ void Unpack(char far *src, void far *dst);
 
     src = GetPageBuffer(srcKind);
     dst = GetPageBuffer(dstKind);
-    slot = FileOpen(name, 1);   /* mode 1: read (src/E1C0E.C:166) */
+    slot = FileOpen(name, 1);   /* mode 1: read (src/E1C0E.C:216) */
     /* the packed block's byte length: WHITEPAPER 4.2 (WHITEPAPER.md:151) gives this u16 as the "size
        of the rest (some files: the file size)"; LoadPacked reads up to that many bytes after the
        word, so for a "file size" file it asks for more bytes than the block holds, and FileRead
-       stops at the end of the file (up to len bytes, src/E1C0E.C:270-271) */
+       stops at the end of the file (up to len bytes, src/E1C0E.C:320-321) */
     /* &packedLen is a stack address taken as a far pointer: -ml puts the stack in DGROUP, so its
        segment is DS */
     FileRead(slot, (char far *)&packedLen, 2L);
@@ -151,9 +151,9 @@ void Unpack(char far *src, void far *dst);
     case FORMAT_LZW_12:
         if (gBufSize < FORMAT1_BUFFER_SIZE) {
             /* QUIRK 1B82:0131: the MemAlloc result is stored and passed on untested. MemAlloc returns
-               NULL only when the failure hook returns 0 (src/E19BC.C:73-77, the rule is described at
+               NULL only when the failure hook returns 0 (src/E19BC.C:78-82, the rule is described at
                src/E19BC.C:49-53); the installed hook AllocationFailure ends in ShutdownGame, which
-               does not return (src/E07C8.C:359-366), so the NULL is not reached in practice, but the
+               does not return (src/E07C8.C:382-389), so the NULL is not reached in practice, but the
                missing test is what the bytes show */
             work.block = MemAlloc((unsigned long)FORMAT1_BUFFER_SIZE, MEMALLOC_ALIGNED);
             Unpack1(FP_SEG(src), FP_SEG(dst), work.words[1]);

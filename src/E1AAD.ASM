@@ -16,7 +16,7 @@
         .DATA
         EXTRN   gSoundOn:BYTE           ; @ ds:80E6: sound on unless argv[2] was '4' (E07C8.C)
         EXTRN   gTunesOn:WORD              ; @ ds:80E8: a toggled option flag, saved next to gSoundOn
-                                        ; (EOV3.C:808-840) and toggled by the options code
+                                        ; (EOV3.C:889-921) and toggled by the options code
                                         ; (EOV1.ASM:3724-3731); the INT 9 handler also toggles it on
                                         ; key 0434h (M), as it toggles gSoundOn on 0420h (S)
         EXTRN   gKeyboardOptions:WORD              ; @ ds:80EA: the driver's option bits, copied into 1AAD:0180
@@ -283,7 +283,7 @@ kCtrlFnCodes    db 00h,37h,34h,31h,00h,2Fh,38h,35h,32h,30h,2Ah,39h   ; 1AAD:037A
 ; stays in the ring: like 1AAD:0409 the return path does not store kKeyBufRead. It copies
 ; kShiftFlags to kShiftFlagsCopy, translates a nonzero key through 1AAD:0223 and clears AH.
 ; Callers test the return and leave the key in the ring; the callers flush it afterwards
-; (FlushKeyBuffer, e.g. EOV6.C:353 and :517). Callers: EditTextField (082C:000B),
+; (FlushKeyBuffer, e.g. EOV6.C:365 and :517). Callers: EditTextField (082C:000B),
 ; DelaySecondsThenKey (082C:0B43), PickClass (ovl0:207A), ShowMessageBox (ovl1:13F7), CampLoop
 ; (ovl6:0000) and ShowCampMessage (ovl6:0B9B). Purpose unknown: why this filter differs from 1AAD:0409's.
         PUBLIC  _ReadKey                 ; @ 1AAD:038E

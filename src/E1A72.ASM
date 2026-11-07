@@ -58,7 +58,7 @@
         ;                                              (14EF:0154) clears it as its last statement
         ;                                              (14EF:0268), and RunMapLoop clears it
         ;                                              after EnterMapScreen and LockShowPointer
-        ;                                              (0ACD:0EC8, E0ACD.C:886)
+        ;                                              (0ACD:0EC8, E0ACD.C:914)
         EXTRN   gMouseButtonSeen:WORD              ; @ ds:8136: latched to 1 once any button has been seen;
         ;                                              this unit never clears it, E1AAD.ASM:1395
         ;                                              sets it too and nothing in src/ clears it
@@ -294,7 +294,7 @@ _Int3FHandler ENDP
 ; it records that (DGROUP:8144 = 1) and doubles the constant centre 0A0h before setting
 ; the position (function 4). It installs 1A72:017A for moves and the left and right buttons
 ; (function 0Ch, mask 1Fh) and returns 1 in AX; with no driver it returns 0. Called from StartupGame
-; (E07C8.C:236, the `lcall 1A72:00DA` at 07C8:0238; that function's entry is 07C8:0199). The
+; (E07C8.C:259, the `lcall 1A72:00DA` at 07C8:0238; that function's entry is 07C8:0199). The
 ; DGROUP defaults are the middle of a 320x200 screen and the screen
 ; bounds.
         PUBLIC  _InitMouse              ; @ 1A72:00DA
@@ -480,8 +480,8 @@ _InitMouse ENDP
 
 ; 1A72:0285: remove the mouse event handler, but only when one was installed (DGROUP:8148 nonzero).
 ; INT 33h function 0Ch with mask 0 clears the handler; ES:DX = CS:1A72:017A with mask 0 (INT 33h
-; wants ES:DX set even for a null mask [H]). Called from ShutdownGame (07C8:058A, E07C8.C:361), at
-; E07C8.C:382 under `if (gMouseHandlerInstalled)` (E07C8.C:381).
+; wants ES:DX set even for a null mask [H]). Called from ShutdownGame (07C8:058A, E07C8.C:384), at
+; E07C8.C:405 under `if (gMouseHandlerInstalled)` (E07C8.C:404).
         PUBLIC  _RemoveMouseHandler           ; @ 1A72:0285
 _RemoveMouseHandler PROC FAR
         push    bp
@@ -513,8 +513,8 @@ _RemoveMouseHandler ENDP
 ; inclusive, 0 otherwise. It spins at 1A72:02B9 while the busy flag at DGROUP:812E is set, takes the
 ; flag, copies the drawn position through DGROUP:8026/8028, tests it and releases the flag.
 ; Arguments are x1, y1, x2, y2 words. The callers in src/ are UnpryableDoorAction
-; (122E:0847, the call at E122E.C:522, extern at :195), PickClass (ovl0:207A, the call at
-; EOV0.C:1208, function at EOV0.C:1180) and _ScribeScrolls (EOV1.ASM:3096, function at
+; (122E:0847, the call at E122E.C:546, extern at :195), PickClass (ovl0:207A, the call at
+; EOV0.C:1293, function at EOV0.C:1265) and _ScribeScrolls (EOV1.ASM:3096, function at
 ; EOV1.ASM:2791; EOV1.ASM:2779 says the map folds that routine into range 1551).
         PUBLIC  _IsMouseInRect            ; @ 1A72:02A6
 _IsMouseInRect PROC FAR

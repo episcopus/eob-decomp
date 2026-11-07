@@ -2,7 +2,7 @@
 ; start-up (i_c0) and the Borland runtime library (i_lib): Westwood's AdLib sound driver, code and data in one
 ; segment, running with DS = CS (WHITEPAPER 2.1.2 gives what segment 0 holds, 2.4 the INTRO.EXE program).
 ; LoadSoundDriver (E177D.C) reads the 32C8h-byte block of adlib.dat or pcgamesn.dat
-; into cs:0416h; the AdLib driver (sound card 0, E177D.C:147-149) plays the sounds in it, the PC speaker and Tandy
+; into cs:0416h; the AdLib driver (sound card 0, E177D.C:158-160) plays the sounds in it, the PC speaker and Tandy
 ; driver is E1948.ASM. This is the INTRO.EXE build of EOB.EXE's e_text (src/E_TEXT.ASM): the same driver, 984 bytes
 ; larger, with the data laid out 1000 bytes further on (tables 3944 to 3D2C, variables 3B36 to 3F1E) and six
 ; instructions dropped from the code in three places (the `cld` of the AdLib INT 08h handler, its gBusyCountdown wait
@@ -85,7 +85,7 @@ _GetDriverBlock PROC NEAR
         retf
 _GetDriverBlock ENDP
 
-; 0000:03B0: writes one byte of the driver block: idx selects one word of the 300-word table at 0416 (the near pointer at cs:0416 + 2*idx), reg offsets into the record that word points to (E177D.C:251 to 252)
+; 0000:03B0: writes one byte of the driver block: idx selects one word of the 300-word table at 0416 (the near pointer at cs:0416 + 2*idx), reg offsets into the record that word points to (E177D.C:262 to 252)
         PUBLIC  _SetSoundByte              ; @ 0000:03B0
 _SetSoundByte PROC NEAR
         push      bp
@@ -160,7 +160,7 @@ L_0409:
 _RebaseDriverBlock ENDP
 
 ; 0000:0416: the driver block (data, 14614 bytes to 3D2B). LoadSoundDriver reads the 32C8h bytes of adlib.dat or pcgamesn.dat
-; over 0416 to 36DD at run time (E177D.C:152) and RebaseDriverBlock turns its first 300 words into near pointers; the bytes
+; over 0416 to 36DD at run time (E177D.C:163) and RebaseDriverBlock turns its first 300 words into near pointers; the bytes
 ; here are the EXE's image of it and are overwritten before they are read: zeros but for the word 066Eh at 0416, the word
 ; 0671h at 0542 (gPatchTable's first word) and 12 bytes at 0670 (10 nonzero): Purpose unknown. gBlockSpare (36DE, 1614 bytes to 3D2C)
 ; follows the block, zero and unreferenced in this file.
@@ -541,7 +541,7 @@ L_4389:
         retf
 _StartAdlibDriver ENDP
 
-; 0000:43A5: the AdLib driver off: restores the saved INT 08h vector, resets the AdLib voices and stops the PIT. Callers: ShutdownGame at 0892:0835 (src/I0892.C:451, calls it at line 461; the extern is at I0892.C:155); EOB's E07C8.C:451.
+; 0000:43A5: the AdLib driver off: restores the saved INT 08h vector, resets the AdLib voices and stops the PIT. Callers: ShutdownGame at 0892:0835 (src/I0892.C:451, calls it at line 461; the extern is at I0892.C:155); EOB's E07C8.C:474.
         PUBLIC  _StopAdlibDriver              ; @ 0000:43A5
 _StopAdlibDriver PROC NEAR
         push      ds
