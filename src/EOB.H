@@ -335,6 +335,13 @@ struct Effect {
     char active;                    /* +0F: nonzero while the effect is armed */
 };
 
+/* The moving door is effect 12 of gEffects (ds:5BA8, src/E1414.C; StepDoor is its handler), and the
+   units read its fields by these names (ds:5C74, 5C76, 5C77). A unit that uses them declares
+   gEffects. */
+#define gDoorEffectCell     (gEffects[12].arg)      /* the moving door's cell */
+#define gDoorMoveDir        (gEffects[12].sub)      /* its step: +1 opens, -1 closes */
+#define gDoorEffectActive   (gEffects[12].active)   /* nonzero while a door is moving */
+
 /* The 16-byte option-list records at ds:017F (gPanels), right after the region table. */
 struct Panel {
     int x;                      /* +0: column offset from ds:FE64; eight-pixel cells in both drawing

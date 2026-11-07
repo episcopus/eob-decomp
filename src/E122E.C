@@ -26,9 +26,6 @@ extern char gMazeItems[]; /*@ ds:B899 */            /* gMaze +5: each cell's ite
 extern int gMouseItem; /*@ ds:FBCE */               /* the item index shown by the mouse (src/E07A9.C) */
 extern int gScriptCell; /*@ ds:B800 */               /* the cell whose script is running (122E:1DA8) */
 extern int gScriptTrigger; /*@ ds:FB36 */               /* the driver mode the script is running in (122E:1DA8) */
-extern char gDoorEffectActive; /*@ ds:5C77 */        /* gEffects[12].active: a door is moving (122E:0154) */
-extern int gDoorEffectCell; /*@ ds:5C74 */         /* gEffects[12].arg: the moving door's cell (122E:0154) */
-extern signed char gDoorMoveDir; /*@ ds:5C76 */       /* gEffects[12].sub: +1 opens, -1 closes (src/E1414.C) */
 extern void ArmEffectWith(int idx, int arg, int sub, int active); /*@ 1414:055B */
 extern void StepDoor(int who); /*@ 1414:03B4 */
 extern void SpawnMonster(int kind, int id, int frame, int orient, int b0, int m07, int type, int timer, int m12, int m14); /*@ 08E6:1505 */
@@ -92,6 +89,8 @@ struct SlotRegion {
 };
 
 #include "EOB.H"
+
+extern struct Effect gEffects[]; /*@ ds:5BA8 */   /* the timed effects (src/E1414.C); the door is gEffects[12] */
 
 extern struct SlotRegion gSlotRegions[]; /*@ ds:E06B */
 extern struct RectKind far *gDecorShapes[]; /*@ ds:EFD4 */

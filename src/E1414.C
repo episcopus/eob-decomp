@@ -31,8 +31,6 @@ extern unsigned char far *gViewCells[]; /*@ ds:EF6A */ /* 18 far pointers, walke
 extern signed char gViewFrontSide; /*@ ds:A9C6 */      /* an offset added into gViewCells's targets */
 extern int gAnimWallPhase; /*@ ds:FB78 */              /* a flag toggled by 04B0 */
 extern signed char gBlinkPhase; /*@ ds:5CAA */      /* the blink phase toggled by 0000 */
-extern signed char gDoorMoveDir; /*@ ds:5C76 */      /* gEffects[12].sub, the door step 03B4 reads; src/E122E.C
-                                                 (set to 1 at 278, 0xff at 301, negated at 321) */
 extern unsigned char gNextPosByDir[]; /*@ ds:5CAB */  /* a byte table indexed by direction in 0285 */
 extern char gMovingMember; /*@ ds:FB34 */             /* the index of the party member being moved, -1
                                                        when none (PickOrSwapMember 0ACD:0264) */

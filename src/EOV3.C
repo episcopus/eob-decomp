@@ -89,9 +89,6 @@ extern void RearmCharEffects(void); /*@ 1414:0B2E */
 extern signed char gWallTypeFlags[]; /*@ ds:194B */
 extern signed char gWallDecorHead[]; /*@ ds:18BF */  /* per-wall-type table (src/E122E.C) */
 extern unsigned char gWallHandlerIndex[]; /*@ ds:1905 */     /* a 256-byte table gMaze indexes into (src/E0DE8.C) */
-extern int gDoorEffectCell; /*@ ds:5C74 */
-extern signed char gDoorMoveDir; /*@ ds:5C76 */
-extern char gDoorEffectActive; /*@ ds:5C77 */
 
 extern struct Projectile gProjectiles[]; /*@ ds:DD2C */
 
