@@ -122,9 +122,15 @@ def declared() -> dict[int, set]:
         if f.suffix.upper() not in (".C", ".ASM"):
             continue
         # every annotation, with or without text after the address (`/*@ ds:009E: records ... */`), as
-        # the matcher reads them
-        for m in re.finditer(r"(?:/\*|;)\s*@\s*ds:([0-9A-Fa-f]{4})\b", f.read_text(errors="replace")):
-            out[int(m.group(1), 16)].add(f.stem.lower())
+        # the matcher reads them; but not a definition's (step D2): the map is the evidence of the
+        # declarations, and a module's definitions are drafted from it (make data-skeleton)
+        text = f.read_text(errors="replace")
+        data = bool(re.search(r"(?:/\*|;)\s*@data\b", text))
+        for line in text.splitlines():
+            if data and "=" in line.split("/*")[0] and not line.lstrip().startswith("extern"):
+                continue
+            for m in re.finditer(r"(?:/\*|;)\s*@\s*ds:([0-9A-Fa-f]{4})\b", line):
+                out[int(m.group(1), 16)].add(f.stem.lower())
     return out
 
 

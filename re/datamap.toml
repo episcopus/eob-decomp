@@ -58,7 +58,7 @@ end = "ds:36B0"
 bytes = 822
 start_by = "settled"
 start_why = "e08e6's pool ends at ds:3379; _DATA is word aligned"
-evidence = ["relocations ds:3408-35D4 (12)", "pool ds:36A4-36AF (2 literals)", "name ds:337A declared only by e0a72", "name ds:339D declared only by e0a72", "name ds:33BB declared only by e0a72", "name ds:33ED declared only by e0a72", "name ds:3406 declared only by e0a72"]
+evidence = ["relocations ds:3408-35D4 (12)", "pool ds:36A4-36AF (2 literals)", "name ds:3406 declared only by e0a72"]
 
 [[module]]
 id = "e0acd"
