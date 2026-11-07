@@ -39,6 +39,18 @@ def test_the_port_builds_and_passes_its_self_test():
     r = subprocess.run([sys.executable, str(ROOT / "tools/port/image.py")], cwd=ROOT, capture_output=True, text=True)
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
     assert "compared: the same" in r.stdout
+    assert "in their code segments" in r.stdout and r.stdout.rstrip().endswith("the same"), r.stdout[-1000:]
+
+
+@pytest.mark.slow
+def test_the_port_replays_boot_title():
+    """M5 (playbook 80): the port, started from its own image (no byte of EOB.EXE), plays boot-title
+    headless with the interrupts delivered by access count, and each checkpoint is the oracle's: the
+    port's view of the state (tools/port/state.py) and the screen, the golden's own image."""
+    r = subprocess.run([sys.executable, str(ROOT / "tools/port/replay.py"), "boot-title"], cwd=ROOT,
+                       capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
+    assert r.stdout.count("the same") == 4, r.stdout
 
 
 def test_only_the_platform_directory_uses_sdl():

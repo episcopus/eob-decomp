@@ -13,7 +13,8 @@ dump:
   - the start-up code's data in DGROUP (ds:0000 to 008F) but the words the port's far heap reads;
   - the library's data (ds:84B2 to 88A0) but the variables the port's runtime keeps there
     (tools/port/image.py, RUNTIME) and the heap's size word;
-  - the stack segment, 412D:0000 to the heap (frames, return addresses, argv);
+  - the stack segment, 412D:0000 to the heap (frames, return addresses, argv), and the words in DGROUP
+    that hold a stack address (STACK_SAVES);
   - the overlay buffer, the heap's first block (the overlay manager's, which the port allocates and
     leaves empty: its overlays are plain code);
   - the screen apart: mode 13h's 64,000 bytes at A000:0000 through the DAC, rendered as the golden's
@@ -33,6 +34,9 @@ VGA = 0xA0000
 
 # the words of the start-up code's data the port's far heap reads (port/runtime/tcheap.c)
 C0_KEPT = [(0x0079, 0x007B), (0x0087, 0x008F)]
+# DGROUP words that hold a stack address, which the port's stack cannot share: E1C00's SS:SP saved
+# across the driver's EXEC (src/E1C00.ASM, ds:8192 and 8194)
+STACK_SAVES = [(0x8192, 0x8196)]
 # the library's data the runtime keeps (tools/port/image.py RUNTIME) and the heap's size word
 LIB_KEPT = [(0x8758, 0x8782), (0x8784, 0x8788), (0x8810, 0x881E), (0x85C6, 0x85C8)]
 
@@ -55,6 +59,7 @@ def masks(mem) -> list[tuple[int, int]]:
     out = [(LOAD * 16, ds)]
     out += [(ds + a, ds + b) for a, b in _holes(0x0000, 0x0090, C0_KEPT)]
     out += [(ds + a, ds + b) for a, b in _holes(0x84B2, 0x88A0, LIB_KEPT)]
+    out += [(ds + a, ds + b) for a, b in STACK_SAVES]
     out.append((STACK * 16, HEAP * 16))
     paras = mem[HEAP * 16] | (mem[HEAP * 16 + 1] << 8)
     if paras:

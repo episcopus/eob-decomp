@@ -6,7 +6,7 @@ PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
 .PHONY: help setup doctor inputs overlays pak data emu2 test p0-check tc-install tc-check rtl-compare map match oracle-run golden test-slow \
 	match-gate check queue next claim locks unlock packet skeleton handoff handoffs handoff-done integrate review-pass worker progress \
-	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port port-image port-literals port-hybrid handbook handbook-setup handbook-figs datamap data-skeleton
+	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port port-image port-replay port-asmdata port-literals port-hybrid handbook handbook-setup handbook-figs datamap data-skeleton
 
 help:
 	@echo "Phase 0:  setup doctor inputs overlays pak emu2 test p0-check"
@@ -19,7 +19,9 @@ help:
 	@echo "          smoke-agent start-run watch-agents run-status run-add stop-run (work/roster.toml)"
 	@echo "Phase 7:  port (playbook 80: translate port/units.txt, build build/port/eob-port-headless and, with SDL3, build/port/eob-port; self-test)"
 	@echo "          port-hybrid (M2: each translated function against the original on golden states; SESSION= FUNC= SAMPLES=)"
+	@echo "          port-image (D3: the generated image against EOB.EXE) port-replay (M5: goldens headless on the port; NAME= VIEWS=1)"
 	@echo "          port-literals (when src/ changes a literal: port/literals.json from the matcher; needs Turbo C++)"
+	@echo "          port-asmdata (when an assembly unit changes its data: port/asmdata.json from TASM listings; needs Turbo Assembler)"
 	@echo "Docs:     handbook (the whitepaper as a PDF: docs/Eye-of-the-Beholder-Whitepaper-v*.pdf; tools/handbook/README.md) handbook-setup handbook-figs"
 	@echo "See AGENTS.md and docs/spec/SPEC.md."
 
@@ -91,6 +93,12 @@ port-hybrid: overlays  ## M2 (playbook 80): each translated function against the
 
 port-image: port  ## step D3 (playbook 80): the port's data image, written from src/'s definitions, against EOB.EXE's
 	$(PY) tools/port/image.py
+
+port-replay: port  ## M5 (playbook 80): play golden sessions headless on the port from its own image and compare their checkpoints [NAME=boot-title] [VIEWS=1]
+	$(PY) tools/port/replay.py $(if $(VIEWS),--views) $(if $(NAME),$(NAME),boot-title)
+
+port-asmdata:      ## the assembly units' data in their code segments (port/asmdata.json, from TASM's listings; needs Turbo Assembler)
+	$(PY) tools/port/asmlist.py
 
 port-literals: overlays  ## where the original keeps each string literal of port/units.txt (port/literals.json, from the matcher; needs Turbo C++)
 	$(PY) tools/port/literals.py

@@ -295,6 +295,19 @@ static int alloc_handle(dosfile *f)
     return -1;
 }
 
+/* A handle held as the overlay manager holds the program file (port/start.c): taken, read-only and
+   empty, so the game's own opens get the handles they got in the original; the file is not read. */
+int dos_reserve_handle(const char *path)
+{
+    dosfile *f = calloc(1, sizeof *f);
+    if (f == NULL) {
+        tc_fail(70, "dos: out of host memory");
+    }
+    resolve(path, f->path);
+    f->data = vbuf_new(0);
+    return alloc_handle(f);
+}
+
 static void path_of(u16 seg, u16 off, char *out)
 {
     u16 i;
