@@ -6,7 +6,7 @@
 ; gVideoTopSeg). The last two run only for the Tandy graphics mode:
 ; StartupGame (07C8:0199) calls CheckMemoryChain (07C8:01BB) and ReserveMemoryBelowVideo (07C8:01F2)
 ; for graphics choice 1, and ShutdownGame (07C8:060D) calls TrimMemoryToVideo when ds:8102 is 1
-; (src/E07C8.C:343-344), including after a failed CheckMemoryChain: StartupGame returns 0 before it
+; (src/E07C8.C:366-367), including after a failed CheckMemoryChain: StartupGame returns 0 before it
 ; stores gMemTopSeg, so Trim then runs with gMemTopSeg at its loaded 0 (the EXE image has 0 there).
 ; WHITEPAPER 2.6 reads argv digit 1 as Tandy and 3 as VGA, and START1's menu order is CGA, Tandy,
 ; EGA, VGA (WHITEPAPER line 105); the B800/A000 probe is in the code at 1990:0139 to 0150. The
@@ -21,12 +21,12 @@ gMemTopSeg    dw 0                      ; 1990:0002: segment where the program's
                                         ;   ReserveMemoryBelowVideo stores the end of DOS memory
                                         ;   here (1990:01F0: the segment just past the last block);
                                         ;   the caller StartupGame then stores atol(gArgv->number)
-                                        ;   over it (07C8:0212, src/E07C8.C:305). gArgv is the C
+                                        ;   over it (07C8:0212, src/E07C8.C:328). gArgv is the C
                                         ;   library's _argv (whitepaper 2.6), so the string is argv[6],
                                         ;   a launcher argument. TrimMemoryToVideo reads it back.
 gVideoTopSeg  dw 0                      ; 1990:0004: the base of the memory reserved below the
                                         ;   probed segment (the caller uses it as the base of the
-                                        ;   64000 byte Tandy buffer, src/E07C8.C:206 to 207 and
+                                        ;   64000 byte Tandy buffer, src/E07C8.C:229 to 207 and
                                         ;   220). "Video top" is a
                                         ;   hypothesis [H]: ReserveMemoryBelowVideo probes the
                                         ;   segment whose B800:0000 marker aliases (or A000,
@@ -236,7 +236,7 @@ CheckMemoryChain ENDP
 ; calls CheckMCB (1990:0271) to merge the freed block into the chain and stores that new top into
 ; PSP:0002 (1990:0264). The result is gVideoTopSeg after
 ; the step at 1990:0202 to 0207 (loaded at 1990:0274), not gMemTopSeg; the caller uses it as memtop
-; (src/E07C8.C:188, slots 2 and 3 at E07C8.C:220). The CheckMCB result is overwritten at 1990:0274.
+; (src/E07C8.C:188, slots 2 and 3 at E07C8.C:243). The CheckMCB result is overwritten at 1990:0274.
         PUBLIC  ReserveMemoryBelowVideo ; @ 1990:0133
 ReserveMemoryBelowVideo PROC FAR
         push    bp
@@ -387,7 +387,7 @@ ReserveMemoryBelowVideo ENDP
 ; block (1990:02BD to 02C0, INT 21h AH=49h). gMemTopSeg has one of two inputs here. On the path
 ; through StartupGame it is atol(gArgv->number) (07C8:0212). On the path where CheckMemoryChain
 ; failed, StartupGame returns 0 (src/E07C8.C:181-185) before that store, and g8102 is already 1
-; (src/E07C8.C:178), so ShutdownGame still calls this (src/E07C8.C:343-344) with gMemTopSeg at its
+; (src/E07C8.C:178), so ShutdownGame still calls this (src/E07C8.C:366-367) with gMemTopSeg at its
 ; loaded value, 0 (the EXE image has 0 at 1990:0001 to 000F). With gMemTopSeg 0 the last block's
 ; size is set to 0 less its data segment (1990:02B0 to 02B9), a wrapped 16 bit value, and the walk
 ; (1990:0299 to 02AC) only looks for a 'Z' type, so it does not stop at a broken chain. The name's
@@ -400,7 +400,7 @@ ReserveMemoryBelowVideo ENDP
 ; AH=48h at 1990:0288) without testing the carry flag: on failure AX is DOS's error code (7 or 8),
 ; the MCB type is read at segment 6 or 7 (1990:028B to 028E), and the one-word-out exit marked
 ; below is taken when that byte is not 'M'. Called from ShutdownGame at exit for the Tandy mode,
-; when ds:8102 is 1 (07C8:060D, src/E07C8.C:343-344).
+; when ds:8102 is 1 (07C8:060D, src/E07C8.C:366-367).
         PUBLIC  TrimMemoryToVideo       ; @ 1990:027D
 TrimMemoryToVideo PROC FAR
         push    bp

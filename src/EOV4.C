@@ -14,6 +14,225 @@ extern signed char gWallVmpSet[]; /*@ ds:1879 */      /* per-wall-type 1-based b
 extern int gViewCellIds[]; /*@ ds:A9C8 */         /* 18 heading words, the masked sum (this unit) */
 extern int gViewSlots[]; /*@ ds:DCB2 */         /* 18 {left,right} view-slot pairs (this unit) */
 
+/*@data */
+/* the data of eov4, ds:6B82 to ds:7298 (1814 bytes, 26 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+/* what the pointers name that the file does not declare before them: */
+extern signed char gViewFrontSide; /*@ ds:A9C6 */
+extern signed char gViewLeftSide; /*@ ds:EFD0 */
+extern signed char gViewRightSide; /*@ ds:EFB9 */
+signed char gSpanWallClip[324] = { /*@ ds:6B82 */
+    -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41,
+    -41, -41, -41, -41, -40, -41, -40, -40, 2, -40, -40, -40,
+    -40, -2, -41, -40, -40, -40, -41, 3, -40, -3, -40, -40,
+    -40, -2, -40, 8, -40, -40, -40, -2, -41, 6, -40, -40,
+    -6, 3, -40, -3, -40, -40, -40, -40, -40, -40, -40, -40,
+    -40, -40, -6, -41, 16, -40, -3, -41, 19, -40, -40, -40,
+    -40, -40, -40, -14, -40, 20, -40, -40, -40, -16, -41, 20,
+    -40, -19, 16, -40, -40, 19, -40, -40, -40, -40, -20, -40,
+    -40, -40, -40, -40, -41, 20, -40, -19, -41, -40, -40, 19,
+    -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -41,
+    -41, -41, -41, -41, -40, -41, -41, -41, -41, -41, -41, -41,
+    -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -40, -41,
+    -40, -40, -40, -40, -40, -40, -40, -40, -40, 6, -40, -40,
+    -6, 3, -40, -3, -40, -40, -40, -40, -40, -40, -40, -40,
+    -40, -40, -6, -40, 16, -40, -3, -41, 19, -3, -40, 19,
+    -40, -40, -40, -40, -40, -40, -40, -40, -40, -16, -40, -40,
+    -40, -19, 16, -40, -40, 19, -41, -41, -41, -41, -41, -41,
+    -41, -41, -41, -41, -41, -41, -41, -41, -41, -41, -40, -41,
+    -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40,
+    -40, 3, -40, -3, -40, -40, -40, -40, -40, -40, -40, -40,
+    -40, -40, -40, -40, -40, -40, -3, -40, 19, -3, -40, 19,
+    -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40,
+    -40, -19, -40, -40, -40, 19, -40, -40, -40, -40, -40, -40,
+    -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40,
+    -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40,
+    -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40,
+    -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40, -40
+};
+signed char gSpanDoorClip[648] = { /*@ ds:6CC6 */
+    22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0,
+    22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0,
+    22, 0, 22, 0, 22, 0, 22, 0, 0, 22, 22, 0,
+    0, 22, 0, 22, 0, 2, 0, 22, 0, 22, 0, 22,
+    0, 22, 2, 22, 0, 4, 0, 22, 0, 22, 0, 22,
+    22, 0, 0, 3, 0, 22, 3, 22, 0, 22, 0, 22,
+    0, 22, 2, 22, 0, 22, 0, 8, 0, 22, 0, 22,
+    0, 22, 0, 2, 22, 0, 0, 6, 0, 22, 0, 22,
+    6, 22, 0, 3, 0, 22, 3, 0, 0, 22, 0, 22,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22,
+    0, 22, 0, 22, 6, 22, 8, 14, 0, 16, 0, 22,
+    3, 22, 6, 16, 0, 19, 0, 22, 0, 22, 0, 22,
+    0, 22, 0, 22, 0, 22, 14, 22, 0, 22, 0, 20,
+    0, 22, 0, 22, 0, 22, 16, 22, 22, 0, 0, 20,
+    0, 22, 19, 22, 0, 16, 0, 22, 0, 22, 0, 19,
+    0, 22, 0, 22, 0, 22, 0, 22, 20, 22, 0, 22,
+    0, 22, 0, 22, 0, 22, 0, 22, 18, 22, 20, 22,
+    0, 22, 19, 22, 22, 0, 0, 22, 0, 22, 0, 19,
+    22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0,
+    22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0,
+    22, 0, 22, 0, 22, 0, 22, 0, 0, 22, 22, 0,
+    22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0,
+    22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0,
+    22, 0, 22, 0, 22, 0, 22, 0, 0, 22, 22, 0,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22,
+    0, 22, 0, 22, 0, 22, 0, 6, 0, 22, 0, 22,
+    6, 22, 0, 3, 0, 22, 3, 22, 0, 22, 0, 22,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22,
+    0, 22, 0, 22, 6, 22, 0, 22, 0, 16, 0, 22,
+    3, 22, 7, 15, 0, 19, 3, 22, 0, 22, 0, 19,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22,
+    0, 22, 0, 22, 0, 22, 16, 22, 0, 22, 0, 22,
+    0, 22, 19, 22, 0, 16, 0, 22, 0, 22, 0, 19,
+    22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0,
+    22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0,
+    22, 0, 22, 0, 22, 0, 22, 0, 0, 22, 22, 0,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22,
+    0, 22, 0, 3, 0, 22, 3, 22, 0, 22, 0, 22,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22,
+    3, 22, 0, 22, 0, 19, 3, 22, 0, 22, 0, 19,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22,
+    0, 22, 19, 22, 0, 22, 0, 22, 0, 22, 0, 19,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22,
+    0, 22, 0, 22, 0, 22, 0, 22, 0, 22, 0, 22
+};
+signed char gDoorClipY[31] = { /*@ ds:6F4E */
+    32, 24, 15, 0, 0, 0, 0, 0, 32, 32, 24, 0,
+    30, 24, 16, 0, 58, 72, 96, 120, 58, 70, 86, 0,
+    120, 120, 120, 120, 31, 24, 15
+};
+signed char gDoorClipTopRow[12] = { 0, 0, 0, 0, 4, 4, 4, 8, 8, 8, 12, 12 }; /*@ ds:6F6D */
+signed char gDoorClipBottomRow[13] = { /*@ ds:6F79 */
+    28, 16, 16, 16, 24, 24, 24, 16, 16, 16, 20, 20,
+    24
+};
+signed char gItemClipSlot[18] = { /*@ ds:6F86 */
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, 3, -1, -1,
+    -1, 9, -1, 11, 12, 13
+};
+signed char gItemScaleFrame[16] = { /*@ ds:6F98 */
+    -1, -1, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1,
+    0, 0, -1, -1
+};
+int gNicheItemY[3] = { 37, 49, 56 }; /*@ ds:6FA8 */
+int gItemJitter[8] = { 0, -2, 1, -1, 2, 0, 1, -1 }; /*@ ds:6FAE */
+signed char gMonsterShrinkSteps[3] = { 2, 1, 0 }; /*@ ds:6FBE */
+signed char gMonsterFramesMirrorStep[32] = { /*@ ds:6FC1 */
+    4, -2, 1, 3, 3, 4, -2, 1, 1, 3, 4, -2,
+    -2, 1, 3, 4, -4, -3, -1, 2, 2, -4, -3, -1,
+    -1, 2, -4, -3, -3, -1, 2, -4
+};
+signed char gMonsterFrames[32] = { /*@ ds:6FE1 */
+    4, -2, 1, 3, 3, 4, -2, 1, 1, 3, 4, -2,
+    -2, 1, 3, 4, 4, -3, 1, 2, 2, 4, -3, 1,
+    1, 2, 4, -3, -3, 1, 2, 4
+};
+signed char gMonsterDrawOrder[20] = { /*@ ds:7001 */
+    0, 1, 2, 3, 4, 2, 0, 3, 1, 4, 2, 3,
+    0, 1, 4, 1, 3, 0, 2, 4
+};
+signed char gMonsterYAdjust[3] = { 20, 12, 4 }; /*@ ds:7015 */
+void far *gWallFaces[36] = { /*@ ds:7018 */
+    0, 0, &gViewFrontSide, &gViewRightSide,
+    &gViewFrontSide, &gViewRightSide, &gViewFrontSide, 0,
+    &gViewFrontSide, &gViewLeftSide, &gViewFrontSide, &gViewLeftSide,
+    0, 0, &gViewFrontSide, &gViewRightSide,
+    &gViewFrontSide, &gViewRightSide, &gViewFrontSide, 0,
+    &gViewFrontSide, &gViewLeftSide, &gViewFrontSide, &gViewLeftSide,
+    &gViewFrontSide, &gViewRightSide, &gViewFrontSide, 0,
+    &gViewFrontSide, &gViewLeftSide, 0, &gViewRightSide,
+    &gViewFrontSide, 0, 0, &gViewLeftSide
+};
+signed char gWallOffsets[36] = { /*@ ds:70A8 */
+    1, 1, 4, 10, 4, 8, 4, 1, 4, -8, 4, -10,
+    0, 0, 3, 9, 3, 7, 3, 1, 3, -7, 3, -9,
+    2, 6, 2, 1, 2, -6, 1, 5, 1, 1, 1, -5
+};
+int gWallXBias[18] = { /*@ ds:70CC */
+    -144, -96, -48, 0, 48, 96, 144, -160, -80, 0, 80, 160,
+    -128, 0, 128, 0, 0, 0
+};
+signed char gDoorYLevels1to3[4] = ":GV"; /*@ ds:70F0 */
+signed char gDoorYLevels4to6[4] = ";GX"; /*@ ds:70F4 */
+signed char gDoorYLevels7to9[4] = { 32, 32, 24, 0 }; /*@ ds:70F8 */
+signed char gDoorYLevels10to11[3] = { 30, 24, 16 }; /*@ ds:70FC */
+signed char gDoorBackYLevels10to11[3] = { 48, 52, 59 }; /*@ ds:70FF */
+signed char gDoorYLevel12[4] = ":EZ"; /*@ ds:7102 */
+int gDoorClipLeftX[1] = { 0 }; /*@ ds:7106 */
+int gDoorClipRightX[35] = { /*@ ds:7108 */
+    0, -24, 16, 32, 64, 72, 104, 112, 144, 160, 200, 0,
+    0, 0, 0, -24, 48, 56, 120, 128, 200, 0, 0, -88,
+    32, 40, 136, 144, 264, 0, 0, 0, 0, 0, 0
+};
+signed char gDoorStepBase[32] = { /*@ ds:714E */
+    0, 0, 0, 3, 3, 3, 3, 3, 8, 8, 8, 8,
+    8, 13, 13, 13, 13, 13, 18, 18, 18, 18, 18, 0,
+    0, 0, 0, 0, 0, 0, 30, 31
+};
+signed char gDoorShapeSet[32] = { /*@ ds:716E */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0,
+    0, 0, 0, 0, 0, 0, 0, 3
+};
+signed char gDoorLiftStep[4] = { 8, 12, 18, 0 }; /*@ ds:718E */
+signed char gDoorLiftFrom30[4] = { 0, 2, 4, 0 }; /*@ ds:7192 */
+signed char gDoorSlideStep[4] = { 4, 6, 9, 0 }; /*@ ds:7196 */
+signed char gDoorSlideFrom30[4] = { 0, 2, 4, 0 }; /*@ ds:719A */
+signed char gDoorSplitStep[4] = { 7, 11, 14, 0 }; /*@ ds:719E */
+signed char gDoorSplitFrom30[4] = { 0, 2, 4, 0 }; /*@ ds:71A2 */
+unsigned char gProjectileX[1] = { 0 }; /*@ ds:71A6 */
+/* ds:71A7 is where EOV5's folded base of gCharPool[-n-1].name falls (gCharPool + 2 - 0xF3, src/EOV5.C),
+   so the name the link needs for it is defined on these bytes of this unit's, which nothing in this
+   unit reads by it */
+unsigned char gPoolNameBase[71] = { /*@ ds:71A7 */
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x21, 0x34, 0x00,
+    0x00, 0x47, 0x5A, 0x00, 0x00, 0x6D, 0x7F, 0x00, 0x00, 0x92, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFD, 0x19, 0xE9, 0x0F, 0x3C,
+    0x58, 0x35, 0x5B, 0x7B, 0x97, 0x81, 0xA7, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0xF7, 0x00, 0xDF, 0x28, 0x59, 0x1F, 0x5E, 0x8A, 0x00, 0x9D, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x10, 0x60, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+signed char gProjectileY[16] = { /*@ ds:71EE */
+    32, 32, 31, 31, 22, 22, 21, 21, 21, 21, 20, 20,
+    12, 12, 100, 100
+};
+signed char gProjectileFrame[72] = { /*@ ds:71FE */
+    -1, -1, -1, -1, -1, -1, -1, 3, -1, -1, 3, 3,
+    -1, -1, 3, 3, -1, -1, 3, 3, -1, -1, 3, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, -1, -1, -1, -1,
+    -1, 1, -1, 1, 1, 1, 1, 1, 1, -1, 1, -1,
+    -1, -1, -1, -1, 0, 0, -1, -1, -1, -1, -1, -1
+};
+signed char gProjectileDrawOrder[20] = { /*@ ds:7246 */
+    0, 1, 2, 3, 4, 2, 0, 3, 1, 4, 2, 3,
+    0, 1, 4, 1, 3, 0, 2, 4
+};
+signed char gProjectileFixWidth[4] = { 4, 3, 2, 1 }; /*@ ds:725A */
+signed char gProjectileFixX[4] = { 16, 8, 4, 2 }; /*@ ds:725E */
+signed char gProjectileFlip[16] = { /*@ ds:7262 */
+    0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0,
+    1, 1, 0, 0
+};
+signed char gTeleporterLeftOffset[3] = { 40, 28, 18 }; /*@ ds:7272 */
+signed char gTeleporterTopY[3] = { 13, 21, 26 }; /*@ ds:7275 */
+signed char gViewDrawOrder[18] = { /*@ ds:7278 */
+    0, 6, 1, 5, 2, 4, 3, 7, 11, 8, 10, 9,
+    12, 14, 13, 15, 17, 16
+};
+int gCompassX[3] = { 112, 77, 149 }; /*@ ds:728A */
+int gCompassY[3] = { 127, 154, 154 }; /*@ ds:7290 */
+int gCompassDir = -1; /*@ ds:7296 */
+
 /* ovl4:0000: for each of the 18 view slots, compute a heading word from `base` plus the slot's
    signed offset in the 18-byte row `row` of ds:199D (row is scaled by 18 first), masked to 10 bits,
    store it in the heading table at ds:A9C8, point the slot's ds:EF6A entry at the 9-byte tile
@@ -222,7 +441,7 @@ extern unsigned char gViewBlockMap[]; /*@ ds:ADB0 */  /* the view pixel buffer (
 
 /* ovl4:042C: returns 1 when `slot` is nonzero and bit 3 of its ds:194B flag byte is clear, else 0.
    The callers use it to choose between the slot's own ds:EF6A record and a second record; bit 3
-   itself is read with other meanings in src/E1414.C:321 and src/EOV3.C:1012. Called by BuildViewBlockMap
+   itself is read with other meanings in src/E1414.C:364 and src/EOV3.C:1012. Called by BuildViewBlockMap
    at ovl4:0563 and ovl4:05D8. */
 /*@ ovl4:042C */ int IsSlotLive(int slot)
 {
@@ -467,8 +686,8 @@ extern void far *gScratchBuf; /*@ ds:DCFC */    /* start-up far allocation, 4096
 extern int gGraphicsChoice; /*@ ds:8102 */  /* the graphics choice: 0 CGA, 1 Tandy, 2 EGA, 3 MCGA/VGA, 4 VGA (re/globals.toml ds:8102; src/E07C8.C:42-45) */
 extern int gPartyCell; /*@ ds:FBCA */        /* the current map cell id (src/E08E6.C) */
 extern void (far *gSetRemapTable)(char far *map); /*@ ds:80D2 */  /* the far colour-table callback (src/E07A9.C) */
-extern char gHitFlashRemap[]; /*@ ds:1CD3 */  /* a 16-byte colour row the colour callback ds:80D2 is passed (src/E08E6.C:110, :752) */
-extern char gHitFlashRemapCga[]; /*@ ds:1CE3 */  /* the 16-byte colour row ds:80D2 is passed when gGraphicsChoice is 0 (src/E08E6.C:111, :750) */
+extern char gHitFlashRemap[]; /*@ ds:1CD3 */  /* a 16-byte colour row the colour callback ds:80D2 is passed (src/E08E6.C:151, :752) */
+extern char gHitFlashRemapCga[]; /*@ ds:1CE3 */  /* the 16-byte colour row ds:80D2 is passed when gGraphicsChoice is 0 (src/E08E6.C:152, :750) */
 extern void BlitSpriteEga(void far *src, void far *dst); /*@ 17A6:1715 */
 extern void BlitSpriteCga(void far *src, void far *dst); /*@ 17A6:11CD */
 extern void BlitSpriteDefault(void far *src, void far *dst); /*@ 17A6:0FFA */
@@ -686,7 +905,7 @@ extern struct ViewWallRec gViewWalls[]; /*@ ds:E06A */
         }
     }
 }
-extern struct SlotSize far *gDoorShapes[]; /*@ ds:FB5E */  /* per column, a far size record (ovl3:031A frees and clears the entries, src/EOV3.C:356-358; src/EOV2.C:155 and src/EOV3.C:143 declare it long, but the ->width use here needs a far pointer) */
+extern struct SlotSize far *gDoorShapes[]; /*@ ds:FB5E */  /* per column, a far size record (ovl3:031A frees and clears the entries, src/EOV3.C:434-436; src/EOV2.C:155 and src/EOV3.C:143 declare it long, but the ->width use here needs a far pointer) */
 extern struct SlotPos gDoorButtons[]; /*@ ds:A99C */
 extern signed char gDoorShapeSet[]; /*@ ds:716E */   /* per wall type, a column base (this unit) */
 extern signed char gDoorYLevels1to3[]; /*@ ds:70F0 */   /* per index y base, level 1..3 (this unit) */

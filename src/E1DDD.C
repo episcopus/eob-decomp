@@ -33,6 +33,19 @@ extern unsigned gVideoOutRegs; /*@ ds:FF36 */
 
 /* int86 returns the output AX; declared void here because both callers ignore it. */
 
+/*@data */
+/* the data of e1ddd, ds:8484 to ds:84B2 (46 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+unsigned char g8484[4] = { 0x34, 0x12, 0x76, 0x98 }; /*@ ds:8484 */
+unsigned gTicksSinceEvent = 0; /*@ ds:8488 */
+unsigned long gTicks = 0L; /*@ ds:848A */
+unsigned char g848E[4] = { 0x00, 0x00, 0x00, 0x00 }; /*@ ds:848E */
+unsigned long gGameTicks = 0L; /*@ ds:8492 */
+unsigned char g8496[4] = { 0x00, 0x00, 0x00, 0x00 }; /*@ ds:8496 */
+unsigned long gFrameWaitTicks = 0L; /*@ ds:849A */
+int gTimerEnableFlags = 0; /*@ ds:849E */
+unsigned gRestoreMode = 0; /*@ ds:84A0 */
+unsigned gBiosVideoModes[8] = { 4, 9, 0x000D, 0x0013, 0x0013, 7, 2, 0 }; /*@ ds:84A2 */
+
 /* 1DDD:0006: the current BIOS video mode, INT 10h AH=0Fh through int86 (the low byte of AX). */
 /*@ 1DDD:0006 */ int GetVideoMode(void)
 {

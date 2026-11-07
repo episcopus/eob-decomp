@@ -29,12 +29,16 @@ def test_the_port_builds_and_passes_its_self_test():
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
     assert "8 lists: ok" in r.stdout
-    assert "41 units" in r.stdout, "every C unit of EOB.EXE is translated (M1)"
+    assert "43 units" in r.stdout, "every C unit of EOB.EXE is translated (M1), and the two data-only modules (D3)"
     # platform separation: the self-test ran on the headless program, which links no SDL
     assert "eob-port-headless --self-test" in r.stdout
     assert (ROOT / "build" / "port" / "eob-port-headless").exists()
     after = subprocess.run(["git", "status", "--porcelain", "src"], cwd=ROOT, capture_output=True, text=True).stdout
     assert before == after, "the port build changed src/"
+    # step D3: the port's image, written from src/'s definitions into an empty arena, is EOB.EXE's
+    r = subprocess.run([sys.executable, str(ROOT / "tools/port/image.py")], cwd=ROOT, capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
+    assert "compared: the same" in r.stdout
 
 
 def test_only_the_platform_directory_uses_sdl():

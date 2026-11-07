@@ -11,7 +11,7 @@
    source: MCGA does not use it (src/drivers/MCGA.ASM:1522-1525) and CGA reads it only for its dither tables
    (src/drivers/CGA.ASM:1666-1671). The PLAYFLD and item art have their own maps, one TLINK data segment each (PLAYFLD
    at 2069, ITEML1 at 20A3, ITEMS1 at 20A5, THROWN at 20A7, ITEMICN at 20A9); gCgaMapDefault (ds:113F) is the default
-   map: DECORATE uses it for its six cells (LoadDecorateIcons), and LoadOverlayScreen passes it to LoadScreenImage as its `extra` argument (src/E082C.C:301-314, :329).
+   map: DECORATE uses it for its six cells (LoadDecorateIcons), and LoadOverlayScreen passes it to LoadScreenImage as its `extra` argument (src/E082C.C:313-326, :329).
    LoadOverlayScreen passes mode -1, which makes LoadScreenImage return before the 19EC:002A blit, so only a
    load with another mode, such as the INTRO load below (ovl2:078D, mode 2), hands the map to 19EC:002A
    (src/E19EC.C:29-35). ITEMICN is loaded and cut twice: SetPointerShape takes the pointer cell with gCgaMapDefault
@@ -54,7 +54,7 @@ extern struct ItemType gItemTypes[]; /*@ ds:A9F0 */
 extern struct ItemRec gItems[]; /*@ ds:8DD0 */
 extern struct Pos2 gCellPosL1[]; /*@ ds:64F8 */
 extern struct Pos2 gCellPosS1[]; /*@ ds:6534 */
-extern char gCellDX[]; /*@ ds:65AC */ /* four per-column y offsets added to a cell's y in LoadItemSheets (src/EOV2.C:269, :276, :283) */
+extern char gCellDX[]; /*@ ds:65AC */ /* four per-column y offsets added to a cell's y in LoadItemSheets (src/EOV2.C:315, :276, :283) */
 extern struct Size2 gCellSize1[]; /*@ ds:65B0 */
 extern struct Size2 gCellSize2[]; /*@ ds:65B8 */
 extern void far *gItemL1Icons[][4]; /*@ ds:EC9A */
@@ -65,11 +65,11 @@ extern void far *gThrownIcon3; /*@ ds:EFB4 */
 extern void far *gThrownIcon4; /*@ ds:EFBE */
 extern char gFileNameBuf[]; /*@ ds:FE6E */
 extern struct WordCell gWordCells[]; /*@ ds:65F0 */
-extern unsigned char gCompassRowHeights[]; /*@ ds:65C0 */ /* the three per-row cell heights of the gCompassIcons loop, indexed by the row i (0..2) (src/EOV2.C:366-368) */
-extern unsigned char gCompassRowTops[]; /*@ ds:65C3 */ /* the three per-row cell y origins of the gCompassIcons loop, indexed by the row i (0..2) (src/EOV2.C:366-368) */
+extern unsigned char gCompassRowHeights[]; /*@ ds:65C0 */ /* the three per-row cell heights of the gCompassIcons loop, indexed by the row i (0..2) (src/EOV2.C:432-434) */
+extern unsigned char gCompassRowTops[]; /*@ ds:65C3 */ /* the three per-row cell y origins of the gCompassIcons loop, indexed by the row i (0..2) (src/EOV2.C:432-434) */
 extern struct Cell4 gDecorateCellRects[]; /*@ ds:65C6 */ /* the six decoration-cell rectangles LoadDecorateIcons cuts from the DECORATE page (gCgaMapDefault is their colour map) */
-extern void far *gTeleporterCells[]; /*@ ds:F4BE */ /* the six cells LoadDecorateIcons cuts from the DECORATE page (src/EOV2.C:314); their only reader, DrawSlotTeleporter (ovl4:1D20, src/EOV4.C:991), draws them for the animated wall type 0x34, alternating by gAnimWallPhase. That 0x34 is the teleporter is [H] (ScummVM's EOB1 wall type 52, re/renames.toml DrawSlotTeleporter), not proven on our bytes */
-extern char far *gFlashFrames[]; /*@ ds:DD1C */ /* the flash-frame images src/E0EF3.C lays over a member, indexed by frame - 1 (src/E0EF3.C:356, :707, :773). The readers compute a frame 0 to 3 and then skip 0 (if (frame-- == 0) continue;, src/E0EF3.C:696, :771), so 0 means no frame and frames 1 to 3 index gFlashFrames[0..2]: DrawFlashFrame (0EF3:05BD) computes (gFlashPassMask[pass] & gFlashFrameMask[i]) >> gFlashFrameShift[i] from the bytes at ds:5621 (40 90 e4 b9 6e 1b 06 01), ds:5629 (c0 30 0c 03) and ds:562D (06 04 02 00), and FlashViewDamage (0EF3:06E7) does the same with gFlashPass2 (ds:564B), gFlashFrame2 (ds:5677) and gFlashShift2 (ds:56B7, shifts 0x1e to 0). So the array holds the three entries DD1C, DD20 and DD24 that LoadDecorateIcons fills; the next slot DD28 is the separate icon pointer gDisabledMemberIcon */
+extern void far *gTeleporterCells[]; /*@ ds:F4BE */ /* the six cells LoadDecorateIcons cuts from the DECORATE page (src/EOV2.C:360); their only reader, DrawSlotTeleporter (ovl4:1D20, src/EOV4.C:1207), draws them for the animated wall type 0x34, alternating by gAnimWallPhase. That 0x34 is the teleporter is [H] (ScummVM's EOB1 wall type 52, re/renames.toml DrawSlotTeleporter), not proven on our bytes */
+extern char far *gFlashFrames[]; /*@ ds:DD1C */ /* the flash-frame images src/E0EF3.C lays over a member, indexed by frame - 1 (src/E0EF3.C:453, :707, :773). The readers compute a frame 0 to 3 and then skip 0 (if (frame-- == 0) continue;, src/E0EF3.C:793, :771), so 0 means no frame and frames 1 to 3 index gFlashFrames[0..2]: DrawFlashFrame (0EF3:05BD) computes (gFlashPassMask[pass] & gFlashFrameMask[i]) >> gFlashFrameShift[i] from the bytes at ds:5621 (40 90 e4 b9 6e 1b 06 01), ds:5629 (c0 30 0c 03) and ds:562D (06 04 02 00), and FlashViewDamage (0EF3:06E7) does the same with gFlashPass2 (ds:564B), gFlashFrame2 (ds:5677) and gFlashShift2 (ds:56B7, shifts 0x1e to 0). So the array holds the three entries DD1C, DD20 and DD24 that LoadDecorateIcons fills; the next slot DD28 is the separate icon pointer gDisabledMemberIcon */
 extern char far *gDisabledMemberIcon; /*@ ds:DD28 */ /* the icon table src/EOV1.ASM:87 draws member icons from, filled by LoadDecorateIcons at the slot after gFlashFrames */
 extern void far *gDeadPortraitIcon; /*@ ds:F2F4 */
 extern void far *gUnconsciousIcon; /*@ ds:DC94 */
@@ -80,7 +80,7 @@ extern int gItemNameCount; /*@ ds:F516 */
 extern unsigned char far gItemNames[]; /*@ 1F28:0000 */
 extern struct CharRec gChars[]; /*@ ds:F580 */
 extern void far *gItemIcons[]; /*@ ds:DDE4 */
-extern void far *gDefaultPointerIcon; /*@ ds:DD00 */ /* the mouse pointer image: gItemIcons[0], set by SetPointerShape (src/EOV2.C:214) and given to SetMousePointerShape (src/E1BB1.ASM:12) */
+extern void far *gDefaultPointerIcon; /*@ ds:DD00 */ /* the mouse pointer image: gItemIcons[0], set by SetPointerShape (src/EOV2.C:260) and given to SetMousePointerShape (src/E1BB1.ASM:12) */
 extern void far *gRemappedIcon; /*@ ds:DF48 */
 extern void far *gStagingPage; /*@ ds:DF4E */
 extern char far *gItemRemapTable; /*@ ds:F534 */
@@ -95,21 +95,21 @@ extern char gPanelFillColour; /*@ ds:F57E */ /* a UI colour (src/E0D1C.C:46), se
 extern char gPanelHighlight; /*@ ds:FB4C */ /* a UI colour (src/E0D1C.C:47), set by SetUiPalette */
 extern char gPanelShadow; /*@ ds:F53A */ /* a UI colour (src/E0D1C.C:48), set by SetUiPalette */
 extern char gUnusedPanelColour; /*@ ds:F53B */ /* a UI colour set by SetUiPalette; no reader in src/ yet */
-extern char gBarEmptyColour; /*@ ds:FB7A */ /* a colour DrawRatioBar is passed (src/E1547.C:279), set by SetUiPalette */
-extern char gAltPanelFill; /*@ ds:FB7B */ /* a colour DrawShadowText is passed (src/E1547.C:529), set by SetUiPalette */
-extern char gUnselTabLightColour; /*@ ds:A9C4 */ /* a panel colour (src/E0EF3.C:1911), set by SetUiPalette */
-extern char gUnselTabDarkColour; /*@ ds:A928 */ /* a panel colour (src/E0EF3.C:1912), set by SetUiPalette */
-extern char gFailLabelLight; /*@ ds:A95A */ /* the top and right edge colour of the action label panel (src/E1547.C:412), set by SetUiPalette */
-extern char gGameLoadState; /*@ ds:A998 */ /* nonzero tells EnterMapScreen (src/E0ACD.C:911) to show the inventory and the loaded map; the saved-game panel writes it in LoadGamePanel */
-extern char gFailLabelShadow; /*@ ds:8A6C */ /* the left and bottom edge colour of the action label panel (src/E1547.C:412), set by SetUiPalette */
-extern char gFailLabelFill; /*@ ds:8A7D */ /* the fill colour of the action label panel (src/E1547.C:412), set by SetUiPalette */
+extern char gBarEmptyColour; /*@ ds:FB7A */ /* a colour DrawRatioBar is passed (src/E1547.C:318), set by SetUiPalette */
+extern char gAltPanelFill; /*@ ds:FB7B */ /* a colour DrawShadowText is passed (src/E1547.C:568), set by SetUiPalette */
+extern char gUnselTabLightColour; /*@ ds:A9C4 */ /* a panel colour (src/E0EF3.C:2008), set by SetUiPalette */
+extern char gUnselTabDarkColour; /*@ ds:A928 */ /* a panel colour (src/E0EF3.C:2009), set by SetUiPalette */
+extern char gFailLabelLight; /*@ ds:A95A */ /* the top and right edge colour of the action label panel (src/E1547.C:451), set by SetUiPalette */
+extern char gGameLoadState; /*@ ds:A998 */ /* nonzero tells EnterMapScreen (src/E0ACD.C:939) to show the inventory and the loaded map; the saved-game panel writes it in LoadGamePanel */
+extern char gFailLabelShadow; /*@ ds:8A6C */ /* the left and bottom edge colour of the action label panel (src/E1547.C:451), set by SetUiPalette */
+extern char gFailLabelFill; /*@ ds:8A7D */ /* the fill colour of the action label panel (src/E1547.C:451), set by SetUiPalette */
 extern char gMovingMember; /*@ ds:FB34 */ /* the party member being moved, -1 when none (PickOrSwapMember 0ACD:0264, BlinkSelected 1414:0000); this unit clears it. The far pointers 4 bytes higher are gFlameShapes (ds:FB38) */
 extern int gUnusedStartupWord; /*@ ds:EFC8 */ /* a word cleared by InitGameTables; no other reader in src/ yet */
 extern int gUnreadInitWord; /*@ ds:EFCA */ /* a word cleared by InitGameTables; no other reader in src/ yet */
 extern void far *gLoadedMonsterShapes[]; /*@ ds:B802 */ /* 36 far monster shape pointers (src/EOV3.C:146, freed by ovl3:05D2), cleared by InitGameTables */
-extern long gDoorShapes[]; /*@ ds:FB5E */ /* six size-record pointers (src/EOV3.C:138 declares them longs; src/EOV4.C:756 declares them struct SlotSize far *), cleared by InitGameTables */
+extern long gDoorShapes[]; /*@ ds:FB5E */ /* six size-record pointers (src/EOV3.C:138 declares them longs; src/EOV4.C:972 declares them struct SlotSize far *), cleared by InitGameTables */
 extern struct SlotPos gDoorButtons[]; /*@ ds:A99C */
-extern void far *gDecorShapes[]; /*@ ds:EFD4 */ /* 200 far size-record pointers (src/EOV3.C:14, freed at :230-241; src/E122E.C:98 declares them struct RectKind far *), cleared by InitGameTables */
+extern void far *gDecorShapes[]; /*@ ds:EFD4 */ /* 200 far size-record pointers (src/EOV3.C:14, freed at :230-241; src/E122E.C:97 declares them struct RectKind far *), cleared by InitGameTables */
 extern char gSelectFrameColours[]; /*@ ds:1CE7 */
 extern char gBoxCycleColours16[]; /*@ ds:65EA */
 extern char gCgaMapDefault[]; /*@ ds:113F */
@@ -163,12 +163,58 @@ extern int strlwr(char far *s); /*@ 0000:6815 */ /* runtime-library strlwr: lowe
    in place ('A' to 'Z' get +0x20 and are stored back, 0000:6822-682C) and returns the pointer in
    dx:ax (0000:6815 decode: push bp, mov bp,sp, push si, cld, lds si,[bp+6], the loop, then
    0000:6832-6838: xchg dx,ax, mov dx,ds, pop ds, pop si, pop bp, retf) */
-extern int LoadGame(void); /*@ 210C:0039 */ /* overlay 3 entry (its target is ovl3:15B9, named LoadGame by src/EOV3.C:863): returns nonzero when a saved game was loaded, otherwise the caller prints "Unable to load your saved game!" */
-extern void RunCharacterPanel(void); /*@ 20F6:0052 */ /* overlay 0 entry (its target is ovl0:28F9, the character panel's main loop named by src/EOV0.C:1447-1455) */
+extern int LoadGame(void); /*@ 210C:0039 */ /* overlay 3 entry (its target is ovl3:15B9, named LoadGame by src/EOV3.C:944): returns nonzero when a saved game was loaded, otherwise the caller prints "Unable to load your saved game!" */
+extern void RunCharacterPanel(void); /*@ 20F6:0052 */ /* overlay 0 entry (its target is ovl0:28F9, the character panel's main loop named by src/EOV0.C:1532-1540) */
 
 extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
 extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:0400 */
 extern void FileClose(int handle); /*@ 1C0E:03BB */
+
+/*@data */
+/* the data of eov2, ds:64F8 to ds:6840 (840 bytes, 3 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+struct Pos2 gCellPosL1[15] = { /*@ ds:64F8 */
+    { 0, 0 }, { 0, 64 }, { 0, 128 }, { 8, 0 },
+    { 8, 64 }, { 8, 128 }, { 16, 0 }, { 16, 64 },
+    { 16, 128 }, { 24, 0 }, { 24, 64 }, { 24, 128 },
+    { 32, 0 }, { 32, 64 }, { 32, 128 }
+};
+struct Pos2 gCellPosS1[30] = { /*@ ds:6534 */
+    { 0, 0 }, { 0, 64 }, { 0, 128 }, { 4, 0 },
+    { 4, 64 }, { 4, 128 }, { 8, 0 }, { 8, 64 },
+    { 8, 128 }, { 12, 0 }, { 12, 64 }, { 12, 128 },
+    { 16, 0 }, { 16, 64 }, { 16, 128 }, { 20, 0 },
+    { 20, 64 }, { 20, 128 }, { 24, 0 }, { 24, 64 },
+    { 24, 128 }, { 28, 0 }, { 28, 64 }, { 28, 128 },
+    { 32, 0 }, { 32, 64 }, { 32, 128 }, { 36, 0 },
+    { 36, 64 }, { 36, 128 }
+};
+char gCellDX[4] = { 0, 24, 40, 56 }; /*@ ds:65AC */
+struct Size2 gCellSize1[4] = { { 8, 24 }, { 6, 16 }, { 4, 16 }, { 2, 8 } }; /*@ ds:65B0 */
+struct Size2 gCellSize2[4] = { { 4, 24 }, { 3, 16 }, { 2, 16 }, { 1, 8 } }; /*@ ds:65B8 */
+unsigned char gCompassRowHeights[3] = { 0x11, 0x0A, 0x0A }; /*@ ds:65C0 */
+unsigned char gCompassRowTops[3] = { 0x78, 0x89, 0x93 }; /*@ ds:65C3 */
+struct Cell4 gDecorateCellRects[6] = { /*@ ds:65C6 */
+    { 0x0C, 0x58, 2, 0x0E }, { 0x0C, 0x67, 1, 7 }, { 0x0C, 0x6F, 1, 7 }, { 0x0C, 0x77, 1, 5 },
+    { 0x0C, 0x7D, 1, 5 }, { 0x0C, 0x83, 1, 3 }
+};
+/* ds:674A-6752: the code's (a literal or template, 'ITEMICN'): written by its function */
+/* ds:6752-675B: the code's (a literal or template, 'ITEM.DAT'): written by its function */
+/* ds:675B-6768: the code's (a literal or template, 'ITEMTYPE.DAT'): written by its function */
+/* ds:6768-676F: the code's (a literal or template, 'ITEML1'): written by its function */
+/* ds:676F-6776: the code's (a literal or template, 'ITEMS1'): written by its function */
+/* ds:6776-677D: the code's (a literal or template, 'THROWN'): written by its function */
+/* ds:677D-6785: the code's (a literal or template, 'ITEMICN'): written by its function */
+/* ds:6785-6790: the code's (a literal or template, 'ITEMRMP.%s'): written by its function */
+/* ds:6790-6794: the code's (a literal or template, 'VGA'): written by its function */
+/* ds:6794-6798: the code's (a literal or template, 'EGA'): written by its function */
+/* ds:6798-67A1: the code's (a literal or template, 'DECORATE'): written by its function */
+/* ds:67A1-67A7: the code's (a literal or template, 'INTRO'): written by its function */
+/* ds:67A7-67BE: the string pool, "LOAD GAME IN PROGRESS\r" (a table's literal) */
+/* ds:67BE-67D1: the string pool, "START A NEW PARTY\r" (a table's literal) */
+/* ds:67D1-67DE: the string pool, "EXIT TO DOS\r" (a table's literal) */
+/* ds:67DE-67FE: the code's (a literal or template, 'Unable to load your saved game!'): written by its function */
+/* ds:67FE-683F: the code's (a literal or template, '\r\r\r\rOn the page with this symbol...\r\rFin'): written by its function */
+/* ds:683F: the pad byte to the next module (word alignment) */
 
 /* ovl2:0000: loads the ITEMICN image, cuts one 2 by 0x10 cell out of it through gGetSpriteCell
    (gCgaMapDefault as the colour map) and makes the result (gItemIcons[0] and gDefaultPointerIcon) the mouse pointer shape at
@@ -271,8 +317,8 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
    for each of the six character records: sets gMovingMember (ds:FB34, the party member being moved,
    -1 when none; src/E0ACD.C:42) to -1, clears the two words gUnusedStartupWord and gUnreadInitWord, the 36 far pointers
    of gLoadedMonsterShapes (src/EOV3.C:146), the six longs of gDoorShapes (src/EOV3.C:138), the far size-record pointer
-   of each of the six gDoorButtons records (src/E122E.C:112-117) and the 200 far pointers of gDecorShapes
-   (src/E122E.C:98, freed by src/EOV3.C:230-241), then writes each character record's index and
+   of each of the six gDoorButtons records (src/E122E.C:111-116) and the 200 far pointers of gDecorShapes
+   (src/E122E.C:97, freed by src/EOV3.C:308-319), then writes each character record's index and
    allocates its buffer (gChars[i].buf). Called by LoadItemData. */
 /*@ ovl2:0496 */ void InitGameTables(void)
 {
@@ -329,7 +375,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
    draws to page 2 (gDrawPage), reads the colour of the pixel at (0, 0) with gGetPixel and fills
    the rectangle (0, 0x9f)-(0x13f, 0xc7) with that colour (gFillRect, src/E082C.C:64),
    draws the two panel frames, clips a 40 by 200 region at (0, 0) (0x28 and 0xc8
-   are the width and height, the same rectangle src/E082C.C:317 makes) and sets the draw page back to 0.
+   are the width and height, the same rectangle src/E082C.C:329 makes) and sets the draw page back to 0.
    It cuts no sprite cells. Called by LoadItemData. */
 /*@ ovl2:078D */ void LoadIntroScreen(void)
 {
@@ -345,15 +391,35 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     gDrawPage = 0;
 }
 
+/* gOptionNames and the data after it follow LoadIntroScreen: the table's three literals lie in the pool
+   after "INTRO" (ds:67A1) and before LoadGamePanel's "Unable to load your saved game!" (ds:67DE). */
+char far *gOptionNames[3] = { "LOAD GAME IN PROGRESS\r", "START A NEW PARTY\r", "EXIT TO DOS\r" }; /*@ ds:65DE */
+char gBoxCycleColours16[6] = { 12, 13, 14, 15, 14, 13 }; /*@ ds:65EA */
+struct WordCell gWordCells[30] = { /*@ ds:65F0 */
+    { 0, 9, 10, 2 }, { 0, 9, 4, 3 }, { 0, 9, 6, 6 }, { 0, 9, 3, 3 }, { 0, 9, 4, 2 }, { 0, 9, 1, 2 },
+    { 0, 9, 5, 1 }, { 0, 9, 9, 2 }, { 0, 9, 6, 2 }, { 0, 35, 1, 5 }, { 0, 35, 2, 2 }, { 0, 35, 3, 6 },
+    { 0, 35, 5, 1 }, { 0, 35, 6, 3 }, { 0, 35, 7, 1 }, { 0, 26, 1, 1 }, { 0, 26, 3, 2 }, { 0, 26, 6, 1 },
+    { 0, 36, 1, 3 }, { 0, 36, 3, 4 }, { 0, 36, 3, 1 }, { 0, 2, 4, 3 }, { 0, 2, 3, 3 }, { 0, 2, 5, 3 },
+    { 0, 1, 1, 1 }, { 0, 1, 5, 3 }, { 0, 1, 4, 3 }, { 0, 12, 2, 1 }, { 0, 12, 3, 3 }, { 0, 12, 4, 2 }
+};
+unsigned char g6668 = 0; /*@ ds:6668 */
+/* the 30 answers of the "find the word" puzzle, NUL-separated: FindWordPanel (ovl2:09ED) compares
+   the player's word with SkipStrings(g6669, pick), the pick-th string. Two spare NUL bytes end it. */
+char g6669[225] = /*@ ds:6669 */
+    "attacks\0short\0line\0weapons\0certain\0rank\0rear\0can\0away\0dungeon\0cursor\0"
+    "feature\0information\0displayed\0below\0around\0carefree\0gnomes\0clerics\0"
+    "mystic\0pummel\0fitness\0using\0toughness\0wealth\0wizard\0officials\0hound\0"
+    "disturbing\0flaming\0\0";
+
 /* ovl2:0846: the title menu's "load a saved game" panel. Draws the panel (DrawOptionList) and waits
    (UpdateOptionList) until the pointer picks an entry. Entry 0 loads a saved game and marks the
-   load in gGameLoadState: 0xff while it runs (src/EOV3.C:937 skips its map reload on that value) and 0xfe
-   when it succeeded; both are nonzero, which is how EnterMapScreen (src/E0ACD.C:909-918) later
+   load in gGameLoadState: 0xff while it runs (src/EOV3.C:1018 skips its map reload on that value) and 0xfe
+   when it succeeded; both are nonzero, which is how EnterMapScreen (src/E0ACD.C:937-946) later
    shows the loaded map and the inventory. On failure it prints "Unable to load your saved game!",
    clears gGameLoadState and redraws the panel to wait again. Entry 1 sets gGameLoadState to 0, selects the 8x8 font
-   (SetFont with gFont8x8, the Font8.fnt loaded at src/E07C8.C:376, src/E1C0E.C:57) and runs
+   (SetFont with gFont8x8, the Font8.fnt loaded at src/E07C8.C:399, src/E1C0E.C:57) and runs
    RunCharacterPanel (ovl0:28F9), then restores the 6x6 font (gFont6x6, the FONT6.FNT loaded at
-   src/E07C8.C:377, src/EOV0.C:168, src/EOV3.C:42): the "Start a new party" entry [H]
+   src/E07C8.C:400, src/EOV0.C:168, src/EOV3.C:42): the "Start a new party" entry [H]
    (docs/design/WHITEPAPER.md:137). Entry 2 shuts the game down with exit. Called by LoadItemData. */
 /*@ ovl2:0846 */ void LoadGamePanel(void)
 {
@@ -496,7 +562,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
         while (input[strlen(input) - 1] == ' ')
             input[strlen(input) - 1] = 0;
         strlwr(input);
-        if (strcmp(SkipStrings("attacks", pick), input) == 0)
+        if (strcmp(SkipStrings(g6669, pick), input) == 0)
             break;
         tries++;
         if (tries == 3) {

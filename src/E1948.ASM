@@ -5,8 +5,8 @@
 ; note's period from a table (PC speaker or Tandy), programs the pitch (1948:0316) and turns the
 ; voice on or off (1948:02C7 / 1948:02F1). _StartSound (1948:0418) starts a sound for PlaySound
 ; (177D:0070) and PlaySoundAtCell (177D:0106); the driver is selected by gTandyOn (ds:8A67): 1 is
-; Tandy, 0 is the PC speaker (StartupGame installs and selects it, src/E07C8.C:345-351; PlaySound
-; starts sounds through StartSound at src/E177D.C:194 and PlaySoundAtCell at src/E177D.C:285).
+; Tandy, 0 is the PC speaker (StartupGame installs and selects it, src/E07C8.C:368-374; PlaySound
+; starts sounds through StartSound at src/E177D.C:205 and PlaySoundAtCell at src/E177D.C:296).
 ;
 ; The driver keeps its state in a segment that is an alias of DGROUP at 88A0h: the code sets DS to
 ; 29B8h itself (the value the install and every entry set), and DGROUP is 212Eh (whitepaper 2.2), so
@@ -30,33 +30,49 @@
 ; The driver's data segment, an alias of DGROUP at 88A0h (DS is set to 29B8h, the value the install
 ; and every entry set), so its offset 1C7h is DGROUP:8A67. TASM encodes every `[reg+name]` as a
 ; word displacement (16-bit), as the original shows (the offsets in the original are 16-bit even
-; where they fit in a byte).
+; where they fit in a byte). The values are the original's image (step D2 of playbook 80): the
+; variables start at 0 and the two note tables hold their 96 words each; the matcher compares the
+; code only, make rebuild the whole image.
 SND     SEGMENT PARA PUBLIC 'SNDDATA'
-        db      6 dup (?)                ; 0 to 5: this unit does not read them. Offset 2 is
+        db      6 dup (0)       ; 0 to 5: this unit does not read them. Offset 2 is
                                          ; DGROUP:88A2, read by the code just before the 07A9 unit
                                          ; (mov ax,[88A2] at 07A9:0003, src/E07A9.C:2-3); the saved
                                          ; INT 8 vector lives in the code segment at 1948:0006
-gChainReload     dw      ?               ; @ ds:88A6: offset 06h, 0Fh, reload for the BIOS chain countdown
-gChainCount      dw      ?               ; @ ds:88A8: offset 08h, counts down; at 0 the handler chains to the BIOS
-gSongBase        dw      ?               ; @ ds:88AA: offset 0Ah, song base offset, copied once from gSongPtr
+gChainReload     dw      0               ; @ ds:88A6: offset 06h, 0Fh, reload for the BIOS chain countdown
+gChainCount      dw      0               ; @ ds:88A8: offset 08h, counts down; at 0 the handler chains to the BIOS
+gSongBase        dw      0               ; @ ds:88AA: offset 0Ah, song base offset, copied once from gSongPtr
                                          ; at the start of a song (1948:006E); every voice reads from the base + gVoicePos
-gSongBaseSeg     dw      ?               ; @ ds:88AC: offset 0Ch, song base segment, copied once at song start (1948:0074)
-gVoicePos        dw      4 dup (?)       ; @ ds:88AE: offset 0Eh, word per voice, offset into the song data from the base
-gSongPtr         dw      ?               ; @ ds:88B6: offset 16h, song pointer offset (_StartSound's argument)
-gSongPtrSeg      dw      ?               ; @ ds:88B8: offset 18h, song pointer segment
-gNoteTablePc     dw      96 dup (?)      ; @ ds:88BA: offset 1Ah, PC speaker note -> PIT divisor (0 = rest)
-gNoteTableTandy  dw      96 dup (?)      ; @ ds:897A: offset DAh, Tandy note -> SN76489 tone (0 = rest)
-gPort61Save      db      ?               ; @ ds:8A3A: offset 19Ah, port 61h value saved at install
-gVoiceCount      dw      ?               ; @ ds:8A3B: offset 19Bh, active voices, 3 Tandy or 1 PC speaker
-gPlaying         db      ?               ; @ ds:8A3D: offset 19Dh, 1 while a song is playing
-gStartRequest    db      ?               ; @ ds:8A3E: offset 19Eh, 1 = (re)load the song at gSongPtr
-gStopRequest     db      ?               ; @ ds:8A3F: offset 19Fh, 1 = stop requested. checkRestart
+gSongBaseSeg     dw      0               ; @ ds:88AC: offset 0Ch, song base segment, copied once at song start (1948:0074)
+gVoicePos        dw      4 dup (0)       ; @ ds:88AE: offset 0Eh, word per voice, offset into the song data from the base
+gSongPtr         dw      0               ; @ ds:88B6: offset 16h, song pointer offset (_StartSound's argument)
+gSongPtrSeg      dw      0               ; @ ds:88B8: offset 18h, song pointer segment
+gNoteTablePc     dw      0, 0FDFFH, 0EFA2H, 0E241H, 0D582H, 0C998H, 0BE3DH, 0B38AH, 0A97CH, 9FF2H, 96FCH, 8E89H  ; @ ds:88BA: offset 1Ah, PC speaker note -> PIT divisor (0 = rest)
+                 dw      8683H, 7EF7H, 77D9H, 7121H, 6AC7H, 64C6H, 5F1FH, 59CAH, 54BEH, 4FFDH, 4B7EH, 4742H
+                 dw      4342H, 3F7BH, 3BDBH, 388FH, 3562H, 3263H, 2F8FH, 2CE4H, 2A5FH, 27FEH, 25C0H, 23A1H
+                 dw      21A1H, 1FBEH, 1DF6H, 1C48H, 1AB1H, 1932H, 17C8H, 1672H, 1530H, 13FFH, 12E0H, 11D1H
+                 dw      10D1H, 0FDFH, 0EFBH, 0E24H, 0D59H, 0C99H, 0BE4H, 0B39H, 0A98H, 0A00H, 970H, 8E8H
+                 dw      868H, 7F0H, 77EH, 712H, 6ACH, 64CH, 5F2H, 59DH, 54CH, 500H, 4B8H, 474H
+                 dw      434H, 3F8H, 3BFH, 382H, 356H, 326H, 2F9H, 2CEH, 2A6H, 280H, 25CH, 23AH
+                 dw      21AH, 1FCH, 1DFH, 1C4H, 1ABH, 193H, 17CH, 167H, 153H, 140H, 12EH, 11DH
+gNoteTableTandy  dw      0, 3FFH, 3FFH, 3FFH, 3FFH, 3FFH, 3FFH, 3FFH, 3FFH, 3FFH, 3FFH, 3FFH  ; @ ds:897A: offset DAh, Tandy note -> SN76489 tone (0 = rest)
+                 dw      3FFH, 3FFH, 3FFH, 3FFH, 3FFH, 3FFH, 3FFH, 3FFH, 3FFH, 3FFH, 3FFH, 3FFH
+                 dw      3FFH, 3FFH, 3FFH, 3FFH, 3FFH, 3FFH, 3FFH, 3FFH, 3F9H, 3C0H, 38AH, 357H
+                 dw      327H, 2FAH, 2CFH, 2A7H, 281H, 25DH, 23BH, 21BH, 1FCH, 1E0H, 1C5H, 1ACH
+                 dw      194H, 17DH, 168H, 153H, 140H, 12EH, 11DH, 10DH, 0FEH, 0F0H, 0E2H, 0D6H
+                 dw      0CAH, 0BEH, 0B4H, 0AAH, 0A0H, 97H, 8FH, 87H, 7FH, 78H, 71H, 6BH
+                 dw      65H, 5FH, 5AH, 54H, 50H, 4CH, 47H, 43H, 40H, 3CH, 39H, 35H
+                 dw      32H, 30H, 2DH, 2AH, 28H, 26H, 24H, 22H, 20H, 1EH, 1CH, 1BH
+gPort61Save      db      0               ; @ ds:8A3A: offset 19Ah, port 61h value saved at install
+gVoiceCount      dw      0               ; @ ds:8A3B: offset 19Bh, active voices, 3 Tandy or 1 PC speaker
+gPlaying         db      0               ; @ ds:8A3D: offset 19Dh, 1 while a song is playing
+gStartRequest    db      0               ; @ ds:8A3E: offset 19Eh, 1 = (re)load the song at gSongPtr
+gStopRequest     db      0               ; @ ds:8A3F: offset 19Fh, 1 = stop requested. checkRestart
                                          ; (1948:0258) is its only reader, and it runs only for a voice
                                          ; whose gVoiceReadNext is 0 (1948:00F0 to 00F7), so a sounding
                                          ; voice is muted at its next check; a voice that reads its next
                                          ; note or command on the stop tick plays it first (readFirst,
                                          ; 1948:00FA) and is muted on the following tick
-gVoiceMute       db      4 dup (?)       ; @ ds:8A40: offset 1A0h, byte per voice, nonzero silences the
+gVoiceMute       db      4 dup (0)       ; @ ds:8A40: offset 1A0h, byte per voice, nonzero silences the
                                          ; voice. checkRestart (1948:0258) is its only reader: the test at
                                          ; 1948:0278 falls through to muteVoice (1948:027F), and like
                                          ; gStopRequest checkRestart runs only for a voice whose
@@ -65,14 +81,14 @@ gVoiceMute       db      4 dup (?)       ; @ ds:8A40: offset 1A0h, byte per voic
                                          ; command on this tick plays it first (readFirst, 1948:00FA) and is
                                          ; muted on the following tick. Only 0 is written here (1948:0081
                                          ; and 027F), the writer of nonzero is unknown
-gVoiceReadNext   db      4 dup (?)       ; @ ds:8A44: offset 1A4h, byte per voice, 1 = read the next note or command
+gVoiceReadNext   db      4 dup (0)       ; @ ds:8A44: offset 1A4h, byte per voice, 1 = read the next note or command
                                          ; this tick (set at 1948:007C and 0273); 0 = a note is sounding and
                                          ; its duration counts down (set at 1948:0151; endCommand leaves 0 too).
                                          ; When the countdown ends, checkRestart sets this back to 1
                                          ; (1948:0273) and calls no _VoiceOff, so the tone keeps sounding
                                          ; until the next note (its pitch is set again by _SetVoicePitch,
                                          ; 1948:0316), a rest (1948:0139) or a mute (muteVoice, 1948:027F)
-gVoiceSilent     db      4 dup (?)       ; @ ds:8A48: offset 1A8h, byte per voice, 1 when the driver has
+gVoiceSilent     db      4 dup (0)       ; @ ds:8A48: offset 1A8h, byte per voice, 1 when the driver has
                                          ; turned this voice off. Three writers: startVoice clears voices
                                          ; 0 to 2 at each song start (1948:0086), muteVoice (1948:027F)
                                          ; sets one voice, and _SetThreeVoices (1948:034A) sets all four,
@@ -86,43 +102,43 @@ gVoiceSilent     db      4 dup (?)       ; @ ds:8A48: offset 1A8h, byte per voic
                                          ; once every voice is flagged (1948:029D to 02BB). A voice muted
                                          ; by a CEh or D2h overflow keeps this flag while it sounds, so
                                          ; checkRestart never re-arms it
-gVoiceDuration   dw      4 dup (?)       ; @ ds:8A4C: offset 1ACh, word per voice, note countdown, not
+gVoiceDuration   dw      4 dup (0)       ; @ ds:8A4C: offset 1ACh, word per voice, note countdown, not
                                          ; "ticks left": readLoop stores (duration byte + 1) times
                                          ; gVoiceLengthMul, less 1 (1948:0142 to 0148). checkRestart
                                          ; decrements it (1948:0266) and keeps the note sounding while the
                                          ; result is 0 or -1 (jns at 1948:026A, the -1 test at 1948:026C);
                                          ; only a result below -1 re-arms the voice (1948:0273), so a
                                          ; stored 0 still sounds one more tick
-gVoiceTandyVol   db      4 dup (?)       ; @ ds:8A54: offset 1B4h, byte per voice, Tandy volume 0 silent to 15
+gVoiceTandyVol   db      0FH, 0AH, 5, 0  ; @ ds:8A54: offset 1B4h, byte per voice, Tandy volume 0 silent to 15
                                          ; loudest [H]. The image starts them at 15, 10, 5 and 0 for voices
                                          ; 0 to 3, so voices 0 to 2 do not start silent: their loudness
                                          ; comes from the image, not from code (no writer is known in
                                          ; src/; the name and the offset 8A54 appear only in this unit).
                                          ; Voice 3 (0, on the noise channel) is never played. Its only
                                          ; read is _VoiceOn (1948:02D7), which sends the inverse to the chip
-gVoiceLengthMul  db      4 dup (?)       ; @ ds:8A58: offset 1B8h, byte per voice, multiplier of the note length,
+gVoiceLengthMul  db      4 dup (0)       ; @ ds:8A58: offset 1B8h, byte per voice, multiplier of the note length,
                                          ; not a volume: it scales the duration (1948:0144)
-gVoiceRepeat1    db      4 dup (?)       ; @ ds:8A5C: offset 1BCh, byte per voice, loop counter for CEh.
+gVoiceRepeat1    db      4 dup (0)       ; @ ds:8A5C: offset 1BCh, byte per voice, loop counter for CEh.
                                          ; CDh sets it to the following byte, or 1 when that byte is 0
                                          ; (1948:0189); CEh counts it down and loops while nonzero (1948:015D).
                                          ; Nothing clears it at song start (startVoice, 1948:007C to 00A3)
                                          ; or in the install; the image starts it at 0, so a CEh before
                                          ; its CDh hits a dec of 0 (0FFh) and loops back 255 times before
                                          ; it falls through, which a port must reproduce
-gVoiceRepeat2    db      4 dup (?)       ; @ ds:8A60: offset 1C0h, byte per voice, loop counter for D2h.
+gVoiceRepeat2    db      4 dup (0)       ; @ ds:8A60: offset 1C0h, byte per voice, loop counter for D2h.
                                          ; D1h sets it the same way (1948:01C6); D2h counts it down (1948:0198).
                                          ; Like gVoiceRepeat1 it starts at 0 from the image, so a D2h
                                          ; before its D1h loops back 255 times before it falls through
-gVoiceDelay1     db      ?               ; @ ds:8A64: offset 1C4h, countdown before the voice at index 1 plays
-gVoiceDelay2     db      ?               ; @ ds:8A65: offset 1C5h, countdown before the voice at index 2 plays
-gRunning         db      ?               ; @ ds:8A66: offset 1C6h, 1 while the driver has an active song;
+gVoiceDelay1     db      0               ; @ ds:8A64: offset 1C4h, countdown before the voice at index 1 plays
+gVoiceDelay2     db      0               ; @ ds:8A65: offset 1C5h, countdown before the voice at index 2 plays
+gRunning         db      0               ; @ ds:8A66: offset 1C6h, 1 while the driver has an active song;
                                          ; duplicates gPlaying (both are written at the same three points,
                                          ; 1948:0057, 02BB and 0439), read nowhere in src/ (grep)
-gTandyOn         db      ?               ; @ ds:8A67: offset 1C7h, 1 Tandy, 0 PC speaker
-gTickCount       dw      ?               ; @ ds:8A68: offset 1C8h, handler tick counter, 0 to 123h (292 ticks, about
+gTandyOn         db      0               ; @ ds:8A67: offset 1C7h, 1 Tandy, 0 PC speaker
+gTickCount       dw      0               ; @ ds:8A68: offset 1C8h, handler tick counter, 0 to 123h (292 ticks, about
                                          ; one second at 291 Hz [H]); when it passes 123h it wraps to 0 and
                                          ; gTickSeconds is incremented
-gTickSeconds     db      ?               ; @ ds:8A6A: offset 1CAh, [H] seconds counter, incremented once per
+gTickSeconds     db      0               ; @ ds:8A6A: offset 1CAh, [H] seconds counter, incremented once per
                                          ; gTickCount period and wrapped at 3Bh (0 to 59); nothing outside
                                          ; this unit reads it
 SND     ENDS
@@ -585,10 +601,10 @@ _SetVoicePitch ENDP
 ; silence (voice index 3) writes the SN76489 noise channel, because
 ; the latch's channel bits 6-5 are 3 [H]; no path sets gVoiceCount to 4, so voice 3 is never played.
 ; It also sets gVoiceSilent for all four voices in the loop (1948:0352), so a call during a song
-; flags every voice: the live resume callers start a sound straight after (src/E177D.C:189 and 278)
+; flags every voice: the live resume callers start a sound straight after (src/E177D.C:200 and 278)
 ; and the next tick's start path clears voices 0 to 2 (1948:0050 to 0086, the startVoice loop at
 ; 1948:007C clears gVoiceSilent at 0086; voice 3 is never started), but the shutdown caller of
-; _SoundDriverSilenceToOneVoice (src/E07C8.C:374) does not, so its flags end the song at the next
+; _SoundDriverSilenceToOneVoice (src/E07C8.C:397) does not, so its flags end the song at the next
 ; tick (see gVoiceSilent).
 ; Called by the install routine on Tandy (1948:0377), _SoundDriverResume (1948:0458),
 ; _SoundDriverUninstall (1948:03DA) and _SoundDriverSilenceToOneVoice (1948:046B).
@@ -629,10 +645,10 @@ _SetOneVoice ENDP
 ; without loading its count (_SetVoicePitch loads it, 1948:0316), remembers port 61h in
 ; gPort61Save and sets the output up for Tandy (_SetThreeVoices, 1948:03D2) or the PC speaker
 ; (_SetOneVoice, 1948:03CC) by gTandyOn (1948:03C5). Called by StartupGame after the sound card
-; choice (src/E07C8.C:345 and 348). At both call sites gTandyOn is still 0 while the install runs
-; (the Tandy case sets it to 1 only afterwards, src/E07C8.C:349), so from StartupGame the install
-; takes its one-voice branch and the three voices come from _SoundDriverResume (src/E07C8.C:351); the
-; Tandy branch is reached only if a PlaySound call set gTandyOn to 1 first (src/E177D.C:188).
+; choice (src/E07C8.C:368 and 348). At both call sites gTandyOn is still 0 while the install runs
+; (the Tandy case sets it to 1 only afterwards, src/E07C8.C:372), so from StartupGame the install
+; takes its one-voice branch and the three voices come from _SoundDriverResume (src/E07C8.C:374); the
+; Tandy branch is reached only if a PlaySound call set gTandyOn to 1 first (src/E177D.C:199).
         PUBLIC  _SoundDriverInstall     ; @ 1948:0377
 _SoundDriverInstall PROC FAR
         push    bp
@@ -687,7 +703,7 @@ _SoundDriverInstall ENDP
 ; 1948:03DA: remove the driver. Restores the saved BIOS INT 8 vector (cs:oldInt8Off/oldInt8Seg)
 ; and programs PIT channel 0 to mode 3 with divisor 0 (65536, about 18.2 Hz, the BIOS divisor);
 ; on Tandy it silences the three voices before _SetOneVoice restores port 61h. Called by
-; ShutdownGame (src/E07C8.C:368 and 376, the gSoundCard 1 and 2 cases).
+; ShutdownGame (src/E07C8.C:391 and 376, the gSoundCard 1 and 2 cases).
         PUBLIC  _SoundDriverUninstall   ; @ 1948:03DA
 _SoundDriverUninstall PROC FAR
         push    bp
@@ -730,7 +746,7 @@ _SoundDriverUninstall ENDP
 ; whitepaper 4.4 (docs/design/WHITEPAPER.md:177) gives the block only as u16 offsets, and
 ; src/E177D.C:121-122 words it as a driver routine (StartSound's parameter is named `routine` at
 ; src/E177D.C:130); the two units disagree, to decide at merge. Called by PlaySound (177D:0070,
-; src/E177D.C:194) and PlaySoundAtCell (177D:0106, src/E177D.C:285). Argument: a far pointer at
+; src/E177D.C:205) and PlaySoundAtCell (177D:0106, src/E177D.C:296). Argument: a far pointer at
 ; [bp+6] offset, [bp+8] segment.
         PUBLIC  _StartSound             ; @ 1948:0418
 _StartSound PROC FAR
@@ -779,14 +795,14 @@ _StopSound ENDP
 
 ; 1948:0458: set up the three-voice output (_SetThreeVoices), which sets gVoiceCount to 3 and flags
 ; all four voices silent (1948:034A). A resume during a song flags every voice, but the game never
-; stops a song that way: the live callers start a sound straight after the resume (src/E177D.C:189
+; stops a song that way: the live callers start a sound straight after the resume (src/E177D.C:200
 ; and 278, each followed by StartSound at 194 and 285), and the next tick's start path restarts
 ; voices 0 to 2 and clears their flags (1948:0050 to 0086, startVoice at 1948:007C, its flag clear
 ; at 0086; voice 3 is never started). The stop needs a resume with no start request after it, and no
-; caller in src/ makes one during a song (StartupGame's resume, src/E07C8.C:351, also has none, but
+; caller in src/ makes one during a song (StartupGame's resume, src/E07C8.C:374, also has none, but
 ; no song is playing then). The live resume calls in src/E177D.C are 189 in PlaySound and 278 in
-; PlaySoundAtCell; 185 and 274 sit on the gTandyOn = 0 direction that E177D.C:164-166 and 228-231
-; call dead. StartupGame calls it once after the Tandy install (src/E07C8.C:348 to 351).
+; PlaySoundAtCell; 185 and 274 sit on the gTandyOn = 0 direction that E177D.C:175-177 and 228-231
+; call dead. StartupGame calls it once after the Tandy install (src/E07C8.C:371 to 351).
         PUBLIC  _SoundDriverResume      ; @ 1948:0458
 _SoundDriverResume PROC FAR
         push    bp
@@ -812,7 +828,7 @@ _SoundDriverResume ENDP
 ; gVoiceSilent, so it plays its next note after the silence, and the count then clears gPlaying with
 ; that tone still on. Nothing silences it again, because the uninstall that follows skips its Tandy
 ; step when gTandyOn is 0 (1948:0406). Only used on the way out: ShutdownGame's Tandy case calls it
-; just before gTandyOn = 0 and _SoundDriverUninstall (src/E07C8.C:374-376), and nothing resumes the
+; just before gTandyOn = 0 and _SoundDriverUninstall (src/E07C8.C:397-399), and nothing resumes the
 ; output afterwards. The uninstall follows at once and removes the handler, but a tick can still run
 ; before it.
         PUBLIC  _SoundDriverSilenceToOneVoice       ; @ 1948:046B

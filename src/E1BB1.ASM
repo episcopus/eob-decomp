@@ -8,9 +8,9 @@
 ; (8,8) when its icon number item is above 0 and (0,0) otherwise, and the record gItemIcons[item] in
 ; both cases (the calls SetMousePointerShape(MOUSE_HOTSPOT, MOUSE_HOTSPOT, gItemIcons[item]) and
 ; SetMousePointerShape(0, 0, gItemIcons[item]) in src/E07A9.C; the table holds item icon images, the
-; comment just above gItemIcons). SetPointerShape (ovl2:0000, src/EOV2.C:206-211) passes (0,0) and
-; gDefaultPointerIcon, which it has just set to gItemIcons[0] (EOV2.C:210-211); LoadItemData calls
-; SetPointerShape at start-up (EOV2.C:451). The globals this function fills are the pointer's hot
+; comment just above gItemIcons). SetPointerShape (ovl2:0000, src/EOV2.C:252-257) passes (0,0) and
+; gDefaultPointerIcon, which it has just set to gItemIcons[0] (EOV2.C:256-257); LoadItemData calls
+; SetPointerShape at start-up (EOV2.C:517). The globals this function fills are the pointer's hot
 ; spot gPointerHotX/gPointerHotY (ds:8158/815A), its shape record gPointerShapeOff/gPointerShapeSeg
 ; (ds:816E/8170), its size gPointerHeight/gPointerWidth8 (ds:8154/8156) and its save-under buffer
 ; gPointerBackOff/gPointerBackSeg (ds:816A/816C); unit 1BBE (src/E1BBE.ASM) owns what reads and
@@ -33,7 +33,7 @@
 ; query [ds:80C6] is called as (width, height) and its result is the new buffer size. The check
 ; needs LargestFreeBlock (19BC:023D) to return at least that result plus HEAP_BLOCK (16, 1BB1:0076
 ; `add ax,HEAP_BLOCK`), and that function already subtracts 16 from the raw largest free block
-; (E19BC.C:142 `max -= 0x10`; the quote "less one 16 byte block" is its header, E19BC.C:5), so a
+; (E19BC.C:147 `max -= 0x10`; the quote "less one 16 byte block" is its header, E19BC.C:5), so a
 ; raw free block of result + 32 bytes is what passes. The comparison is skipped when the block's
 ; high word DX is nonzero (1BB1:0080 `or dx,dx`; 1BB1:0082 `jne`), so a free block of 64 KB or
 ; more passes without the test. MemAlloc then allocates the result at 1BB1:0091..0094 (si minus
@@ -48,7 +48,7 @@
 ; screen; the gates and the clips are in src/E1BBE.ASM. The pair
 ; [ds:80AA] on the far pointer ds:8172/8174 and [ds:80A2] brackets only the show call at
 ; 1BB1:00B8 (1BB1:00B1 and 1BB1:00BD); this unit and E1BF3 only read ds:8172/8174, which
-; _SetFarPointer (1A72:02FE, src/E1A72.ASM:442-443) writes and _GetFarPointer (1A72:033A) reads.
+; _SetFarPointer (1A72:02FE, src/E1A72.ASM:455-456) writes and _GetFarPointer (1A72:033A) reads.
 ;
 ; The function acquires the busy flag gPointerBusy (ds:812E, a test then an increment, not a lock),
 ; returns 1, or 0 when the block is too small (the margin test at 1BB1:0084..0086) or MemAlloc
@@ -65,7 +65,7 @@
                                  ; units) is a reading [H]
         SHAPE_HEIGHT_BYTE EQU 3  ; shape record byte +3: height in pixels, read at 1BB1:0034
         HEAP_BLOCK        EQU 16 ; the 16 that LargestFreeBlock takes off the raw block
-                                 ; (E19BC.C:142 `max -= 0x10`; the quote "less one 16 byte
+                                 ; (E19BC.C:147 `max -= 0x10`; the quote "less one 16 byte
                                  ; block" is its header, E19BC.C:5); this unit adds it back for
                                  ; the margin (1BB1:0076) and removes it for MemAlloc (1BB1:0091)
 
@@ -86,9 +86,9 @@
         EXTRN   _gPointerShapeOff:WORD  ; @ ds:816E: pointer shape record, far offset
         EXTRN   _gPointerShapeSeg:WORD  ; @ ds:8170: pointer shape record, far segment
         EXTRN   gEgaRegShadowOff:WORD              ; @ ds:8172: argument of the [ds:80AA] call, offset; written by
-                                        ; _SetFarPointer 1A72:02FE (src/E1A72.ASM:442), read by _GetFarPointer 1A72:033A
+                                        ; _SetFarPointer 1A72:02FE (src/E1A72.ASM:455), read by _GetFarPointer 1A72:033A
         EXTRN   gEgaRegShadowSeg:WORD              ; @ ds:8174: argument of the [ds:80AA] call, segment; written by
-                                        ; _SetFarPointer 1A72:02FE (src/E1A72.ASM:443), read by _GetFarPointer 1A72:033A
+                                        ; _SetFarPointer 1A72:02FE (src/E1A72.ASM:456), read by _GetFarPointer 1A72:033A
         EXTRN   gSaveRectSize:DWORD             ; @ ds:80C6: indirect far function, returns the save-under buffer
                                         ; size in bytes; called as (width, height) at 1BB1:006F
         EXTRN   gSaveDrawState:DWORD             ; @ ds:80AA: indirect far function, called with ds:8172/8174
@@ -106,7 +106,7 @@
         EXTRN   _MemAlloc:FAR           ; @ 19BC:0007
         EXTRN   _MemFree:FAR            ; @ 19BC:0137
         EXTRN   _LargestFreeBlock:FAR         ; @ 19BC:023D: returns the largest free block (DX:AX), less
-                                              ; one 16 byte block and clamped at 0 (E19BC.C:128-130, :142)
+                                              ; one 16 byte block and clamped at 0 (E19BC.C:133-135, :142)
 
 ; 1BB1:0002: set the mouse pointer shape to the record at (argument 3, argument 4) and the hot
 ; spot to (argument 1, argument 2). Allocates the save-under buffer when there is none yet or the
@@ -166,7 +166,7 @@ setsize:
         call    dword ptr [gSaveRectSize]
         add     sp,4
         add     ax,HEAP_BLOCK           ; add back the 16 that LargestFreeBlock takes off
-                                        ; (E19BC.C:142); 1BB1:0076
+                                        ; (E19BC.C:147); 1BB1:0076
         mov     si,ax
         ASSUME  CS:NOTHING
         call    far ptr _LargestFreeBlock

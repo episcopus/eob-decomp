@@ -43,7 +43,7 @@
 #define MOVSB(ds, si, es, di) x86_stosb((es), (di), x86_lodsb((ds), (si)))
 #define MOVSW(ds, si, es, di) x86_stosw((es), (di), x86_lodsw((ds), (si)))
 
-/* DGROUP variables (src/E17A6.ASM:25-31) */
+/* DGROUP variables (src/E17A6.ASM:25-28) */
 #define gDirectionFromMask 0x7FBCu
 #define gNeighbourOffsets 0x7FCCu
 #define gAheadOffsets2And3 0x7FDCu

@@ -69,6 +69,18 @@ int AreMonstersNear(void);
 int HasSpellsToRegain(void);
 void ShowCampMessage(int message);
 
+/*@data */
+/* the data of eov6, ds:7F40 to ds:7FBC (124 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order.
+   re/datamap.toml has the span from ds:7F46 (a free boundary given to eov5), but the module starts at ds:7F40:
+   CampLoop's code copies its local template from there (ovl6:000F, mov ax, 7F40h), and eov5's pool ends at ds:7F3E,
+   then its pad byte. */
+/* ds:7F40-7F46: CampLoop's template (its local `counters`, six zero bytes): written by its function */
+/* ds:7F46-7F55: the code's (a literal or template, '%s gained %s.\r'): written by its function */
+/* ds:7F55-7F67: the code's (a literal or template, '%s memorized %s.\r'): written by its function */
+/* ds:7F67-7F80: the code's (a literal or template, '%s casts healing on %s.\r'): written by its function */
+/* ds:7F80-7F93: the code's (a literal or template, 'Hours rested: %-4d'): written by its function */
+/* ds:7F93-7FBC: the code's (a literal or template, "\rYou can't rest here, monsters are near."): written by its function */
+
 /* ovl6:0000: the rest/camp loop, the overlay's entry. In six sub-steps per hour (the local tick)
    it increments each member's spell group counters, memorises a spell when one of the 30 memorized
    slots at +0x55 or known slots at +0x37 is negative ("%s gained %s." / "%s memorized %s."), and

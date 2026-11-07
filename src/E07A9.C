@@ -12,11 +12,11 @@
    (177D:000A, 07A9:00D2), passes the slot 7 segment (gPageSegs[7], the word at ds:FC1A) and size
    0xFC00 to SetUnpackBuffer (1B82:0217, 07A9:00DB/00DF; 0xFC00 is the unpacker's work-buffer
    requirement, see UNPACK_BUFFER_SIZE). Slot 7's own block is 0xCB20 bytes in cases 0 to 3
-   (src/E07C8.C:256, 265, 274, 280) and 0xFC00 only in case 4 (src/E07C8.C:290). It clears ds:810E
+   (src/E07C8.C:279, 265, 274, 280) and 0xFC00 only in case 4 (src/E07C8.C:313). It clears ds:810E
    (07A9:00E6), loads the item tables (LoadItemData, 07A9:00EC), selects the 6x6 font as the
    current font (1A47:0169(gFont6x6), 07A9:00F9) and loads the item sheets (LoadDecorateIcons, Ovl2
    entry 8, 07A9:0100), which reads ITEMRMP (FileRead at ovl2:047F, inside LoadItemSheets,
-   src/EOV2.C:255 and :296, called at src/EOV2.C:333). It ends by running the map loop (RunMapLoop,
+   src/EOV2.C:301 and :296, called at src/EOV2.C:379). It ends by running the map loop (RunMapLoop,
    0ACD:0E8A, 07A9:0105), which runs the game. The second function (07A9:010C SetMouseItem)
    records the item shown by the mouse (SetCurrentItem stores ds:FBCE) and installs the item's
    icon as the mouse pointer image (SetMousePointerShape, 1BB1:0002, at 07A9:01E6). Overlay entries
@@ -26,17 +26,17 @@
 /* Meaningful constants of this unit. */
 /* ItemRecord.flags bit that, with gPartySpellFlags bit 0, gates the flagged branch of SetMouseItem (07A9:015C to
    01B1): the icon colour row, the translated copy and the pointer image; when either gate fails the
-   branch is skipped (07A9:0161 and 0168, je 0x1bc). The same test is in src/E0D1C.C:478. The bit
-   selects the colour-row draw path: in DrawItemIcon (src/E0D1C.C:478 to 484) a record whose flags
+   branch is skipped (07A9:0161 and 0168, je 0x1bc). The same test is in src/E0D1C.C:502. The bit
+   selects the colour-row draw path: in DrawItemIcon (src/E0D1C.C:502 to 484) a record whose flags
    have the bit, when gPartySpellFlags bit 0 is set too, is drawn through its icon's colour row (gSetRemapTable) and
    DrawShapeRemapped; any other record, or the same record with gPartySpellFlags bit 0 clear, goes through
    DrawShape. The same byte is tested for 0x20, 0x08 and 0x10 elsewhere (see ItemRecord.flags
    below). */
 #define ITEM_FLAG_COLOUR_ICON 0x80
 /* the MemAlloc flag that returns a paragraph-aligned, offset-0 block: the bit is defined at
-   src/E19BC.C:49 (described at :44-46), the block shape is described at src/E19BC.C:62-66 (the
+   src/E19BC.C:49 (described at :44-46), the block shape is described at src/E19BC.C:67-71 (the
    block starts at offset 0 of a paragraph, its header at offset 15), and the code is at
-   src/E19BC.C:81 and :95-98 */
+   src/E19BC.C:86 and :95-98 */
 #include "EOB.H"
 /* the size SetUnpackBuffer is given for the shared unpack work buffer, 0xFC00 in every video
    mode (07A9:00D7). It is the unpacker's own work-buffer requirement, not the size of slot 7's
@@ -51,13 +51,13 @@
    described at src/E1D9A.ASM:424-429
    and built at :483, :494 and :499), past the 0xCB20 block of cases 0 to 3, but no pinned file
    uses format 2 [H] (docs/design/WHITEPAPER.md:157). Slot 7's own block is 0xCB20 bytes in cases
-   0 to 3 (src/E07C8.C:256, 265, 274, 280) and 0xFC00 only in case 4 (src/E07C8.C:290) */
+   0 to 3 (src/E07C8.C:279, 265, 274, 280) and 0xFC00 only in case 4 (src/E07C8.C:313) */
 #define UNPACK_BUFFER_SIZE 0xFC00
 /* the gItemIcons index that aliases gRemappedIcon, the translated icon image shown as the mouse pointer for
-   flagged items (0xDDE4 + 0x59 * 4 = 0xDF48); slots 1..0x58 hold the item icons (src/EOV2.C:290) */
+   flagged items (0xDDE4 + 0x59 * 4 = 0xDF48); slots 1..0x58 hold the item icons (src/EOV2.C:336) */
 #define ICON_SLOT_TRANSLATED 0x59
 /* the mouse pointer's hot spot, the centre of a 16x16 icon [H]: the 16x16 cell comes from
-   src/EOV2.C:290 (gGetSpriteCell(..., 2, 0x10, ...)), and the unit of the cell's width argument
+   src/EOV2.C:336 (gGetSpriteCell(..., 2, 0x10, ...)), and the unit of the cell's width argument
    is not cited */
 #define MOUSE_HOTSPOT 8
 
@@ -65,7 +65,7 @@ extern char gBarGraphsOn; /*@ ds:F43C */  /* the Bar Graphs option: ovl1:1ACD fo
                                       "Bar Graphs are %-3s" label from BoolString(ds:F43C) and button
                                       0x800F toggles it (re/renames.toml, ds:F43C); StartupAlloc
                                       (07A9:000D) sets it to 1. DrawMemberHp also reads it, to draw the
-                                      "HP" label instead of "%3d of %-3d" (src/E1547.C:269) */
+                                      "HP" label instead of "%3d of %-3d" (src/E1547.C:308) */
 extern char gLevelPalettePending; /*@ ds:FB45 */  /* a new level's palette waiting for the next view frame:
                                       LoadMapScreen (ovl3:0A7C) sets it to 1 after loading the level's
                                       .PAL, StartupAlloc (07A9:0024) clears it, and DrawViewFrame
@@ -76,29 +76,29 @@ extern char gLevelPalettePending; /*@ ds:FB45 */  /* a new level's palette waiti
 extern void far *gLevelInf; /*@ ds:8DCA */  /* start-up far allocation, 7500 bytes (07A9:002F); the base
                                               of the 122E action-script driver's script (declared
                                               src/E122E.C:22): JumpToScriptOffset (122E:139D,
-                                              src/E122E.C:1001) adds the script's word offset to it
-                                              (src/E122E.C:1005, the comment at :999-1000), and
-                                              PushScriptPointer (122E:1422, src/E122E.C:1034) does the
-                                              same (src/E122E.C:1044, the comment at :1031-1033).
-                                              EvaluateScriptExpr (122E:147F, a draft, src/E122E.C:1058)
-                                              jumps to the base with the word offset at src/E122E.C:1232,
-                                              and RunCellScript (122E:1DA8, src/E122E.C:1414) starts its
+                                              src/E122E.C:1025) adds the script's word offset to it
+                                              (src/E122E.C:1029, the comment at :999-1000), and
+                                              PushScriptPointer (122E:1422, src/E122E.C:1058) does the
+                                              same (src/E122E.C:1068, the comment at :1031-1033).
+                                              EvaluateScriptExpr (122E:147F, a draft, src/E122E.C:1082)
+                                              jumps to the base with the word offset at src/E122E.C:1256,
+                                              and RunCellScript (122E:1DA8, src/E122E.C:1438) starts its
                                               script walk at it (src/E122E.C:1438). Overlay
                                               3 uses it too: LoadLevel unpacks LEVEL<n>.INF
-                                              (read into gStagingPage at src/EOV3.C:571) into it
-                                              (src/EOV3.C:573-574, "the 7500-byte unpacked level
-                                              script", src/EOV3.C:200), reads the item records through
-                                              it (the script word and item loop, src/EOV3.C:666-681) and
+                                              (read into gStagingPage at src/EOV3.C:649) into it
+                                              (src/EOV3.C:651-652, "the 7500-byte unpacked level
+                                              script", src/EOV3.C:278), reads the item records through
+                                              it (the script word and item loop, src/EOV3.C:747-762) and
                                               passes gLevelInf + 0x1a to LoadWallTextures
-                                              (src/EOV3.C:682). Why the start-up block holds the script
+                                              (src/EOV3.C:763). Why the start-up block holds the script
                                               is Purpose unknown */
 extern void far *gWallBlockMaps; /*@ ds:F43E */  /* start-up far allocation, 6000 bytes (07A9:0046); the
                                               overlay 3 LoadLevel fills it from the level graphics
-                                              file (src/EOV3.C:579-580, "the 6000-byte level
-                                              graphics file", src/EOV3.C:201), and the overlay 4
-                                              readers CopyViewColumn (src/EOV4.C:166, its
+                                              file (src/EOV3.C:657-658, "the 6000-byte level
+                                              graphics file", src/EOV3.C:279), and the overlay 4
+                                              readers CopyViewColumn (src/EOV4.C:382, its
                                               source assignment at :175) and ToggleViewColumn
-                                              (src/EOV4.C:203, source at :212, pixel read at :218)
+                                              (src/EOV4.C:419, source at :212, pixel read at :218)
                                               read 0x35E bytes per gWallVmpSet entry: the level's
                                               .VMP (VGA) or .EMP block map, read at ovl3:0A7C */
 extern unsigned char far *gSoundMap; /*@ ds:DCAC */  /* the 120-byte sound map (game number to
@@ -106,74 +106,74 @@ extern unsigned char far *gSoundMap; /*@ ds:DCAC */  /* the 120-byte sound map (
                                                          (adlib.dat or pcgamesn.dat, src/E177D.C:2-3) */
 extern void far *gScratchBuf; /*@ ds:DCFC */  /* start-up far allocation, 4096 bytes (07A9:0074); the
                                               overlay 3 level-state work buffer: PackLevelState
-                                              (ovl3:0FD1, src/EOV3.C:692) fills it with the gMaze
-                                              bytes (src/EOV3.C:701-704) and compresses it
-                                              (CompressLcw, src/EOV3.C:705; the "Map compression
+                                              (ovl3:0FD1, src/EOV3.C:773) fills it with the gMaze
+                                              bytes (src/EOV3.C:782-785) and compresses it
+                                              (CompressLcw, src/EOV3.C:786; the "Map compression
                                               failure" message at :708); UnpackLevelState
-                                              (ovl3:109D, src/EOV3.C:719) calls Unpack4 to fill
-                                              it (src/EOV3.C:728) and reads it back into gMaze
-                                              (src/EOV3.C:729-731). E19FC.ASM:40 describes the caller
+                                              (ovl3:109D, src/EOV3.C:800) calls Unpack4 to fill
+                                              it (src/EOV3.C:809) and reads it back into gMaze
+                                              (src/EOV3.C:810-812). E19FC.ASM:40 describes the caller
                                               that fills the block before compression (through
                                               ds:DCFC and ds:DCFE) */
 extern char far *gItemRemapTable; /*@ ds:F534 */  /* the 1600-byte ITEMRMP buffer (07A9:008B,
                                               whitepaper 4.4). Its readers: the ITEMRMP read
-                                              (FileRead of 0x640 bytes into it, src/EOV2.C:296, in
-                                              LoadItemSheets) and the icon colour row (src/E0D1C.C:480,
+                                              (FileRead of 0x640 bytes into it, src/EOV2.C:342, in
+                                              LoadItemSheets) and the icon colour row (src/E0D1C.C:504,
                                               gSetRemapTable(gItemRemapTable + (icon << 4))) */
 extern void far *gWallBlocks; /*@ ds:DCA6 */  /* the far pointer GetPageBuffer(7) returns (src/E19EC.C:20,
                                               07A9:00A3): offset 0, segment gPageSegs[7], the word at
                                               ds:FC1A that SetUnpackBuffer gets at 07A9:00DB. Overlay 3
                                               and 4 use it too: LoadWallTextures writes the
-                                              0xCB20-byte texture block through it (src/EOV3.C:471),
-                                              expands and masks it (src/EOV3.C:474-478 and :482; the
-                                              comment above LoadWallTextures, src/EOV3.C:454-459), and
-                                              DrawViewFrame draws from it (DrawTile(gWallBlocks), src/EOV4.C:1052;
+                                              0xCB20-byte texture block through it (src/EOV3.C:549),
+                                              expands and masks it (src/EOV3.C:552-556 and :482; the
+                                              comment above LoadWallTextures, src/EOV3.C:532-537), and
+                                              DrawViewFrame draws from it (DrawTile(gWallBlocks), src/EOV4.C:1268;
                                               declared "the far pointer DrawTile draws",
-                                              src/EOV4.C:1033) */
+                                              src/EOV4.C:1249) */
 extern void far *gStagingPage; /*@ ds:DF4E */  /* slot 5's far pointer, GetPageBuffer(5) (07A9:00BA); the
-                                              action screen's swap buffer: PickOrSwapMember (src/E0ACD.C:287)
+                                              action screen's swap buffer: PickOrSwapMember (src/E0ACD.C:299)
                                               swaps the moving member's 243-byte record with the slot's
                                               through it (the record at gChars + gMovingMember out to it, the
                                               slot's record into gChars + gMovingMember, and it back to the
-                                              slot; three Unpack0 copies, src/E0ACD.C:307-309).
-                                              RestorePortraitPanel (src/E0ACD.C:263) blits it to the action field
-                                              through gRestoreRectToPage (src/E0ACD.C:269), and FindWordPanel
-                                              passes it to gSaveRectFromPage and gRestoreRectToPage (src/EOV2.C:482, 522);
-                                              RedrawRowArea (0BD2:0ABE, src/E0BD2.C:622) passes it to
+                                              slot; three Unpack0 copies, src/E0ACD.C:319-321).
+                                              RestorePortraitPanel (src/E0ACD.C:275) blits it to the action field
+                                              through gRestoreRectToPage (src/E0ACD.C:281), and FindWordPanel
+                                              passes it to gSaveRectFromPage and gRestoreRectToPage (src/EOV2.C:548, 522);
+                                              RedrawRowArea (0BD2:0ABE, src/E0BD2.C:674) passes it to
                                               gSaveRect with the same 0x12 by 0xA8 field that
-                                              RestorePortraitPanel blits (src/E0ACD.C:269).
+                                              RestorePortraitPanel blits (src/E0ACD.C:281).
                                               Overlay 3 uses it too: LoadLevel reads LEVEL<n>.INF
-                                              into it before unpacking that into gLevelInf (src/EOV3.C:571,
+                                              into it before unpacking that into gLevelInf (src/EOV3.C:649,
                                               the Unpack at :573), LoadMaze (ovl3:09AA,
-                                              src/EOV3.C:503) reads 0x1000 bytes into it (FileRead at
-                                              src/EOV3.C:513) and copies it back (src/EOV3.C:518-525),
-                                              LoadWallSet (ovl3:004F, src/EOV3.C:250) puts its
-                                              decorations at gStagingPage + 0x3E80 (src/EOV3.C:265-266,
-                                              274), and LoadWallTextures (ovl3:07A5, src/EOV3.C:460)
+                                              src/EOV3.C:581) reads 0x1000 bytes into it (FileRead at
+                                              src/EOV3.C:591) and copies it back (src/EOV3.C:596-603),
+                                              LoadWallSet (ovl3:004F, src/EOV3.C:328) puts its
+                                              decorations at gStagingPage + 0x3E80 (src/EOV3.C:343-344,
+                                              274), and LoadWallTextures (ovl3:07A5, src/EOV3.C:538)
                                               expands the texture plane tables into it in EGA mode 2
-                                              (src/EOV3.C:474-478) */
+                                              (src/EOV3.C:552-556) */
 extern void far *gArtPage; /*@ ds:EFC2 */  /* slot 3's far pointer, GetPageBuffer(3) (07A9:00CB); a
                                               shared overlay 3 buffer (src/EOV3.C:130 declares it
                                               with no comment), used four ways. Level state:
-                                              LoadLevelState (ovl3:1147, src/EOV3.C:739) reads 0x7F8
+                                              LoadLevelState (ovl3:1147, src/EOV3.C:820) reads 0x7F8
                                               bytes of LEVELS.TMP into it (FileRead at
-                                              src/EOV3.C:745) and unpacks them (UnpackLevelState,
-                                              ovl3:109D, src/EOV3.C:719, called at src/EOV3.C:747);
-                                              SaveLevelState (ovl3:11AF, src/EOV3.C:753) packs
+                                              src/EOV3.C:826) and unpacks them (UnpackLevelState,
+                                              ovl3:109D, src/EOV3.C:800, called at src/EOV3.C:828);
+                                              SaveLevelState (ovl3:11AF, src/EOV3.C:834) packs
                                               gArtPage + 0xC800 back to LEVELS.TMP (the +0xC800
-                                              normalisation at src/EOV3.C:758, PackLevelState at
+                                              normalisation at src/EOV3.C:839, PackLevelState at
                                               :759). Wall texture plane tables:
-                                              LoadWallTextures (ovl3:07A5, src/EOV3.C:460) unpacks
+                                              LoadWallTextures (ovl3:07A5, src/EOV3.C:538) unpacks
                                               the 16-byte planes from gArtPage+2 and +0x12
-                                              (src/EOV3.C:469-470) and the 0xCB20-byte block from
-                                              gArtPage+0x22 (src/EOV3.C:471). The saved-game screen
-                                              block: SaveGame (ovl3:1368, src/EOV3.C:811) reads the
+                                              (src/EOV3.C:547-548) and the 0xCB20-byte block from
+                                              gArtPage+0x22 (src/EOV3.C:549). The saved-game screen
+                                              block: SaveGame (ovl3:1368, src/EOV3.C:892) reads the
                                               0x5FA0-byte screen block from LEVELS.TMP into it
-                                              (src/EOV3.C:821) and writes it to EOBDATA.SAV (opened
-                                              for writing at src/EOV3.C:827, the write at :839). The
+                                              (src/EOV3.C:902) and writes it to EOBDATA.SAV (opened
+                                              for writing at src/EOV3.C:908, the write at :839). The
                                               EOBDATA.SAV blocks: LoadGame
-                                              (ovl3:15B9, src/EOV3.C:863) uses it as its buffer
-                                              (src/EOV3.C:876 and :888) for the six sized block reads.
+                                              (ovl3:15B9, src/EOV3.C:944) uses it as its buffer
+                                              (src/EOV3.C:957 and :888) for the six sized block reads.
                                               Overlay 3 reads the far pointer again (ds:EFC2 and
                                               ds:EFC4): ovl3:1186, 119E,
                                               11B6 (ovl3:1147, the loader above), ovl3:0815, 0833,
@@ -181,13 +181,13 @@ extern void far *gArtPage; /*@ ds:EFC2 */  /* slot 3's far pointer, GetPageBuffe
                                               ovl3:15C1, 164D (ovl3:15B9, the function that calls
                                               SetMouseItem). The resident E17A6 reader calls it the
                                               saved screen buffer (src/E17A6.ASM:22), read at
-                                              src/E17A6.ASM:256-257 when gGraphicsChoice != 2 [H]. What the
+                                              src/E17A6.ASM:275-276 when gGraphicsChoice != 2 [H]. What the
                                               buffer is is Purpose unknown */
 /* the page/buffer segment table (src/E07C8.C:74, src/E19EC.C:15), whose eighth word at ds:FC1A
    is slot 7, the segment gWallBlocks holds (GetPageBuffer(7), 07A9:00A3). */
 extern unsigned gPageSegs[]; /*@ ds:FC0C */
-/* the net allocation counter: MemAlloc adds one at src/E19BC.C:112 and MemFree subtracts one at
-   src/E19BC.C:137, so it is the number of successful MemAlloc calls minus the number of MemFree
+/* the net allocation counter: MemAlloc adds one at src/E19BC.C:117 and MemFree subtracts one at
+   src/E19BC.C:142, so it is the number of successful MemAlloc calls minus the number of MemFree
    calls and can fall below the number of live blocks (src/E19BC.C:17-21). StartupAlloc sets it
    to 0 at 07A9:00E6, after its five allocations, so they are no longer counted: Purpose unknown. */
 extern unsigned gAllocCount; /*@ ds:810E */
@@ -197,22 +197,22 @@ extern void far *gFont6x6; /*@ ds:A9C0 */  /* the 6x6 font loaded from FONT6.FNT
                                            height and width bytes src/E1A47.C:81-85 reads),
                                            docs/design/WHITEPAPER.md:171 [V] */
 extern int gTextRegion; /*@ ds:811F */  /* this unit tests it as 7 to gate the " taken." message
-                                     (07A9:011E, 0123); FindWordPanel saves it (src/EOV2.C:476) and
-                                     indexes gRegions[gTextRegion] with it (src/EOV2.C:489-492, 517-520) */
+                                     (07A9:011E, 0123); FindWordPanel saves it (src/EOV2.C:542) and
+                                     indexes gRegions[gTextRegion] with it (src/EOV2.C:555-558, 517-520) */
 extern struct ItemRecord gItems[]; /*@ ds:8DD0 */
 extern int gMouseDisabled; /*@ ds:814A */  /* nonzero disables the mouse pointer code: the test at
                                               07A9:0148 (`cmp [814A],0; je`) runs SetMouseItem's body
                                               when zero. main sets it before StartupAlloc: 1 when
                                               !gMouseHandlerInstalled, else !mouse
-                                              (src/E07C8.C:190 to 193); src/E0D1C.C:110 gives the
+                                              (src/E07C8.C:190 to 193); src/E0D1C.C:134 gives the
                                               meaning (nonzero disables the mouse) */
-extern int gMouseItem; /*@ ds:FBCE */  /* the item index shown by the mouse (src/E0D1C.C:109); SetCurrentItem
+extern int gMouseItem; /*@ ds:FBCE */  /* the item index shown by the mouse (src/E0D1C.C:133); SetCurrentItem
                                      stores it (0D1C:0311) */
 extern unsigned char gPartySpellFlags; /*@ ds:FBD2 */  /* bit 0, with ItemRecord.flags bit 0x80, gates the flagged
                                                  branch of SetMouseItem (07A9:0163 to 01B1); the same
                                                  bit gates the icon colour row in 0D1C:070F
                                                  (src/E0D1C.C:50); read at 07A9:0163 and
-                                                 src/E0D1C.C:478 */
+                                                 src/E0D1C.C:502 */
 extern int gGraphicsChoice; /*@ ds:8102 */  /* the mode word SetMouseItem tests at 07A9:016A (the colour row
                                      against the ds:0090 dummy) and passes to TranslateImage (07A9:018F);
                                      the switch at 17A6:199E tests it (cases 0, 2 and 3). src/ reads
@@ -220,7 +220,7 @@ extern int gGraphicsChoice; /*@ ds:8102 */  /* the mode word SetMouseItem tests 
                                      mode ... 3 and 4 select the 6-bit cells" (src/E1DE7.C:46), "the
                                      video mode the game initialised (3 is CGA-compatible)"
                                      (src/E082C.C:41; the bare phrase at src/E1547.C:55), and "nonzero: a colour row
-                                     exists" (src/E0D1C.C:51 and src/E0BD2.C:100) */
+                                     exists" (src/E0D1C.C:51 and src/E0BD2.C:152) */
 /* a far function pointer whose argument is a colour row (an array of colour indices): a 16-byte
    row of the 1600-byte ITEMRMP buffer (ds:F534 + n<<4), the one-byte dummy at ds:0090, or the
    colour tables at ds:1CD3 and ds:1CE3 that other callers pass (08E6:0DFC `mov ax,0x1ce3` and
@@ -246,9 +246,9 @@ extern void far *gRemappedIcon; /*@ ds:DF48 */  /* the 0x12C-byte buffer LoadIte
                                            MemAlloc at offset 7: the callee is MemAlloc [H]. It is not an
                                            item description buffer (the old reading of src/EOV2.C) */
 /* one far pointer per icon to the image it holds, indexed by icon number; slot 0 holds the
-   pointer shape (src/EOV2.C:205-211). ovl2:0029..0033 writes entry 0 (ds:DDE4 and
+   pointer shape (src/EOV2.C:251-257). ovl2:0029..0033 writes entry 0 (ds:DDE4 and
    ds:DDE6) from a separate call through [ds:8086] with cell (0,0) and the sheet gCgaMapDefault
-   (ds:113F, src/EOV2.C:149, passed to gGetSpriteCell at src/EOV2.C:209); the loop at ovl2:03D0
+   (ds:113F, src/EOV2.C:149, passed to gGetSpriteCell at src/EOV2.C:255); the loop at ovl2:03D0
    starts with `mov si,1` and fills entries 1..0x58 from the same call with a 16x16 cell position
    on the 20-per-row ITEMICN sheet (the string at ds:677D). */
 extern void far *gItemIcons[]; /*@ ds:DDE4 */
@@ -259,17 +259,17 @@ extern void far *MemAlloc(unsigned long size, int flags); /*@ 19BC:0007 */
 extern void far *GetPageBuffer(int kind); /*@ 19EC:0002 */
 extern void LoadSoundDriver(void); /*@ 177D:000A */
 extern void SetUnpackBuffer(unsigned seg, unsigned size); /*@ 1B82:0217 */
-/* the overlay entry at stub 2106:002A resolves to ovl2:09CC LoadItemData (src/EOV2.C:449). */
+/* the overlay entry at stub 2106:002A resolves to ovl2:09CC LoadItemData (src/EOV2.C:515). */
 extern void LoadItemData(void); /*@ 2106:002A */
 /* sets gCurFont = font and reads the font's width and height bytes (src/E1A47.C:81-85). */
 extern void SetFont(char far *font); /*@ 1A47:0169 */
-/* the overlay entry at stub 2106:0048 resolves to ovl2:0577 LoadDecorateIcons (src/EOV2.C:328), which
+/* the overlay entry at stub 2106:0048 resolves to ovl2:0577 LoadDecorateIcons (src/EOV2.C:374), which
    leads to the ITEMRMP read (ovl2:047F, via ovl2:0171; docs/design/WHITEPAPER.md, the ITEMRMP.VGA/EGA
    row). The stub is named after its target, like LoadItemData above. */
 extern void LoadDecorateIcons(void); /*@ 2106:0048 */
 extern void RunMapLoop(void); /*@ 0ACD:0E8A */
 extern void SetCurrentItem(int n); /*@ 0D1C:0304 */
-/* 0BD2:05B5 draws item `item`'s name into the text buffer (src/E0BD2.C:426-437), with the flag
+/* 0BD2:05B5 draws item `item`'s name into the text buffer (src/E0BD2.C:478-489), with the flag
    bit 0x40 and name-table cases. Called at 07A9:0126 with the item index, just before the
    " taken.\r" message (07A9:012D), when gTextRegion == 7. Why the name is asked for here is Purpose
    unknown. */
@@ -287,6 +287,14 @@ extern void TranslateImage(void far *src, void far *dst, void far *xlat, int mod
    (8,8) when item > 0 and (0,0) otherwise, and the far pointer gItemIcons[item] in both cases (see below). */
 extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0002 */
 
+/*@data */
+/* the data of e07a9, ds:0090 to ds:009E (14 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+/* ds:0090: the colour row SetMouseItem passes to gSetRemapTable for a colour icon when gGraphicsChoice
+   is 0 (CGA, the first of gOverlayFiles' drivers, src/E07C8.C) instead of the icon's ITEMRMP row */
+unsigned char gCgaIconRemap[4] = { 0x00, 0x55, 0x55, 0xFF }; /*@ ds:0090 */
+/* ds:0094-009D: the string pool, " taken.\r" (SetMouseItem's) */
+/* ds:009D: the pad byte to the next module (word alignment) */
+
 /* 07A9:000A: the start-up routine called from `main` (07C8:017F passes argc, argv through). The name
    is the registry's and covers only its first part, the five far allocations below; besides them it
    loads the sound driver, the item tables, the font and the ITEMRMP icons, and its last call runs
@@ -300,7 +308,7 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
    (07A9:00E6), loads the item tables (LoadItemData, Ovl2 stub entry 2, 07A9:00EC), selects the 6x6
    font as the current font (1A47:0169(gFont6x6), 07A9:00F9), and loads the item sheets
    (LoadDecorateIcons, Ovl2 stub entry 8, 07A9:0100), which reads ITEMRMP (FileRead at ovl2:047F,
-   inside LoadItemSheets, src/EOV2.C:255 and :296). It ends by running the map loop (RunMapLoop,
+   inside LoadItemSheets, src/EOV2.C:301 and :296). It ends by running the map loop (RunMapLoop,
    0ACD:0E8A, 07A9:0105), which runs the game. Sets ds:F43C = 1 and ds:FB45 = 0. */
 /*@ 07A9:000A */ void StartupAlloc(int argc, char far * far *argv)
 {
@@ -313,8 +321,8 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
         ;
     gLevelPalettePending = 0;
     /* of the five start-up allocations only this block asks for flag 0x20 (the other four pass 0;
-       0x20 also appears in src/E07C8.C:254 to 290 and in the two Unpack allocations at src/E1B82.C:165
-       and :174): the bit is defined at src/E19BC.C:49 (described at :44-46), and src/E19BC.C:62-66
+       0x20 also appears in src/E07C8.C:277 to 290 and in the two Unpack allocations at src/E1B82.C:165
+       and :174): the bit is defined at src/E19BC.C:49 (described at :44-46), and src/E19BC.C:67-71
        (code at :81 and :95-98) turns it into an offset-0 block, the block shape E1B82.C:21-25
        describes for the work buffer. Why this block alone gets the flag is Purpose unknown. */
     gLevelInf = MemAlloc(7500L, MEMALLOC_ALIGNED);
@@ -335,9 +343,9 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
 }
 
 /* 07A9:010C: sets the item shown by the mouse to `item` and shows its icon. SetCurrentItem stores the
-   index item in ds:FBCE (gMouseItem, the item index shown by the mouse, src/E0D1C.C:109) unless
-   gMouseDisabled; src/E0D1C.C:274 says an item is cleared and redrawn through SetMouseItem, and the
-   call SetMouseItem(0) is at src/E0D1C.C:302 (the tests leading to it at :298 and :300). A nonzero
+   index item in ds:FBCE (gMouseItem, the item index shown by the mouse, src/E0D1C.C:133) unless
+   gMouseDisabled; src/E0D1C.C:298 says an item is cleared and redrawn through SetMouseItem, and the
+   call SetMouseItem(0) is at src/E0D1C.C:326 (the tests leading to it at :298 and :300). A nonzero
    item also passes " taken.\r" (ds:0094) to 1DE7:060A after 0BD2:05B5 when gTextRegion == 7, and the
    record gItems[item].icon then supplies the icon number. When the current record
    gItems[gMouseItem] has flag 0x80 and gPartySpellFlags bit 0 is set, the flagged branch runs (07A9:015C to
@@ -370,12 +378,11 @@ extern void SetMousePointerShape(int hotX, int hotY, void far *icon); /*@ 1BB1:0
             if (gGraphicsChoice)
                 gSetRemapTable(gItemRemapTable + (item << 4));   /* the icon's 16-byte colour row */
             else
-                /* QUIRK 07A9:0184: when gGraphicsChoice == 0 the argument is the one-byte literal at
-                   ds:0090, a dummy. gGraphicsChoice only chooses the ITEMRMP name, "VGA" (ds:6790) when
-                   it is 3 and "EGA" (ds:6794) otherwise (ovl2:0432..0446); the ITEMRMP read
-                   itself (ovl2:047F) has no branch on gGraphicsChoice. Why gGraphicsChoice == 0 gets the dummy is
-                   Purpose unknown. */
-                gSetRemapTable("");
+                /* when gGraphicsChoice == 0 (CGA) the row is the fixed 4-byte table at ds:0090,
+                   {0, 55h, 55h, FFh}, not a row of ITEMRMP. gGraphicsChoice otherwise only chooses the
+                   ITEMRMP name, "VGA" (ds:6790) when it is 3 and "EGA" (ds:6794) otherwise
+                   (ovl2:0432..0446). What the CGA driver does with the 4 bytes is Purpose unknown. */
+                gSetRemapTable(gCgaIconRemap);
             TranslateImage(gItemIcons[item], gRemappedIcon, gRemapTable, gGraphicsChoice);
             /* gItemIcons[0x59] is gRemappedIcon (0xDDE4 + 0x59 * 4 = 0xDF48), the same pointer just passed
                as the second argument: the translated icon image shown by 1BB1:0002 as the mouse

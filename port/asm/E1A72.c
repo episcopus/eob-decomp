@@ -36,7 +36,7 @@
 #define EVENT_CX TC_MKFP(MACHINE_ROM_SEG, 0x3084u)
 #define EVENT_DX TC_MKFP(MACHINE_ROM_SEG, 0x3086u)
 
-/* the DGROUP variables (src/E1A72.ASM:32-160) */
+/* the DGROUP variables (src/E1A72.ASM:32-158) */
 #define gHitTestX 0x8026u
 #define gHitTestY 0x8028u
 #define gRestoreDrawState 0x80A2u

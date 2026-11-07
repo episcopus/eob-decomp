@@ -38,6 +38,14 @@ farptr tc_copy(farptr dst, farptr src, u16 n)
     return dst;
 }
 
+void tc_put(farptr dst, const u8 *src, u16 n)
+{
+    u16 i;
+    for (i = 0; i < n; i++) {
+        tc_st_u8(tc_fp_add(dst, i), src[i]);
+    }
+}
+
 void tc_zero(farptr dst, u16 n)
 {
     u16 i;

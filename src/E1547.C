@@ -93,6 +93,45 @@ extern char far *gClassNames[]; /*@ ds:11DD */     /* the class names */
 extern char far *gBaseClassNames[]; /*@ ds:1219 */     /* the per-class-slot names (GetClassSlotByte index) */
 extern char far *gAlignmentNames[]; /*@ ds:1240 */     /* the alignment names */
 
+/*@data */
+/* the data of e1547, ds:5D1C to ds:5DE0 (196 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+signed char gHpBarColours[3] = { 3, 5, 8 }; /*@ ds:5D1C */
+unsigned char gMemberFrameX[2] = { 8, 0x50 }; /*@ ds:5D1F */
+signed char gMemberFrameY[3] = { 2, 54, 106 }; /*@ ds:5D21 */
+signed char gHpLineX[2] = { 23, 95 }; /*@ ds:5D24 */
+unsigned char gHpLineY[3] = { 0x2E, 0x62, 0x96 }; /*@ ds:5D26 */
+signed char gFoodBarColours[3] = { 3, 5, 8 }; /*@ ds:5D29 */
+signed char gPortraitX[2] = { 8, 80 }; /*@ ds:5D2C */
+signed char gPortraitY[3] = { 11, 63, 115 }; /*@ ds:5D2E */
+signed char gHandSlotX[2] = { 40, 112 }; /*@ ds:5D31 */
+unsigned char gHandSlotY[6] = { 0x0B, 0x1B, 0x3F, 0x4F, 0x73, 0x83 }; /*@ ds:5D33 */
+unsigned gInfoBoxLeft[3] = { 0x00B3, 0x0110, 0x012D }; /*@ ds:5D39 */
+unsigned char gInfoBoxTop[3] = { 0x24, 0x33, 0x33 }; /*@ ds:5D3F */
+unsigned gInfoBoxRight[3] = { 0x010F, 0x012C, 0x013E }; /*@ ds:5D42 */
+unsigned char gInfoBoxBottom[3] = { 0xA5, 0xA5, 0x93 }; /*@ ds:5D48 */
+signed char gMemberBlockCol[2] = { 1, 10 }; /*@ ds:5D4B */
+signed char gMemberScreenCol[2] = { 23, 32 }; /*@ ds:5D4D */
+signed char gMemberBlockY[3] = { 2, 54, 106 }; /*@ ds:5D4F */
+/* ds:5D52-5D55: the code's (a literal or template, 'HP'): written by its function */
+/* ds:5D55-5D61: the code's (a literal or template, '%3d of %-3d'): written by its function */
+/* ds:5D61-5D66: the code's (a literal or template, 'MISS'): written by its function */
+/* ds:5D66-5D6B: the code's (a literal or template, 'HACK'): written by its function */
+/* ds:5D6B-5D71: the code's (a literal or template, "CAN'T"): written by its function */
+/* ds:5D71-5D77: the code's (a literal or template, 'REACH'): written by its function */
+/* ds:5D77-5D7A: the code's (a literal or template, 'NO'): written by its function */
+/* ds:5D7A-5D7F: the code's (a literal or template, 'AMMO'): written by its function */
+/* ds:5D7F-5D82: the code's (a literal or template, '%d'): written by its function */
+/* ds:5D82-5D8B: the code's (a literal or template, 'Swapping'): written by its function */
+/* ds:5D8B-5D90: the code's (a literal or template, 'DEAD'): written by its function */
+/* ds:5D90-5D9C: the code's (a literal or template, 'UNCONSCIOUS'): written by its function */
+/* ds:5D9C-5DAA: the code's (a literal or template, 'POISON (SLOW)'): written by its function */
+/* ds:5DAA-5DB3: the code's (a literal or template, 'POISONED'): written by its function */
+/* ds:5DB3-5DBD: the code's (a literal or template, 'PARALYZED'): written by its function */
+/* ds:5DBD-5DCC: the code's (a literal or template, 'CHARACTER INFO'): written by its function */
+/* ds:5DCC-5DD8: the code's (a literal or template, 'ARMOR CLASS'): written by its function */
+/* ds:5DD8-5DDC: the code's (a literal or template, 'EXP'): written by its function */
+/* ds:5DDC-5DE0: the code's (a literal or template, 'LVL'): written by its function */
+
 extern char *itoa(int value, char *string, int radix); /*@ 0000:62AA */
 extern void SetFont(char far *font); /*@ 1A47:0169 */
 extern void DrawShadowText(char far *text, int x, int y, int color, int extra); /*@ 082C:0898 */
@@ -112,7 +151,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    DrawRect in `colour` (6 or 3 by video mode); when only `hatch` holds a DrawRect in colour 5;
    when both hold the border alternates, each row in `colour` for `outline` and 5 for `hatch`. What
    the individual effectFlags bits mean is not established (mDF is the penalty counter, mE0 a countdown:
-   src/E0DE8.C:563-566, src/E0EF3.C:39). Called by RedrawMember (0991) only. The flag tests read
+   src/E0DE8.C:572-575, src/E0EF3.C:39). Called by RedrawMember (0991) only. The flag tests read
    effectFlags as a long, so they take the `mov ax,es:[bx+0xE3]; and ax,K; or ax,0` form (the long bit test
    at 0D1C:0B17). */
 /*@ 1547:0009 */ void DrawMemberFrame(int who)
@@ -210,7 +249,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    ratio bar (DrawRatioBar) of hp + 10 against maxHp + 10 (the +10 keeps the bar visible at negative
    hit points), the colour picked by a wound state: 1 when (maxHp + 10) / 3 exceeds hp + 10, 2 when
    hp + 10 is 10 or less (hp at or below 0), else 0; when gBarGraphsOn is 0 it prints "%3d of %-3d" (hp,
-   maxHp) instead. Called by RedrawMember (0991) and HealCharacter (0DE8:0ADB, src/E0DE8.C:592). */
+   maxHp) instead. Called by RedrawMember (0991) and HealCharacter (0DE8:0ADB, src/E0DE8.C:601). */
 /*@ 1547:033F */ void DrawMemberHp(int member)
 {
     int state;
@@ -266,7 +305,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    status bit 0 (alive) is set and the member is the selected gInventoryMember. The bar is at (0xfa, 0x19): value
    food (the food value) against 100, 51 wide, 5 tall, the colour picked by a hunger state (the lower
    the food value the hungrier: 1 below 0x21, 2 below 0x14, else 0). Called from RedrawMember (0991),
-   EatFood (0ACD:07E0, src/E0ACD.C:577) and DecayMemberState (1414:0C82, src/E1414.C:657). */
+   EatFood (0ACD:07E0, src/E0ACD.C:605) and DecayMemberState (1414:0C82, src/E1414.C:657). */
 /*@ 1547:04A0 */ void DrawMemberFood(int member)
 {
     struct CharRec far *rec;
@@ -295,7 +334,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    returns; when effectFlags bit 2 is set and gPanelMode is 0 it fills the portrait in colour 0xC and returns;
    otherwise it draws the member's own portrait pointer (rec + 0x33) and, at hp below 1, the
    wounded overlay gUnconsciousIcon. Called by RedrawMember (0991) and DamageCharacter (0DE8:09B9,
-   src/E0DE8.C:573). The effectFlags bit test reads it as a long, so it takes the `and ax,4; or ax,0` form
+   src/E0DE8.C:582). The effectFlags bit test reads it as a long, so it takes the `and ax,4; or ax,0` form
    (the long bit test at 0D1C:0B17). */
 /*@ 1547:0544 */ void DrawMemberPortrait(int who)
 {
@@ -339,7 +378,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    y + 1), -2 "HACK", -3 "CAN'T"+"REACH", -4 "NO"+"AMMO", anything else the decimal `result`. It
    draws `name` centred (indent 0x10 - strlen*6/2) at (x + indent, y + 5), or `name` at (x + indent,
    y + 2) and `suffix` at (x + indent, y + 9) when the suffix is set. Called by DrawHandSlot (07E7)
-   only. `result` is what UseItem (0DE8:0763, src/E0DE8.C:499) stored in the record's lastAction[slot]. */
+   only. `result` is what UseItem (0DE8:0763, src/E0DE8.C:508) stored in the record's lastAction[slot]. */
 /*@ 1547:0642 */ void DrawActionLabel(int x, int y, int result)
 {
     char name[6];
@@ -394,7 +433,7 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    item icon through DrawItemIcon, or the empty-slot icon gEmptySlotIcons[slot] through DrawShape,
    and then, in that else branch only, draws the highlight icon gHandShadeIcon when the slot's m1E bit is
    set, or CanUseHand(who, slot) returns 0, or hp is 0 or below, or status bit 2 (paralyzed) is set.
-   Called by RedrawMember (0991) and RemoveCarriedItems (0D1C:01CA, src/E0D1C.C:294). */
+   Called by RedrawMember (0991) and RemoveCarriedItems (0D1C:01CA, src/E0D1C.C:318). */
 /*@ 1547:07E7 */ void DrawHandSlot(char who, char slot)
 {
     int item;
@@ -433,9 +472,9 @@ extern void DrawItemRow(int who, int slot, int one); /*@ 0BD2:0917 */
    panel) draws the stat panel with the class, race and alignment names, the six stat lines, armor
    class, EXP/LVL and the per-class slot lines. The name colour and text attribute come from status
    bits 1 and 2 (8/6), otherwise 0xc/0xf; status bit 0 is the alive bit, bit 1 poisoned and bit 2
-   paralyzed (E1414.C:476-477 clears them at the end of the effect; E0DE8.C:558 keeps only bit 0
+   paralyzed (E1414.C:519-520 clears them at the end of the effect; E0DE8.C:567 keeps only bit 0
    at death). Called by several screens with the member index (for example PickOrSwapMember, 0ACD:0264,
-   while moving a member, src/E0ACD.C:302). */
+   while moving a member, src/E0ACD.C:314). */
 /*@ 1547:0991 */ void RedrawMember(int who)
 {
     struct CharRec far *rec;

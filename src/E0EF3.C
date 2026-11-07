@@ -131,8 +131,6 @@ extern char gStrSpellAborted[];                /*@ ds:57C8 */ /* said by 0EF3:08
 extern char gStrSpellExpires[];                /*@ ds:57D9 */ /* "%s's %s spell expires." (0EF3:0D78) */
 extern char gStrAllDispelled[];                /*@ ds:5859 */ /* "All spells on %s are dispelled." (0EF3:131A) */
 extern char gStrAidFails[];                /*@ ds:5899 */ /* "The aid spell fails!" (0EF3:1BA3) */
-extern signed char gEffectSound[];      /*@ ds:1355 */ /* one record per effect value, stride 0x13;
-                                                           the first byte is a sound id (0EF3:08CF) */
 extern void (far *gCurrentSpellApply)(void);       /*@ ds:EFBA */ /* the current spell's apply callback
                                                          (Spell.apply): set by 0EF3:2676 from
                                                          spell->apply and run there, and run by
@@ -292,6 +290,103 @@ extern int gBurstX;                /*@ ds:FC6C */ /* a particle's x pixel */
 extern int gBurstY;                /*@ ds:FC6E */ /* a particle's y pixel */
 extern int gBurstSavedPage;                /*@ ds:FC70 */ /* gDrawPage saved while the animation runs */
 extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixel returned under the pointer */
+
+/*@data */
+/* the data of e0ef3, ds:55E6 to ds:59B0 (970 bytes, 12 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+signed char gModeRampIndex[9] = { 2, 0, 0, 0, 1, 0, 1, 1, 0 }; /*@ ds:55E6 */
+signed char gDepthFirstDrawSlot[38] = { /*@ ds:55EF */
+    7, 12, 15, 18, 15, 5, 15, 5, 6, 5, 6, 8,
+    6, 8, 6, 8, 0, 15, 9, 15, 9, 2, 10, 11,
+    10, 11, 0, 5, 3, 5, 3, 3, 3, 3, 11, 3,
+    11, 0
+};
+void far *gAnimTable[3] = { &gDepthFirstDrawSlot[4], &gDepthFirstDrawSlot[17], &gDepthFirstDrawSlot[27] }; /*@ ds:5615 */
+unsigned char gFlashPassMask[8] = { 0x40, 0x90, 0xE4, 0xB9, 0x6E, 0x1B, 6, 1 }; /*@ ds:5621 */
+unsigned char gFlashFrameMask[4] = { 0xC0, 0x30, 0x0C, 3 }; /*@ ds:5629 */
+signed char gFlashFrameShift[4] = { 6, 4, 2, 0 }; /*@ ds:562D */
+struct FlashDelta gFlashDelta[4] = { { 8, 6 }, { 28, 20 }, { 13, 24 }, { 13, 15 } }; /*@ ds:5631 */
+int gFlashBaseX[6] = { 23, 32, 23, 32, 23, 32 }; /*@ ds:5639 */
+signed char gFlashBaseY[6] = { 2, 2, 52, 52, 102, 102 }; /*@ ds:5645 */
+unsigned long gFlashPass2[11] = { /*@ ds:564B */
+    0x40000000UL, 0x95000000UL, 0xEA550000UL, 0xBFAA5400UL,
+    0x6AFFA954UL, 0x15AAFEA9UL, 0x0055ABFEUL, 0x000056ABUL,
+    0x00000156UL, 1L, 0L
+};
+unsigned long gFlashFrame2[16] = { /*@ ds:5677 */
+    0xC0000000UL, 0x30000000UL, 0x0C000000UL, 0x03000000UL,
+    0x00C00000UL, 0x00300000UL, 0x000C0000UL, 0x00030000UL,
+    0x0000C000UL, 0x00003000UL, 0x00000C00UL, 0x00000300UL,
+    0x000000C0UL, 0x00000030UL, 0x0000000CUL, 3L
+};
+unsigned char gFlashShift2[16] = { /*@ ds:56B7 */
+    0x1E, 0x1C, 0x1A, 0x18, 0x16, 0x14, 0x12, 0x10, 0x0E, 0x0C, 0x0A, 8,
+    6, 4, 2, 0
+};
+unsigned char gFlashX2[16] = { /*@ ds:56C7 */
+    0x50, 0x70, 0x30, 0x68, 0x20, 0x60, 0x38, 0x78, 0x80, 0x48, 0x58, 0x28,
+    0x60, 0x40, 0x70, 0x48
+};
+unsigned char gFlashY2[16] = { /*@ ds:56D7 */
+    0x31, 0x2B, 0x48, 0x17, 0x16, 0x48, 0x35, 0x1B, 0x43, 0x2E, 0x24, 0x28,
+    0x38, 0x1C, 0x16, 0x44
+};
+struct EffectMode gEffectModes[12] = { /*@ ds:56E7 */
+    { 4, -1, 65, 9 }, { 10, -1, 4, 5 }, { 13, -1, 122, 6 }, { 14, -1, 12, 5 },
+    { 16, -1, 74, 10 }, { 18, 6, 56, 7 }, { 21, 6, 122, 8 }, { 25, -1, 74, 10 },
+    { 47, -1, 75, 6 }, { 50, -1, 9, 7 }, { 51, -1, 9, 10 }, { 52, -1, 9, 10 }
+};
+signed char gInFrontRank[4] = { 1, 1, 0, 0 }; /*@ ds:5717 */
+signed char gBurningHandsShapes[6] = { 3, -3, 2, -2, 1, -1 }; /*@ ds:571B */
+int gBurningHandsX[6] = { 0, 152, 24, 120, 56, 88 }; /*@ ds:5721 */
+signed char gBurningHandsY[6] = { 64, 64, 56, 56, 56, 56 }; /*@ ds:572D */
+signed char gNeighbourCellDeltas[4] = { -32, 32, 1, -1 }; /*@ ds:5733 */
+int gConeOfColdColours[22] = { /*@ ds:5737 */
+    15, 9, 15, 9, 2, 10, 2, 0, -16160, -16447, -24672, 417,
+    -7678, 802, 9187, 16416, 16703, 24416, -159, 7934, -546, -8931
+};
+char far *gConeOfColdCells[4] = { /*@ ds:5763 */
+    (void far *)&gConeOfColdColours[8],
+    (char far *)gConeOfColdColours + 23,
+    (void far *)&gConeOfColdColours[15],
+    (char far *)gConeOfColdColours + 37
+};
+struct CellRect gSpellCells[5] = { /*@ ds:5773 */
+    { 0x47, 0x7A, 0x5B, 0x82 }, { 0x5C, 0x7A, 0x70, 0x82 }, { 0x71, 0x7A, 0x85, 0x82 }, { 0x86, 0x7A, 0x9A, 0x82 },
+    { 0x9B, 0x7A, 0xAF, 0x82 }
+};
+char far *gSpellLabels[5] = { /*@ ds:5787 */
+    &gStrDeathSpell[42], &gStrDeathSpell[46], &gStrDeathSpell[50], &gStrDeathSpell[54],
+    &gStrDeathSpell[58]
+};
+int gBurstFloorY[4] = { 119, 103, 79, 63 }; /*@ ds:579B */
+char gStrCastOnWhich[32] = "Cast spell on which character? "; /*@ ds:57A3 */
+char gStrTargetOk[5] = "\rok\r"; /*@ ds:57C3 */
+char gStrSpellAborted[17] = "\rSpell aborted.\r"; /*@ ds:57C8 */
+char gStrSpellExpires[24] = "%s's %s spell expires.\r"; /*@ ds:57D9 */
+char gStrMissedMonster[24] = "%s missed the monster.\r"; /*@ ds:57F1 */
+char gStrMustBeInFront[39] = "%s must be in the front ranks to hit!\r"; /*@ ds:5809 */
+char gStrHighBaseArmor[41] = "%s already has a high base armor class.\r"; /*@ ds:5830 */
+char gStrAllDispelled[33] = "All spells on %s are dispelled.\r"; /*@ ds:5859 */
+char gStrAlreadyBlessed[31] = "The party is already blessed!\r"; /*@ ds:587A */
+char gStrAidFails[22] = "The aid spell fails!\r"; /*@ ds:5899 */
+char gStrSlowPoisonNoEffect[12] = "no effect.\r"; /*@ ds:58AF */
+char gStrNeutralizeNoEffect[11] = "no effect\r"; /*@ ds:58BB */
+char gStrRaiseDeadNoEffect[11] = "no effect\r"; /*@ ds:58C6 */
+char gStrDisintegrated[28] = "%s has been disintegrated!\r"; /*@ ds:58D1 */
+char gStrDeathSpell[62] = { /*@ ds:58ED */
+    84, 104, 101, 32, 112, 97, 114, 116, 121, 32, 104, 97,
+    115, 32, 98, 101, 101, 110, 32, 104, 105, 116, 32, 98,
+    121, 32, 97, 32, 100, 101, 97, 116, 104, 32, 115, 112,
+    101, 108, 108, 33, 13, 0, 49, 83, 84, 0, 50, 78,
+    68, 0, 51, 82, 68, 0, 52, 84, 72, 0, 53, 84,
+    72, 0
+};
+char gStrAbortSpell[12] = "ABORT SPELL"; /*@ ds:592B */
+char gStrAbortSpellLit[12] = "ABORT SPELL"; /*@ ds:5937 */
+char gStrNeedFreeHand[43] = "You must have a free hand for this spell.\r"; /*@ ds:5943 */
+char gStrTwoSpellsActive[47] = "You can't have two of this spell type active.\r"; /*@ ds:596E */
+char gStrCastsSpell[14] = "%s casts %s.\r"; /*@ ds:599D */
+char gStrCastOk[5] = "ok\r"; /*@ ds:59AB */
 
 /* 0EF3:000E: bubble-sorts each of the ten six-byte rows that start at a character's +0x37 spell
    field. Every pair of adjacent bytes in a row is compared for j = 0..4 (a full bubble sort of
@@ -694,7 +789,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
             return rec->m04;
         DrawText(gCurRec->name);
         DrawText(gStrTargetOk);
-        PlaySound(gEffectSound[gCurrentSpell * 0x13]);
+        PlaySound(gSpells[gCurrentSpell].sound);
         FlashPartyMembers(gCurMember);
         gCurrentSpellApply();
         RedrawMember(gCurMember);
@@ -1232,7 +1327,7 @@ extern int gBurstMaskPixel;                /*@ ds:FC72 */ /* the handle gGetPixe
    +0x0F long and which 0D1C:0BAB does not reject, roll 1d20 and clear the object's type when the
    roll is under the value 0A72:0006 gives for that record. The +2 byte is passed as
    GetSavingThrowTarget's `limit` argument, which 0A72:0006 clamps to gSaveMaxLevel[index]
-   (src/E0A72.C:73-80). Reached through a table (the packet finds no direct caller). The threshold
+   (src/E0A72.C:65-70). Reached through a table (the packet finds no direct caller). The threshold
    is a local and the clear uses &gMonsters[i], not the walking pointer. */
 /*@ 0EF3:1702 */ void CastFear(void)
 {
@@ -1517,7 +1612,7 @@ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
 
 /* 0EF3:1DC0: set every member's +0x23 food byte to 100. The field is the hunger/food value
    EatFood clamps at 100 (src/E0ACD.C:108, :623); 0BD2 case 5 makes the same write
-   (src/E0BD2.C:746). */
+   (src/E0BD2.C:798). */
 /*@ 0EF3:1DC0 */ void CastCreateFood(void)
 {
     int i;

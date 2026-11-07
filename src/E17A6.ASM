@@ -25,11 +25,30 @@
         .DATA
         EXTRN   gGraphicsChoice:WORD              ; @ ds:8102: graphics mode word
         EXTRN   gArtPage:DWORD          ; @ ds:EFC2: far pointer to the saved screen buffer
-        EXTRN   gDirectionFromMask:BYTE         ; @ ds:7FBC: direction table (17A6:0373)
-        EXTRN   gNeighbourOffsets:WORD         ; @ ds:7FCC: neighbour offsets (17A6:0FB8)
-        EXTRN   gAheadOffsets2And3:WORD         ; @ ds:7FDC: neighbour offsets (17A6:0FD3)
         EXTRN   gRowOffsetTableOff:WORD              ; @ ds:80CE: driver row offset table, offset (17A6:18FF)
         EXTRN   gRowOffsetTableSeg:WORD              ; @ ds:80D0: driver row offset table, segment (17A6:1913)
+
+; @data
+; the data of e17a6, ds:7FBC to ds:7FEC (48 bytes, no relocations), the original's bytes in address
+; order: three tables the code indexes, no other reader in src/.
+
+; 16 bytes, indexed at 17A6:0373 by the 4-bit mask DirectionFromPoints builds from the two
+; cells' differences: the direction 0 to 7, 0FFh for none.
+        PUBLIC  _gDirectionFromMask ; @ ds:7FBC
+_gDirectionFromMask label byte
+        db      0FFh, 06h, 02h, 0FFh, 04h, 05h, 03h, 0FFh, 00h, 07h, 01h, 0FFh, 0FFh, 0FFh, 0FFh, 0FFh
+
+; 8 words, the offsets of a cell's eight neighbours on a 32-cell-wide map (-33, -32, -31, -1, 1,
+; 31, 32, 33), which FindNeighbour adds to a cell index (17A6:0FB8).
+        PUBLIC  _gNeighbourOffsets ; @ ds:7FCC
+_gNeighbourOffsets label byte
+        dw      0FFDFh, 0FFE0h, 0FFE1h, 0FFFFh, 0001h, 001Fh, 0020h, 0021h
+
+; 8 words, two per direction (FindNeighbour's third argument times 4 is the byte index, 17A6:0FD3):
+; the offsets of the cells two and three steps ahead (-64, -96; 2, 3; 64, 96; -2, -3).
+        PUBLIC  _gAheadOffsets2And3 ; @ ds:7FDC
+_gAheadOffsets2And3 label byte
+        dw      0FFC0h, 0FFA0h, 0002h, 0003h, 0040h, 0060h, 0FFFEh, 0FFFDh
         .CODE
 
 ; ---- data 0000..0100
@@ -170,7 +189,7 @@ L036A:
         inc si
 L0371:
         xor ax, ax
-        mov al, byte ptr [si+gDirectionFromMask]
+        mov al, byte ptr [si+_gDirectionFromMask]
         pop si
         pop di
         pop dx
@@ -183,7 +202,7 @@ _DirectionFromPoints ENDP
 ; ---- 037E..03AF
 ; 17A6:037E: copy two 16-byte plane tables from the far pointers at [bp+6]/[bp+8] and
 ; [bp+0A]/[bp+0C] into CS:03AF (gPlaneTableA) and CS:03BF (gPlaneTableB). Called from overlay
-; 3 (ovl3:0872, in LoadWallTextures, src/EOV3.C:472) with the first pointer at ds:F4D6 and
+; 3 (ovl3:0872, in LoadWallTextures, src/EOV3.C:550) with the first pointer at ds:F4D6 and
 ; the second at ds:FB4D.
         PUBLIC  _SetPlaneTables              ; @ 17A6:037E
 _SetPlaneTables PROC FAR
@@ -1441,7 +1460,7 @@ _SetPlaneAndWrite ENDP
 ; 17A6:0F1F: copy 0x1F40 groups of four source bytes from the far pointer at [bp+6]/[bp+8] to
 ; [bp+0A]/[bp+0C], nibble-swapping each byte through the table at CS:0200, one output byte per
 ; source byte. A group is read backwards from si + 3, then si advances by 4. The name rests on
-; the caller's comment, "expands the planes into gStagingPage" (src/EOV3.C:456 to :457). Called
+; the caller's comment, "expands the planes into gStagingPage" (src/EOV3.C:534 to :457). Called
 ; from overlay 3 (ovl3:08A8, 08DA).
         PUBLIC  _ExpandNibbles              ; @ 17A6:0F1F
 _ExpandNibbles PROC FAR
@@ -1558,7 +1577,7 @@ _FindNeighbour PROC FAR
         mov bx, 0
 L0FB6:
         mov ax, si
-        add ax, word ptr [bx+gNeighbourOffsets]
+        add ax, word ptr [bx+_gNeighbourOffsets]
         and ax, 3FFh
         cmp ax, di
         je L0FE6
@@ -1570,7 +1589,7 @@ L0FB6:
         shl bx, 1
 L0FD1:
         mov ax, si
-        add ax, word ptr [bx+gAheadOffsets2And3]
+        add ax, word ptr [bx+_gAheadOffsets2And3]
         and ax, 3FFh
         cmp ax, di
         je L0FE6

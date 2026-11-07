@@ -9,7 +9,7 @@
    argues. The callers support x in columns (E1DE7.C:245 passes gTextLeft as x1 and
    x2 and gTextWidth unshifted to CopyRegion, with y2 = gTextTop unshifted and y1 = gTextTop +
    gFontHeight, one line down, and the height `line` derived from gTextHeight at
-   E1DE7.C:244, while EOV6.C:376 and :481 pass gTextHeight itself; the same
+   E1DE7.C:244, while EOV6.C:388 and :481 pass gTextHeight itself; the same
    variables are multiplied by 8 or shifted by 3 for the pixel arguments of gFillRect, gDrawText
    and DrawFramedPanel there). All the compares are signed. The width and height are capped at
    SCREEN_COLUMNS and SCREEN_LINES when larger, as plain size caps not tied to any origin;
@@ -43,10 +43,10 @@
    extra1, height, width, y2, x2, y1, x1. extra1 and extra2 are passed through untouched;
    nothing in this unit reads them and their roles are unknown, and the callers do not settle
    them either: E1DE7.C:245 passes gDrawPage for both extras, whose role E1DE7.C:69 says is not
-   established. One lead [H]: E082C.C:280 and :285 pass extra1 equal to the value given as
+   established. One lead [H]: E082C.C:292 and :285 pass extra1 equal to the value given as
    19EC:002A's second argument in both LoadScreenImage cases (4 with extras 4,2; 2 with extras
-   2,0), which hints extra1 is a driver kind, but the other call sites (E082C.C:113 with 0,2;
-   E082C.C:209 with 2,0; E1DE7.C:245 with gDrawPage twice) do not fit that. The five call sites
+   2,0), which hints extra1 is a driver kind, but the other call sites (E082C.C:125 with 0,2;
+   E082C.C:221 with 2,0; E1DE7.C:245 with gDrawPage twice) do not fit that. The five call sites
    below push the eight ints (add sp,10h); they are the 082C
    and 0EF3 call sites this header checked, not every caller, since the packet lists 30
    callers across the resident code and overlays ovl0 to ovl6. Calls (x1, y1, x2, y2, width,
@@ -61,14 +61,14 @@
    1DE7:03B2 (E1DE7.C:245), is made at 1DE7:0474 (pushes 1DE7:0450 to 0470) with y1 =
    gTextTop + one line and y2 = gTextTop, which E1DE7.C:228 calls a clip and refill of the last
    visible line (a one-line scroll is the [H] reading of the source and destination pattern,
-   lines 66 to 67); 082C:006D (E082C.C:113) has y1 = y and y2 = 0xbf (the pushes at
-   082C:0062 and 082C:005B); 082C:038A (E082C.C:209) has the same pair in the other order,
+   lines 66 to 67); 082C:006D (E082C.C:125) has y1 = y and y2 = 0xbf (the pushes at
+   082C:0062 and 082C:005B); 082C:038A (E082C.C:221) has the same pair in the other order,
    y1 = 0xbf and y2 = y (the pushes at 082C:0383 and 082C:0378). The
    1DE7:0474 reading fits x1, y1 as a source and x2, y2 as a destination, a lead [H] to test
    against the far routine, not evidence yet. The x1 = x2, y1 = y2 pattern holds for the
-   named-origin calls at EOV6.C:376, :385 and :481, and for the literal-zero calls at
-   EOV2.C:365, 082C:05DD and the two 0EF3 calls, but the list is partial and not all callers
-   fit: E0ACD.C:272 (0ACD:01E3) has x2 = 0x16 and x1 = 0 in CopyRegion(0, 0, 0x16, 0, 0x12, 0xa8,
+   named-origin calls at EOV6.C:388, :385 and :481, and for the literal-zero calls at
+   EOV2.C:431, 082C:05DD and the two 0EF3 calls, but the list is partial and not all callers
+   fit: E0ACD.C:284 (0ACD:01E3) has x2 = 0x16 and x1 = 0 in CopyRegion(0, 0, 0x16, 0, 0x12, 0xa8,
    2, 0), and the byte-only 0EF3:2512 (pushes at 0EF3:2505 to 2511) gives origins 9 and 122 each
    twice.
    The two call sites 082C:006D and 082C:038A disagree on which y origin holds 191 (y2 for
@@ -80,7 +80,7 @@
    8-pixel columns, gRegionLeftPx = left * 8), so SCREEN_COLUMNS columns span the 320-pixel
    screen and SCREEN_LINES its 200 lines. Evidence: region record 0 is 0,0,40,200
    (src/E1A29.C, EOB.EXE file offset 0x23B7F), the DGROUP screen bounds gCursorMaxX = 13Fh (319) and
-   gCursorMaxY = 0C7h (199), screen width and height minus one, set at src/E1A72.ASM:191-192 and
+   gCursorMaxY = 0C7h (199), screen width and height minus one, set at src/E1A72.ASM:204-205 and
    declared at src/E1A72.ASM:45-46, and the 40x200 screen the pointer sprite is clipped to
    (src/E1BBE.ASM:79). The same region record at 0x23B7F (00 00 00 00 28 00 c8 00) lands at
    ds:009F under the DGROUP base 0x212E used below (0x23B7F - 0x2800 header - 0x212E0 = 0x9F),

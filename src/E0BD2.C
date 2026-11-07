@@ -97,6 +97,58 @@ void SwapSelectedItem(int who, int row);
 int ItemClassAllowed(int who, int item);
 void DrawItemName(int item);
 
+/*@data */
+/* the data of e0bd2, ds:37B4 to ds:3A62 (686 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+char gRingNames[45] = { /*@ ds:37B4 */
+    65, 100, 111, 114, 110, 109, 101, 110, 116, 0, 87, 105, 122, 97, 114, 100, 114, 121, 0, 83, 117,
+    115, 116, 101, 110, 97, 110, 99, 101, 0, 70, 101, 97, 116, 104, 101, 114, 32, 70, 97, 108, 108,
+    0, 0, 0
+};
+char gPotionNames[86] = { /*@ ds:37E1 */
+    0, 71, 105, 97, 110, 116, 32, 83, 116, 114, 101, 110, 103, 116, 104, 0, 72, 101, 97, 108, 105,
+    110, 103, 0, 69, 120, 116, 114, 97, 32, 72, 101, 97, 108, 105, 110, 103, 0, 80, 111, 105, 115,
+    111, 110, 0, 86, 105, 116, 97, 108, 105, 116, 121, 0, 83, 112, 101, 101, 100, 0, 73, 110, 118,
+    105, 115, 105, 98, 105, 108, 105, 116, 121, 0, 67, 117, 114, 101, 32, 80, 111, 105, 115, 111,
+    110, 0, 0
+};
+char gWandNames[62] = { /*@ ds:3837 */
+    83, 116, 105, 99, 107, 0, 76, 105, 103, 104, 116, 110, 105, 110, 103, 0, 70, 114, 111, 115, 116,
+    0, 67, 117, 114, 105, 110, 103, 0, 70, 105, 114, 101, 98, 97, 108, 108, 0, 83, 105, 108, 118,
+    105, 97, 115, 0, 77, 97, 103, 105, 99, 32, 77, 105, 115, 115, 105, 108, 101, 0, 0, 0
+};
+signed char gInvSlotKind[27] = { /*@ ds:3875 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2
+};
+signed char gInvSlotBoxSize[3] = { 16, 16, 8 }; /*@ ds:3890 */
+char gPotionFeelings[103] = { /*@ ds:3893 */
+    0, 109, 117, 99, 104, 32, 115, 116, 114, 111, 110, 103, 101, 114, 0, 98, 101, 116, 116, 101, 114,
+    0, 109, 117, 99, 104, 32, 98, 101, 116, 116, 101, 114, 0, 105, 108, 108, 32, 102, 111, 114, 32,
+    97, 32, 109, 111, 109, 101, 110, 116, 0, 110, 111, 32, 108, 111, 110, 103, 101, 114, 32, 104,
+    117, 110, 103, 114, 121, 0, 102, 97, 115, 116, 32, 97, 110, 100, 32, 97, 103, 105, 108, 101, 0,
+    116, 114, 97, 110, 115, 112, 97, 114, 101, 110, 116, 0, 98, 101, 116, 116, 101, 114, 0, 0
+};
+signed char gWandSpells[7] = { 0, 18, 24, 40, 13, -1, 4 }; /*@ ds:38FA */
+/* ds:3901-3912: the code's (a literal or template, '%s has lost her '): written by its function */
+/* ds:3912-3923: the code's (a literal or template, '%s has lost his '): written by its function */
+/* ds:3923-3926: the code's (a literal or template, '.\r'): written by its function */
+/* ds:3926-3933: the code's (a literal or template, 'Cursed %s %d'): written by its function */
+/* ds:3933-393A: the code's (a literal or template, '%s +%d'): written by its function */
+/* ds:393A-3946: the code's (a literal or template, 'Mage Scroll'): written by its function */
+/* ds:3946-3954: the code's (a literal or template, 'Cleric Scroll'): written by its function */
+/* ds:3954-3959: the code's (a literal or template, 'Ring'): written by its function */
+/* ds:3959-3960: the code's (a literal or template, 'Potion'): written by its function */
+/* ds:3960-3965: the code's (a literal or template, 'Wand'): written by its function */
+/* ds:3965-396E: the code's (a literal or template, '%s of %s'): written by its function */
+/* ds:396E-3991: the code's (a literal or template, "%s can't wear that type of armor.\r"): written by its function */
+/* ds:3991-39B0: the code's (a literal or template, 'You cant put that item there.\r'): written by its function */
+/* ds:39B0-39B9: the code's (a literal or template, 'poisoned'): written by its function */
+/* ds:39B9-39C7: the code's (a literal or template, '%s feels %s!\r'): written by its function */
+/* ds:39C7-39F0: the code's (a literal or template, 'The wand has no apparent magical effect\r'): written by its function */
+/* ds:39F0-39FC: the code's (a literal or template, 'no effect.\r'): written by its function */
+/* ds:39FC-3A15: the code's (a literal or template, ' can not use this item.\r'): written by its function */
+/* ds:3A15-3A3E: the code's (a literal or template, 'This item automatically used when worn.\r'): written by its function */
+/* ds:3A3E-3A62: the code's (a literal or template, 'This item is not used in this way.\r'): written by its function */
+
 /* functions of this unit, in address order */
 /* 0BD2:000E: the "lost item" message. Rolls 1d27 for a starting slot, then scans the 27 item slots
    of character `who` from there, wrapping, for the first item whose type flags have 0x80. It clears
@@ -165,8 +217,8 @@ void DrawItemName(int item);
 
 /* 0BD2:01D0: inserts the item `item` into the circular list whose head word is `head`, stamping it
    with the list's owner key `key` and the tag `tag` (+5; `level` becomes gCurLevel, or -1 when the
-   key is negative). The key is a list owner: a map cell (E0ACD.C:568, E0D1C.C:362, 0BD2:07DE), an
-   object's id (E08E6.C:807) or 0xFFFE for a character's own pack (E0ACD.C:780, :851, 0BD2:0BA0).
+   key is negative). The key is a list owner: a map cell (E0ACD.C:596, E0D1C.C:386, 0BD2:07DE), an
+   object's id (E08E6.C:848) or 0xFFFE for a character's own pack (E0ACD.C:808, :851, 0BD2:0BA0).
    An empty list becomes `item` alone, linked to itself. Otherwise `item` is spliced in between the
    old head and its predecessor, the tail of the item walk: the new item's nextLink becomes the old head
    (the tail's forward link) and its prevLink becomes the tail, so only the old head's prevLink and the
@@ -438,8 +490,8 @@ next:
 /* 0BD2:07DE: reserves one of the ten effect records at ds:DD2C (returning 0 when all are live),
    queues `item` at the map record gMazeItems + `volume` * 9 through 0BD2:01D0 with the tag `kind | 4`,
    fills the record from the arguments, plays sound 0x0B (0x1A when `type` is 7), and returns 1.
-   `volume` is the item's map cell (most callers pass gPartyCell, E0ACD.C:434, :769, E0DE8.C:406;
-   E122E.C:728 passes the script's id), `page` is gPartyDir, `kind` is the per-page action kind and
+   `volume` is the item's map cell (most callers pass gPartyCell, E0ACD.C:446, :769, E0DE8.C:415;
+   E122E.C:752 passes the script's id), `page` is gPartyDir, `kind` is the per-page action kind and
    `type` is the item's m02. QUIRK 0BD2:07DE: rec->m02 is stored 1 twice (the second store is in the original). */
 /*@ 0BD2:07DE */ int AddDDEffect(int who, int item, int volume, int kind, int page, int type)
 {
@@ -652,7 +704,7 @@ next:
 /* 0BD2:0D2D: applies the effect of the item just taken from slot `slot` of character `who`. It
    clears the slot through 0BD2:0106 (the item's m0B selects the effect), plays sound 0x0A and
    dispatches on m0B: 1 sets the strength score m0D to 0x16 and arms a timed giant-strength effect
-   (ApplyCharEffect(who, ..., 7, 1); 7 is the giant-strength effect type, E1414.C:05ED stores it as
+   (ApplyCharEffect(who, ..., 7, 1); 7 is the giant-strength effect type, E1414.C:5ED stores it as
    the type byte and the 07CA runner prints "%s no longer has giant strength" and restores m0D/strengthPct
    from m0E/m10 when it runs out), 2 and 3 heal by a dice roll, 4 poisons through 0DE8:101A, 5 sets
    food to 100, 6 and 8 run the 0EF3 helpers, 7 sets effect flag 4. After the switch it announces

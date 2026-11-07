@@ -42,14 +42,14 @@ extern char gSoundCard;               /*@ ds:B892: sound choice, argument digit 
                                          gSoundOn (:231) is 1 for every digit except '4'. src/E177D.C:52 declares it unsigned char, but an unsigned char here does not match (the switch promotes it differently), so char keeps the code) */
 extern int gSoundOn;                  /*@ ds:80E6: nonzero unless sound was '4' at start-up, and
                                          toggled at run time (`xor word ptr [gSoundOn],1` at
-                                         src/E1AAD.ASM:935) and written by the sound option
+                                         src/E1AAD.ASM:974) and written by the sound option
                                          (src/EOV1.ASM:3741). src/E1AAD.ASM:17 declares it BYTE
                                          and src/EOV1.ASM:115 WORD; int keeps the code */
 extern unsigned char gTandySelected;           /*@ ds:009E: records that the Tandy card was chosen: its only
                                          store is 1 on StartupGame's Tandy sound path (07C8 image 0x81E8,
                                          next to gTandyOn = 1); the PC speaker path leaves it at its load
                                          value. PlaySound and PlaySoundAtCell test it == 1 to gate the
-                                         gTandyOn toggle (src/E177D.C:182; re/renames.toml, ds:009E) */
+                                         gTandyOn toggle (src/E177D.C:193; re/renames.toml, ds:009E) */
 extern unsigned char gTandyOn;        /*@ ds:8A67: the driver select: 1 is Tandy, 0 the PC speaker
                                          (src/E1948.ASM:7, tested at :279, :379, :500, :527 and
                                          :553). StartupGame sets it to 1 on the Tandy path (:435),
@@ -59,14 +59,14 @@ extern unsigned gRestoreMode;         /*@ ds:84A0: the video mode restored on ex
                                          and on the error paths (:302, :321, :419; src/E1DDD.C:12-21) */
 extern void interrupt (far *gSavedInt3F)();  /*@ ds:FC08: the previous INT 3Fh vector: main saves the
                                          vector in place before it installs its handler, here (:236-237),
-                                         and ShutdownGame puts it back (:475). src/E1A72.ASM:160 calls it
+                                         and ShutdownGame puts it back (:475). src/E1A72.ASM:158 calls it
                                          the previous INT 3Fh vector and 1A72:0006 chains to it */
 extern int (far *gExitHook)(void);      /*@ ds:80FA: exit hook main sets to 07C8:061D (:244); its
                                          target returns int (ExitHook, :486) and the result is
                                          ignored at :467 */
 extern int (far *gAllocFailHook)(void); /*@ ds:810A: allocation failure hook. The image starts it at OutOfMemory (19BC:02B6, src/E19BC.C:23-25); main replaces it with 07C8:0625 (:245), so at run time it is AllocationFailure, not OutOfMemory */
 extern int gMouseHandlerInstalled;    /*@ ds:8148: 1 once the mouse driver handler was installed
-                                         (src/E1A72.ASM:324), 0 when no driver is found (:310,
+                                         (src/E1A72.ASM:337), 0 when no driver is found (:310,
                                          the L0118 path); declared at src/E1A72.ASM:92-96 */
 extern int gMouseDisabled;            /*@ ds:814A: nonzero disables the mouse handler (src/E0ACD.C:111,
                                          src/E122E.C:48, src/E1C00.ASM:281-290). main sets it to 1
@@ -82,20 +82,20 @@ extern unsigned char gOverlayCacheUp;           /*@ ds:3056: set to 1 at :402 ri
                                          ShutdownOverlayCache; no other unit reads ds:3056 */
 extern int gKeyboardOptions;                     /*@ ds:80EA: the keyboard driver's option bits (load-time
                                          value 0110h; the driver tests bits 2, 80h and 200h of its copy
-                                         kModifierState, src/E1AAD.ASM:169, :619), set to 1 by main (:261), after
+                                         kModifierState, src/E1AAD.ASM:208, :619), set to 1 by main (:261), after
                                          InstallKeyboard (:246), so the install copy (InstallKeyboard,
-                                         1AAD:0718, src/E1AAD.ASM:793) takes the load-time value,
+                                         1AAD:0718, src/E1AAD.ASM:832) takes the load-time value,
                                          not 1; the value 1 reaches kModifierState only through the
                                          key-state query _GetKeyState (1AAD:05F1,
-                                         src/E1AAD.ASM:548-573, the copy at :573), which copies on
+                                         src/E1AAD.ASM:587-612, the copy at :573), which copies on
                                          every call */
 extern int gTextAttr2;                /*@ ds:811B: the second text attribute, the fill colour: ClearTextRegion
                                          fills the window with it (src/E1DE7.C:241), the redrawn scroll line fills
-                                         with it and passes it to the draw-text hook (src/E1DE7.C:270-271); main sets DEFAULT_TEXT_ATTR2 (0xC) at start-up (:263); declared in src/E122E.C:75 and src/E1DE7.C:44, read with gTextAttr1 in src/EOV2.C:500 */
+                                         with it and passes it to the draw-text hook (src/E1DE7.C:270-271); main sets DEFAULT_TEXT_ATTR2 (0xC) at start-up (:263); declared in src/E122E.C:74 and src/E1DE7.C:44, read with gTextAttr1 in src/EOV2.C:566 */
 extern int gTextAttr1;                /*@ ds:811D: the first text attribute, set by main to
                                          DEFAULT_TEXT_ATTR1 (0xF) at start-up (:262) and passed to the draw-text
-                                         hook (src/E1DE7.C:271); declared in src/E122E.C:74 and src/E1DE7.C:42, read with gTextAttr2 in src/EOV2.C:500. That it is the foreground colour is [H]: the game meaning of the two attributes is not established (src/E1A29.C:27-28) */
-extern void (far *gSetPalette)(void far *table); /*@ ds:80BA: the palette setter (src/EOV4.C:1035, :1060), called with the palette buffers (:253, :258, :388, :398); Purpose unknown beyond the palette: nothing in src/ assigns ds:80BA */
+                                         hook (src/E1DE7.C:271); declared in src/E122E.C:74 and src/E1DE7.C:42, read with gTextAttr2 in src/EOV2.C:566. That it is the foreground colour is [H]: the game meaning of the two attributes is not established (src/E1A29.C:27-28) */
+extern void (far *gSetPalette)(void far *table); /*@ ds:80BA: the palette setter (src/EOV4.C:1251, :1060), called with the palette buffers (:253, :258, :388, :398); Purpose unknown beyond the palette: nothing in src/ assigns ds:80BA */
 extern void (far *gClearPage)(void);     /*@ ds:8056: a graphics driver entry (slot 11 of the ds:802A
                                          table) that clears the current draw page's segment (MCGA.OVL
                                          0693, EGA.OVL 07FB; re/renames.toml, ds:8056); StartupGame calls it
@@ -107,8 +107,8 @@ extern unsigned char far *gPaletteBuf;      /*@ ds:FE68: the palette buffer Star
                                          (:387, 0xf) are written, the other 14 keeping what MemAlloc
                                          returned; the setter is given gBuiltinPalette (:388), not this, so those 16
                                          bytes have no reader in src/. Case labels 2 and 3 (:392) get 0x300
-                                         bytes; main loads eobpal.col over it for choices 3 and 4 (:257), and the VGA choice (gGraphicsChoice == 3) has src/EOV3.C:584 load `<script>.PAL` over it and src/EOV4.C:1054-1061 send it to the setter when the request flag gLevelPalettePending is set (set at src/EOV3.C:686) and clear gLevelPalettePending */
-extern unsigned char gBuiltinPalette[];  /*@ ds:3057: the table passed to the palette setter for graphics choices 1 and 2 (no eobpal.col). Its length is unknown: no source or doc gives it, and the 16 bytes written at :385-387 belong to the gPaletteBuf buffer, not this. Whether it is a palette is [H] (src/EOV4.C:1035) */
+                                         bytes; main loads eobpal.col over it for choices 3 and 4 (:257), and the VGA choice (gGraphicsChoice == 3) has src/EOV3.C:662 load `<script>.PAL` over it and src/EOV4.C:1270-1277 send it to the setter when the request flag gLevelPalettePending is set (set at src/EOV3.C:767) and clear gLevelPalettePending */
+extern unsigned char gBuiltinPalette[];  /*@ ds:3057: the table passed to the palette setter for graphics choices 1 and 2 (no eobpal.col). Its length is unknown: no source or doc gives it, and the 16 bytes written at :385-387 belong to the gPaletteBuf buffer, not this. Whether it is a palette is [H] (src/EOV4.C:1251) */
 extern void far *gFont8x8;            /*@ ds:FE5A: the 8x8 font loaded from Font8.fnt (whitepaper
                                          4.4, docs/design/WHITEPAPER.md:171: FONT8.FNT is 8 x 8,
                                          checked by 1A47:0005; the file is 0x104 + 128 x 8 bytes) */
@@ -134,7 +134,7 @@ extern struct OverlayRequest gOverlayRequest; /*@ ds:8121: the request RunOverla
 extern void PrintString(char far *s);             /*@ 19EA:0000 */
 extern int WaitGameKey(void);                     /*@ 1AAD:053A: blocks for a game key and returns
                                                      its key code (the result of ProcessKeyEvent,
-                                                     src/E1AAD.ASM:478-484); every call here ignores
+                                                     src/E1AAD.ASM:517-523); every call here ignores
                                                      the result */
 extern void RemoveKeyboard(void);                     /*@ 1AAD:09F6 */
 extern void SetVideoMode(int index); /*@ 1DDD:002D: INT 10h set video mode from the ds:84A2 table,
@@ -199,6 +199,32 @@ int StartupGame(void);
 void ShutdownGame(void);
 int ExitHook(void);
 int AllocationFailure(void);
+
+/*@data */
+/* the data of e07c8, ds:3056 to ds:31AC (342 bytes, 5 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+unsigned char gOverlayCacheUp = 0x00; /*@ ds:3056 */
+unsigned char gBuiltinPalette[16] = { /*@ ds:3057 */
+    0x00, 0x05, 0x03, 0x02, 0x0A, 0x0E, 0x0C, 0x06, 0x04, 0x0B, 0x09, 0x01,
+    0x00, 0x08, 0x07, 0x0F
+};
+char gFont8Name[] = "Font8.fnt"; /*@ ds:3067: a named array, not a literal: the code's two uses share it */
+unsigned char g3071[3] = { 0x00, 0x00, 0x00 }; /*@ ds:3071 */
+char far *gOverlayFiles[5] = { "cga.ovl", "tga.ovl", "ega.ovl", "mcga.ovl", "vga.ovl" }; /*@ ds:3074 */
+/* the overlay manager's buffer size in paragraphs (2CBh, about 11 KB): the program defines the
+   library's _ovrbuffer itself, so TLINK does not link the library's default (OVRBUFF) */
+unsigned _ovrbuffer = 0x02CB; /*@ ds:3088 */
+char g308A[8] = "EOB.EXE"; /*@ ds:308A */
+unsigned char gStartupDone = 0x00; /*@ ds:3092 */
+char gFontErrorText[] = "\r\nUnable to load font "; /*@ ds:3093: before the pool, so an array */
+char gReinstallText[] = ". Reinstall program.\r\n"; /*@ ds:30AA */
+/* ds:30EA-30F0: the code's (a literal or template, 'homie'): written by its function */
+/* ds:30F0-3114: the code's (a literal or template, '\r\nNot enough memory to run program.'): written by its function */
+/* ds:3114-311F: the code's (a literal or template, 'eobpal.col'): written by its function */
+/* ds:311F-3139: the code's (a literal or template, '\r\nMemory chain corrupt!\r\n'): written by its function */
+/* ds:3139-3154: the code's (a literal or template, '\r\nCould not load overlay "'): written by its function */
+/* ds:3154-317A: the code's (a literal or template, '".  Press a key to return to DOS...\r\n'): written by its function */
+/* ds:317A-3184: the code's (a literal or template, 'FONT6.FNT'): written by its function */
+/* ds:3184-31AC: the code's (a literal or template, '\r\nAllocation failure, returning to DOS!'): written by its function */
 
 /* 07C8:0001: main. Reads the four arguments the launcher passes (graphics, sound and mouse, all one
    character, and the five-letter "homie" marker) and the video mode to restore, installs the
@@ -367,7 +393,7 @@ int AllocationFailure(void);
         break;
     }
     gClearPage();
-    gFont8x8 = LoadFont("Font8.fnt");
+    gFont8x8 = LoadFont(gFont8Name);
     gFont6x6 = LoadFont("FONT6.FNT");
     if (!gFont8x8 || !gFont6x6)
         goto font_error;
@@ -411,9 +437,9 @@ int AllocationFailure(void);
     goto done;
 font_error:
     SetVideoMode(7);              /* index 7 restores gRestoreMode (the argv[5] mode) */
-    PrintString("\r\nUnable to load font ");
-    PrintString("Font8.fnt");   /* the message is a fixed string: it names Font8.fnt even when the 6x6 font was the one that failed */
-    PrintString(". Reinstall program.\r\n");
+    PrintString(gFontErrorText);
+    PrintString(gFont8Name);   /* the message is a fixed string: it names Font8.fnt even when the 6x6 font was the one that failed */
+    PrintString(gReinstallText);
     WaitGameKey();
     return 0;
 fail:
@@ -449,7 +475,7 @@ done:
         break;
     case 2:
         /* silences the three Tandy voices and falls back to one voice; the driver's flags end the
-           song at the next tick and the end-of-song count then clears gPlaying (src/E1948.ASM:807-
+           song at the next tick and the end-of-song count then clears gPlaying (src/E1948.ASM:823-
            812), so the song ends, it is not paused (one voice may sound one more note first), and
            nothing resumes it before the uninstall below */
         SoundDriverSilenceToOneVoice();

@@ -66,9 +66,27 @@ def main(argv=None) -> int:
             votes = Counter(key - x for key in rec for x in cum if key >= x)
             base = max(votes.items(), key=lambda kv: (kv[1], -kv[0]))[0] if votes else 0
             found = tc2c.place_literals(lits, prog.dgroup)
+            whole = "/*@data */" in p.read_text(errors="replace")
+            if whole:
+                # a unit that defines its whole data (step D2): the record's keys are offsets in that
+                # data and its values the original's addresses, templates among them; the literals are
+                # the pool's strings in source order, so each is the next address after the one before
+                # that holds its bytes, the record's when the code refers to it
+                held, nxt, exact = sorted(set(rec.values())), 0, []
+                for b in lits:
+                    want = b + b"\0"
+                    at = next((v for v in held if v >= nxt and prog.dgroup[v:v + len(want)] == want), None)
+                    if at is None:
+                        at = prog.dgroup.find(want, nxt)
+                        at = None if at < 0 else at
+                        found[len(exact)] = at if at is not None else found[len(exact)]
+                        exact.append(None)
+                    else:
+                        exact.append(at)
+                    nxt = at + len(want) if at is not None else nxt
             rows = []
-            for b, x, f in zip(lits, cum, found):
-                at = rec.get(base + x)
+            for i, (b, x, f) in enumerate(zip(lits, cum, found)):
+                at = exact[i] if whole else rec.get(base + x)
                 if at is not None and prog.dgroup[at:at + len(b) + 1] != b + b"\0":
                     raise SystemExit("literals: %s: the matcher puts %r at ds:%04X, which holds other bytes"
                                      % (p.name, b, at))

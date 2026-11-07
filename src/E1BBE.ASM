@@ -61,7 +61,7 @@
                                         ; L0221, which the QUIRK 1A72:0229 jump can skip; set to 64h by
                                         ; InitMouse, grep `_gCursorY`, the 64h store)
         EXTRN   _gHideDepth:WORD        ; @ ds:8146: hide depth, 0 = drawn (1BBE:0002/00ED change it);
-                                        ; InitMouse starts it at 1 and the state at 0 (src/E1A72.ASM:299-300,
+                                        ; InitMouse starts it at 1 and the state at 0 (src/E1A72.ASM:312-313,
                                         ; InitMouse, grep `_gHideDepth` and `_gPointerState`), so the pointer
                                         ; starts hidden until the first show
         EXTRN   _gMouseDisabled:WORD              ; @ ds:814A: non-zero disables the pointer (E07A9 tests it too)
@@ -98,25 +98,10 @@
         EXTRN   _gPointerShapeOff:WORD   ; @ ds:816E: pointer shape record, far offset (1BB1 stores it)
         EXTRN   _gPointerShapeSeg:WORD   ; @ ds:8170: pointer shape record, far segment
         EXTRN   gEgaRegShadowOff:WORD              ; @ ds:8172: far pointer handed to [ds:80AA], offset; the 17A6
-                                        ; unit saves and restores the 16 bytes under it (src/E1A72.ASM:561-569
+                                        ; unit saves and restores the 16 bytes under it (src/E1A72.ASM:574-582
                                         ; is the _SetFarPointer header, grep `_SetFarPointer`; the sentence
-                                        ; is at :565; the saved copy is E17A6.ASM:93-95)
+                                        ; is at :565; the saved copy is E17A6.ASM:112-114)
         EXTRN   gEgaRegShadowSeg:WORD              ; @ ds:8174: the same far pointer, segment (pushed first)
-        EXTRN   _gRectLeft:WORD         ; @ ds:8176: pointer rectangle, left; in 8-pixel columns and
-                                        ; clipped in HidePointer/ShowPointer, in pixels and unclipped
-                                        ; in HidePointerZone, which compares it with the zone
-        EXTRN   _gRectTop:WORD          ; @ ds:8178: pointer rectangle, top; pixel rows clipped in
-                                        ; HidePointer/ShowPointer, pixels unclipped in HidePointerZone
-        EXTRN   _gRectRight:WORD        ; @ ds:817A: pointer rectangle, right; as _gRectLeft
-        EXTRN   _gRectBottom:WORD       ; @ ds:817C: pointer rectangle, bottom; as _gRectTop
-        EXTRN   _gShapeX:WORD           ; @ ds:817E: shape drawn at, x in pixels, unclipped
-        EXTRN   _gShapeY:WORD           ; @ ds:8180: shape drawn at, y in pixels, unclipped
-        EXTRN   _gSpriteHeight:WORD     ; @ ds:8182: copy of _gPointerHeight, the sprite height in pixel
-                                        ; rows; added to the top to get the bottom (clip bounds 0 and SCREEN_ROWS)
-        EXTRN   _gNegSpriteHeight:WORD  ; @ ds:8184: minus _gPointerHeight, the lower y clip bound in rows
-        EXTRN   _gSpriteWidth:WORD      ; @ ds:8186: copy of _gPointerWidth8, the sprite width in 8-pixel
-                                        ; columns; added to the left to get the right (bounds 0 and SCREEN_COLUMNS)
-        EXTRN   _gNegSpriteWidth:WORD   ; @ ds:8188: minus _gPointerWidth8, the lower x clip bound in columns
         EXTRN   _gRestoreRect:DWORD     ; @ ds:804E: far fn (x, y, w, h, buf): buffer back to screen;
                                         ; x and w are in 8-pixel columns, y and h in pixel rows
                                         ; (HidePointer shifts the left edge right by three, the three
@@ -134,7 +119,64 @@
                                         ; ShowPointer below, which calls it at 1BBE:01F4 with mode 0 and
                                         ; the shape record _gPointerShapeOff/_gPointerShapeSeg at the
                                         ; unclipped position _gShapeX/_gShapeY (stored at 1BBE:011E and
-                                        ; 012E; src/E1BBE.ASM:337-342 gives the push order, call at :343)
+                                        ; 012E; src/E1BBE.ASM:379-384 gives the push order, call at :385)
+
+; @data
+; the data of e1bbe, ds:8176 to ds:8196 (32 bytes, no relocations), the original's bytes in address
+; order: the pointer rectangle and sprite bounds this unit's code keeps, then twelve bytes the
+; overlay loader uses.
+
+        PUBLIC  _gRectLeft ; @ ds:8176: pointer rectangle, left; in 8-pixel columns and
+                                        ; clipped in HidePointer/ShowPointer, in pixels and unclipped
+                                        ; in HidePointerZone, which compares it with the zone
+_gRectLeft      dw      0
+
+        PUBLIC  _gRectTop ; @ ds:8178: pointer rectangle, top; pixel rows clipped in
+                                        ; HidePointer/ShowPointer, pixels unclipped in HidePointerZone
+_gRectTop       dw      0
+
+        PUBLIC  _gRectRight ; @ ds:817A: pointer rectangle, right; as _gRectLeft
+_gRectRight     dw      0
+
+        PUBLIC  _gRectBottom ; @ ds:817C: pointer rectangle, bottom; as _gRectTop
+_gRectBottom    dw      0
+
+        PUBLIC  _gShapeX ; @ ds:817E: shape drawn at, x in pixels, unclipped
+_gShapeX        dw      0
+
+        PUBLIC  _gShapeY ; @ ds:8180: shape drawn at, y in pixels, unclipped
+_gShapeY        dw      0
+
+        PUBLIC  _gSpriteHeight ; @ ds:8182: copy of _gPointerHeight, the sprite height in pixel
+                                        ; rows; added to the top to get the bottom (clip bounds 0 and SCREEN_ROWS)
+_gSpriteHeight  dw      0
+
+        PUBLIC  _gNegSpriteHeight ; @ ds:8184: minus _gPointerHeight, the lower y clip bound in rows
+_gNegSpriteHeight dw      0
+
+        PUBLIC  _gSpriteWidth ; @ ds:8186: copy of _gPointerWidth8, the sprite width in 8-pixel
+                                        ; columns; added to the left to get the right (bounds 0 and SCREEN_COLUMNS)
+_gSpriteWidth   dw      0
+
+        PUBLIC  _gNegSpriteWidth ; @ ds:8188: minus _gPointerWidth8, the lower x clip bound in columns
+_gNegSpriteWidth dw      0
+
+; the twelve bytes ds:818A to 8196, 0 in the image, are the overlay loader's
+; (src/E1C00.ASM reads and writes them by address, with no name): named by their address.
+
+; the INT 21h/4B03 parameter block, two words: the load segment and the relocation factor
+; (src/E1C00.ASM:66-68, 1C00:002F and 007C)
+g818A label byte ; ds:818A
+        dw      0, 0
+
+; the far pointer through which 1C00:0055 calls the overlay's entry, offset then segment
+; (src/E1C00.ASM:198-200, 1C00:0081 and 0085)
+g818E label byte ; ds:818E
+        dd      0
+
+; SP and SS saved across the overlay load (src/E1C00.ASM:101-102 and 110-111)
+g8192 label byte ; ds:8192
+        dw      0, 0
         .CODE
 
 ; 1BBE:0001: Purpose unknown: the unit's first byte is 00. It is emitted under a public symbol

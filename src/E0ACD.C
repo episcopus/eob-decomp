@@ -22,7 +22,7 @@ extern signed char gInventoryMember; /*@ ds:A99A */    /* the selected character
 extern char gCursorSlot; /*@ ds:F51A */           /* the selected action row: 0..2 in the action menu
                                                (StepActionRow 0ACD:03CD wraps it) and 0x10 for the
                                                character's own item list (0ACD:0A61 and 0BA6; the same
-                                               tests at src/E122E.C:471 and :485) (src/E0D1C.C) */
+                                               tests at src/E122E.C:491 and :485) (src/E0D1C.C) */
 extern char gPanelMode; /*@ ds:FB44 */           /* a mode byte: 0, 1 and 2 gate the action handlers
                                                (src/E0D1C.C) */
 extern int gMatchedNodeKey; /*@ ds:FC82 */            /* an action mode: 0, 1 and 2 pick the branches of the
@@ -106,7 +106,7 @@ extern int gHandSplitY[]; /*@ ds:36B0 */          /* a per-slot word (screen row
 extern int gHitY; /*@ ds:5E12 */            /* the y the hit test uses (the walk is 16A5:00BD, src/E16A5.C) */
 extern unsigned gLeftButtonMode; /*@ ds:5E1C */       /* the left-button mode word: ClickHandSlot (0ACD:0415)
                                                takes its low seven bits, 1 selects SwapSelectedItem,
-                                               anything else UseItemSlot (src/E1658.C); src/E16A5.C:506
+                                               anything else UseItemSlot (src/E1658.C); src/E16A5.C:523
                                                tests gLeftButtonMode for the left button, gRightButtonMode for the right */
 extern signed char gSlotNeighbours[]; /*@ ds:36D0 */  /* a per-row four-byte action table (09EF) */
 extern signed char gFrontPosByDir[]; /*@ ds:373C */  /* a table with two entries per page: 0A61 reads
@@ -144,7 +144,7 @@ struct Node;    /* the screen list node 16A5:005A walks (src/E16A5.C) */
 /* 16A5:005A is void in src/E16A5.C, but its last statement leaves DispatchNodeEvent's result in AX
    and this unit consumes it, so it is declared int here. DispatchNodeEvent (16A5:00BD) returns the
    key a node took, the key itself when no node takes it (`if (result == 0) result = key;`) or 0 for
-   a mouse-only call (src/E16A5.C:185 to 188 and :523 to 524). */
+   a mouse-only call (src/E16A5.C:202 to 188 and :523 to 524). */
 extern int DispatchKeyWait(struct Node far *head); /*@ 16A5:005A */
 extern void DrawMemberFood(int who); /*@ 1547:04A0 */
 extern void RunCellScript(int cell, int mode); /*@ 122E:1DA8 */
@@ -158,10 +158,22 @@ extern void LoadScreenImage(char far *name, char far *extra, int srcKind, int ds
 extern void SetFont(char far *font); /*@ 1A47:0169 */
 void EnterMapScreen(void);
 void ResetMapScreen(void);
-extern void LoadLevel(int level); /*@ 210C:007A */   /* overlay 3 entry, ovl3:0A7C (src/EOV3.C:540) */
+extern void LoadLevel(int level); /*@ 210C:007A */   /* overlay 3 entry, ovl3:0A7C (src/EOV3.C:618) */
 extern void DrawViewFrame(int full); /*@ 2116:005C */    /* overlay 4 entry, ovl4:1F51 (src/EOV4.C) */
 extern void NoOpAfterMapLoad(void); /*@ 2116:0043 */    /* overlay 4 entry, ovl4:2039, a no-op (src/EOV4.C) */
 extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
+
+/*@data */
+/* the data of e0acd, ds:36B0 to ds:37B4 (260 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+int gHandSplitY[6] = { 24, 24, 80, 80, 136, 136 }; /*@ ds:36B0 */
+/* ds:36BC-36CF: ClickFloorItem's two local tables (stepOffset, slotKind), so the definitions after
+   them follow that function */
+/* ds:3752-376A: the code's (a literal or template, "You can't go that way.\r"): written by its function */
+/* ds:376A-378C: the code's (a literal or template, "%s isn't capable of eating food!\r"): written by its function */
+/* ds:378C-37A4: the code's (a literal or template, 'You may only eat food!\r'): written by its function */
+/* ds:37A4-37AC: the code's (a literal or template, 'PLAYFLD'): written by its function */
+/* ds:37AC-37B3: the code's (a literal or template, 'INVENT'): written by its function */
+/* ds:37B3: the pad byte to the next module (word alignment) */
 
 /* 0ACD:0008: draws "You can't go that way.", plays the bump sound and drops any pending key. The
    fallback of the movement keys (04F8..05FF) when StepIfOpen finds the way closed. */
@@ -549,6 +561,22 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
     }
     return 1;
 }
+
+/* the data after ClickFloorItem's templates (ds:36D0 to 3751) */
+signed char gSlotNeighbours[108] = { /*@ ds:36D0 */
+    18, 1, 25, 11, 21, 23, 21, 0, 14, 3, 4, 3,
+    15, 2, 5, 2, 2, 5, 6, 19, 3, 16, 7, 4,
+    4, 7, 8, 20, 5, 17, 9, 6, 6, 9, 10, 22,
+    7, 18, 11, 8, 8, 11, 12, 23, 9, 0, 13, 10,
+    10, 13, 14, 24, 11, 25, 15, 12, 12, 15, 2, 15,
+    13, 14, 3, 14, 25, 19, 17, 5, 16, 20, 18, 7,
+    17, 22, 0, 9, 24, 4, 20, 16, 19, 6, 22, 17,
+    1, 24, 1, 26, 20, 8, 23, 18, 22, 10, 24, 1,
+    23, 12, 19, 21, 0, 26, 16, 13, 0, 21, 16, 25
+};
+signed char gFrontPosByDir[8] = { 0, 1, 1, 3, 3, 2, 2, 0 }; /*@ ds:373C */
+signed char gMemberSide[6] = { 0, 1, 0, 1, 0, 1 }; /*@ ds:3744 */
+int gViewPosAhead[4] = { 0, 0, 1, 1 }; /*@ ds:374A */
 
 /* 0ACD:0753: advances gMapPhase, wrapping above 2 to 1, then moves the selected row
    gCursorSlot (step 2 passes it to NoOpAfterCursorMove with 9, otherwise NoOpBeforeCursorMove).

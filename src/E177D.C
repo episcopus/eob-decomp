@@ -55,9 +55,9 @@ extern unsigned char gSoundCard; /*@ ds:B892 */  /* the sound choice from argv[2
                                                     speaker, from the whitepaper 2.4 menu order (AdLib or
                                                     Sound Blaster, PC speaker, Tandy speaker) and the PC
                                                     speaker / Tandy driver at src/E1948.ASM:1-2, with the
-                                                    Tandy path at src/E07C8.C:306-307. The value is 0..2;
+                                                    Tandy path at src/E07C8.C:329-330. The value is 0..2;
                                                     src/E07C8.C:28 declares it char */
-extern unsigned char gTandySelected; /*@ ds:009E */  /* 1 only on the Tandy path (src/E07C8.C:307), where
+extern unsigned char gTandySelected; /*@ ds:009E */  /* 1 only on the Tandy path (src/E07C8.C:330), where
                                                       the speaker path of PlaySound/PlaySoundAtCell drives
                                                       gTandyOn; Purpose unknown beyond that */
 extern unsigned char gTandyOn; /*@ ds:8A67 */  /* the PC speaker / Tandy driver select applied by
@@ -66,7 +66,7 @@ extern unsigned char gTandyOn; /*@ ds:8A67 */  /* the PC speaker / Tandy driver 
                                                     their 0 stores (177D:00B3, 177D:021E) are dead:
                                                     both sit in the `driverSound < 0` / `gCurSound < 0`
                                                     blocks the QUIRKs name. The live 0 writer is
-                                                    ShutdownGame (src/E07C8.C:329). The name stays
+                                                    ShutdownGame (src/E07C8.C:352). The name stays
                                                     (owner's call): the value selects the driver */
 extern int gCurSound; /*@ ds:5E22 */  /* the driver sound number recorded by the previous call of
                                           PlaySoundAtCell; nonzero guards the retune, and 177D:0106
@@ -93,17 +93,17 @@ extern int gPartyCell; /*@ ds:FBCA */  /* the party's map cell: PlaySoundDefault
                                           it as the sound's cell, and PlaySoundAtCell passes it with
                                           that cell to Distance (17A6:0F61; 177D:026A pushes it,
                                           177D:026E is the call). ResetMapScreen sets it to 0x1EA
-                                          (src/E0ACD.C:939); objects and monsters are measured from
-                                          and compared with it (src/E08E6.C:221, :336, :467, :540;
-                                          src/EOV6.C:410) and it indexes the nine-byte cell records
-                                          (src/E0D1C.C:352, :358) */
+                                          (src/E0ACD.C:967); objects and monsters are measured from
+                                          and compared with it (src/E08E6.C:262, :336, :467, :540;
+                                          src/EOV6.C:422) and it indexes the nine-byte cell records
+                                          (src/E0D1C.C:376, :358) */
 
 extern unsigned char far gBusyCountdown; /*@ 0000:3B36 */  /* the driver's busy countdown: set to DRIVER_BUSY
                                                        after a start and counted down by the driver's
                                                        timer; the AdLib path waits for it to reach 0
                                                        before it writes registers. Not volatile: the
                                                        timer changes it, but volatile cross-jumps
-                                                       elsewhere (src/E1414.C:261) */
+                                                       elsewhere (src/E1414.C:304) */
 
 /* FileOpen returns the cache slot index (not a DOS handle), 1C0E:00DB */
 extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
@@ -134,6 +134,17 @@ extern int Distance(int x, int y); /*@ 17A6:0F61 */
 /* forward declaration: PlaySoundDefault (177D:00F3) calls it before its definition below */
 void PlaySoundAtCell(int sound, int cell);
 
+/*@data */
+/* the data of e177d, ds:5E22 to ds:5E44 (34 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+int gCurSound = 0; /*@ ds:5E22 */
+int gCurAttenuation = 0; /*@ ds:5E24 */
+int gPrevSound = 0; /*@ ds:5E26 */
+int gSoundLevel = -1; /*@ ds:5E28 */
+int gSoundReg1 = -1; /*@ ds:5E2A */
+/* ds:5E2C-5E36: the code's (a literal or template, 'adlib.dat'): written by its function */
+/* ds:5E36-5E43: the code's (a literal or template, 'pcgamesn.dat'): written by its function */
+/* ds:5E43: the pad byte to the next module (word alignment) */
+
 /* 177D:000A: opens the driver file chosen by gSoundCard (adlib.dat when 0, pcgamesn.dat
    otherwise), reads its 120-byte sound map into gSoundMap and its 32C8h data block into segment
    0000 (_TEXT) at offset 0416 (GetDriverBlock returns cs:0416), closes the file and fixes the block's
@@ -143,7 +154,7 @@ void PlaySoundAtCell(int sound, int cell);
 {
     int slot;
 
-    /* FileOpen mode 1 is read (0x8001, src/E1C0E.C:166) */
+    /* FileOpen mode 1 is read (0x8001, src/E1C0E.C:216) */
     if (gSoundCard == 0)
         slot = FileOpen("adlib.dat", 1);
     else
@@ -158,7 +169,7 @@ void PlaySoundAtCell(int sound, int cell);
    (unsigned char, so 0..0FFh) and a value of 96h or more is ignored. On AdLib (gSoundCard 0) the
    driver number is handed to 0000:400C. On the other cards (1 PC speaker, 2 Tandy speaker) the low
    seven bits select a driver routine through 0000:03E3 and start it through 1948:0418; when
-   gTandySelected is 1 (the Tandy path, src/E07C8.C:307) a nonzero number sets gTandyOn to 1 and
+   gTandySelected is 1 (the Tandy path, src/E07C8.C:330) a nonzero number sets gTandyOn to 1 and
    resumes the driver through 1948:0458, but only when gTandyOn is currently 0 (177D:00C1 to 00CD;
    1 is Tandy, 0 the PC speaker, E1948.ASM:7). QUIRK
    177D:00A8: the `driverSound < 0` test (the `gTandyOn = 0` block) is dead: the map byte is

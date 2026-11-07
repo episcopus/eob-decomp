@@ -32,11 +32,11 @@ extern int (far *gAllocFailHook)(void); /*@ ds:810A */
 extern void far *NormalizePtr(void far *p); /*@ 1BA8:0072: normalizes a far pointer to DX:AX (its
                                               body calls _NormFar, src/E1BA8.ASM:81-90) */
 extern int EvictFile(unsigned size, unsigned char flags); /*@ 1C0E:0E5B: first retry before the
-                                                              OOM hook (src/E1C0E.C:631) */
-extern void SetVideoMode(int mode); /*@ 1DDD:002D: INT 10h AH=0 set video mode (src/E1DDD.C:43) */
+                                                              OOM hook (src/E1C0E.C:681) */
+extern void SetVideoMode(int mode); /*@ 1DDD:002D: INT 10h AH=0 set video mode (src/E1DDD.C:56) */
 extern void PrintString(char far *s); /*@ 19EA:0000 */
 extern int WaitGameKey(void); /*@ 1AAD:053A: returns the value _ProcessKeyEvent leaves in AX
-                                 (src/E1AAD.ASM:481-483); src/E1C0E.C:46 and src/E082C.C:99
+                                 (src/E1AAD.ASM:520-522); src/E1C0E.C:46 and src/E082C.C:99
                                  declare int and use it, so the type fits the value */
 extern void ShutdownGame(void); /*@ 07C8:058A */
 
@@ -44,12 +44,12 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
    paragraph aligned block; src/E07A9.C:37 defines this bit and uses it at src/E07A9.C:276, and
    src/E1B82.C:43 defines it and uses it at src/E1B82.C:165 and :174.
    MEMALLOC_ZERO_FILL (0x10) zero fills the block; no caller in src/ passes it (the 0x10L at
-   src/E07C8.C:259 is a size, not a flag), so its meaning is read from this unit's code alone. */
+   src/E07C8.C:282 is a size, not a flag), so its meaning is read from this unit's code alone. */
 #include "EOB.H"
 #define MEMALLOC_ZERO_FILL 0x10
 /* the maxFlags MemAlloc's retry passes to EvictFile: 0xff is the largest unsigned char, and
-   FindEvictableFile keeps a slot whose flags are `<= maxFlags` (src/E1C0E.C:617), so any slot
-   qualifies. The other caller passes the slot's own flags instead (src/E1C0E.C:875). */
+   FindEvictableFile keeps a slot whose flags are `<= maxFlags` (src/E1C0E.C:667), so any slot
+   qualifies. The other caller passes the slot's own flags instead (src/E1C0E.C:925). */
 #define EVICT_ANY 0xff
 /* the zero-fill chunk: MemAlloc fills a MEMALLOC_ZERO_FILL block in chunks this size and steps the
    segment by the same count in paragraphs (0xFA00 / 16 = 0xFA0, the sub at 19BC:00EE and the
@@ -57,6 +57,11 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
    (build/toolchain/tc100/INCLUDE/MEM.H:32, :53), so a block over 64K must be split; why the
    original stops at 0xFA00 rather than 0xFFFF is not evidenced. */
 #define MEMALLOC_FILL_CHUNK 0xFA00L
+
+/*@data */
+/* the data of e19bc, ds:7FEC to ds:8024 (56 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+/* ds:7FEC-8023: the code's (a literal or template, 'Memory Allocation Error! Press any key t'): written by its function */
+/* ds:8023: the pad byte to the next module (word alignment) */
 
 /* 19BC:0007: allocate a far block of `size` bytes. It asks farmalloc for one extra byte (or 16
    for a MEMALLOC_ALIGNED request) and retries: first the retry EvictFile(0, EVICT_ANY) is tried,
@@ -210,9 +215,9 @@ extern void ShutdownGame(void); /*@ 07C8:058A */
    (src/E07C8.C:132), so this function only runs if something allocates before main installs the
    hook. It restores the command line's video mode only when
    argv[5] (ds:84A0) is nonzero: SetVideoMode(7) takes the index 7 branch, which loads ds:84A0 (the
-   mode from argv[5], src/E07C8.C:124), not the literal 7 (src/E1DDD.C:45-48), and SetVideoMode
+   mode from argv[5], src/E07C8.C:124), not the literal 7 (src/E1DDD.C:58-61), and SetVideoMode
    calls the BIOS only when gBiosVideoModes[7] (ds:84B0, 0 in the image, src/E1DDD.C:16-18) differs from
-   ds:84A0 (src/E1DDD.C:49). It then prints "Memory Allocation Error! Press any key to exit to
+   ds:84A0 (src/E1DDD.C:62). It then prints "Memory Allocation Error! Press any key to exit to
    DOS.", waits for a key (WaitGameKey, which does no cleanup) and runs the shut-down path
    ShutdownGame (07C8:058A), which ends in exit(0). The `return 0` only meets the hook's int type;
    it is never reached. */

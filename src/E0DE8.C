@@ -24,13 +24,13 @@ extern signed char gViewToCellPos[]; /*@ ds:1A1B */   /* the cell position seen 
 extern signed char gViewRelativePos[]; /*@ ds:1A2B */   /* by gPartyDir, a cell position to its view position; used by 01FF */
 extern signed char gClassSlotCount[]; /*@ ds:115F */   /* a byte table indexed by a class, used by 0B45 */
 extern signed char gClassBaseBits[]; /*@ ds:1231 */   /* a byte table indexed by the class classIndex (:725;
-                                                src/E0BD2.C:102) */
-extern signed char gLauncherAmmoType[]; /*@ ds:552F */   /* a byte table indexed by the item's m02 (UseItemByKind
-                                                :432) */
+                                                src/E0BD2.C:154) */
+extern signed char gLauncherAmmoType[]; /*@ ds:5536 */   /* the ammunition kind of each launcher, indexed by the
+                                                item's m02 less 7 (m02 7 to 14; UseItemByKind) */
 extern signed char gArmourSlots[]; /*@ ds:553E */   /* the four items slot indexes ComputeArmourClass walks
                                                 (:719) */
 extern signed char gConSaveBonus[]; /*@ ds:54F6 */   /* byte table indexed by constitution; used by 0D1C:059B
-                                                (src/E0D1C.C:437, :441) */
+                                                (src/E0D1C.C:461, :441) */
 extern unsigned char gPartySpellFlags; /*@ ds:FBD2 */   /* bit 0 gates the icon colour row (src/E07A9.C);
                                                 RollToHit reads bits 4 and 5 (:225) */
 extern int gPartyDir; /*@ ds:FBCC */             /* the party's facing, 0..3 north, east, south, west */
@@ -39,7 +39,7 @@ extern signed char gPanelFillColour; /*@ ds:F57E */     /* a colour read by 0D1C
 extern signed char gPanelHighlight; /*@ ds:FB4C */     /* a colour read by 0D1C:0C21 */
 extern signed char gPanelShadow; /*@ ds:F53A */     /* a colour read by 0D1C:0C21 */
 extern char gPanelMode; /*@ ds:FB44 */            /* a mode byte: 0 and 1 gate 0D1C:01CA's redraws
-                                                (src/E0D1C.C:108); DamageCharacter redraws the member
+                                                (src/E0D1C.C:132); DamageCharacter redraws the member
                                                 when it is 0 and the portrait otherwise (:596-599) */
 extern signed char gViewFrontSide; /*@ ds:A9C6 */     /* an offset within a nine-byte gMaze record (:348-350;
                                                 0ACD:0644) */
@@ -91,6 +91,15 @@ extern int sprintf(char *buf, char *fmt, ...); /*@ 0000:57AE */
 
 void DamageCharacter(int who, int what);  /* forward: 01FF reaches it with a far call */
 void LevelUpSlot(int who, int cls, int slot);  /* forward: 0B45 reaches it with a far call */
+
+/*@data */
+/* the data of e0de8, ds:5536 to ds:55E6 (176 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+signed char gLauncherAmmoType[8] = { 16, -1, -1, -1, -1, -1, -1, 18 }; /*@ ds:5536 */
+signed char gArmourSlots[5] = { 17, 0, 1, 18, 19 }; /*@ ds:553E */
+/* ds:5543-55B0: the code's (a literal or template, 'All of your party has been defeated.  Th'): written by its function */
+/* ds:55B0-55DA: the code's (a literal or template, '\x06\x01%s has gained a level of experience.\x06\x0f'): written by its function */
+/* ds:55DA-55E5: the code's (a literal or template, '%s is %s!\r'): written by its function */
+/* ds:55E5: the pad byte to the next module (word alignment) */
 
 /* 0DE8:0007: the to-hit roll of character `who` against monster `obj`. It derives an attack bonus
    from the item record `slot` (an index into gItems; its m02 item type index selects the m0B
@@ -316,7 +325,7 @@ fail:
 }
 
 /* 0DE8:05BB: picks the item for the action `slot` (an index into gItems) and runs it. The
-   item's m02 indexes gLauncherAmmoType to a `kind`; kind 0x10 takes the first of items[0] and items[1] whose own
+   item's m02, less 7, indexes gLauncherAmmoType to a `kind`; kind 0x10 takes the first of items[0] and items[1] whose own
    m02 is 0x10 (clearing that slot), else the special items[16] slot (pulled through RemoveListItem,
    with no m02 test); otherwise it scans all 27 slots for the first whose item m02 equals `kind`
    (clearing it and redrawing with RedrawMember when the slot is below 2). A found item is
@@ -332,7 +341,7 @@ fail:
     int i;
 
     m02 = gItems[slot].type;
-    kind = gLauncherAmmoType[m02];
+    kind = gLauncherAmmoType[m02 - 7];   /* the code indexes ds:552F, the table less 7 */
     item = 0;
     if (kind == 0x10) {
         item = gChars[who].items[0];
@@ -431,7 +440,7 @@ fail:
         ApplyCharEffect(who, 0x12, slot + 2, 1);
 }
 /* 0DE8:093B: the party-wipe ending. It counts how many of the six characters pass the
-   MemberIs(n, 5) test (m01 bit 0 and m1B > 0, src/E0D1C.C:445-448); when none does it hides the
+   MemberIs(n, 5) test (m01 bit 0 and m1B > 0, src/E0D1C.C:469-472); when none does it hides the
    pointer, fills the panel (0, 0x79)-(0x13F, 0xC8), writes "All of your party has been defeated.
    ..." in text window 9, shows the pointer again (LockShowPointer, :550), waits for a key
    (DelaySecondsThenKey(1), :551) and shuts the game down. Called by 0DE8:09B9. */

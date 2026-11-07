@@ -47,7 +47,7 @@ def test_draft_names_far_pointers_by_their_targets():
     text = dataskel.draft("e0a72")
     assert "char far *gSaveTables[6] = { g33BB, g33ED, g337A, g339D, g33BB, g33BB }; /*@ ds:3406 */" in text
     # an unnamed target of a table of long far pointers is typed by the table
-    assert re.search(r"^long g34D0\[12\] = \{ 0L, 2500L,", text, re.M)
+    assert re.search(r"^long g34D0\[12\] = \{ /\*@ ds:34D0 \*/\n    0L, 2500L,", text, re.M)
 
 
 def test_data_definitions_need_the_marker():

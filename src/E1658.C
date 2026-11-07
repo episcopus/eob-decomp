@@ -4,16 +4,16 @@
    pointer, an unsigned sort key, a flags word at +0E, a state word at +2E and a far callback at
    +30; the box coordinates the drawing routine uses sit at +1E..+24. DrawNode (16A5:07C3) reads
    the pointer size and the box, kind and mode fields first, then the state word +2E at
-   E16A5.C:541. The on bit 0x0001 and the 0x0004 bit are two separate tests: the
-   st1 block (E16A5.C:555) runs when 0x0001 is set and picks its path by modeB +0B, and the
-   st4 block (E16A5.C:597) runs when 0x0004 is set and picks its path by modeC +0C, so both run
+   E16A5.C:558. The on bit 0x0001 and the 0x0004 bit are two separate tests: the
+   st1 block (E16A5.C:572) runs when 0x0001 is set and picks its path by modeB +0B, and the
+   st4 block (E16A5.C:614) runs when 0x0004 is set and picks its path by modeC +0C, so both run
    when both bits are set. Only when both are clear does it draw by the kind +0A: the region
    front end 1A29:000F for kind 1 (Purpose unknown, E1A29.C:68), called with the src14 or src10
-   pointer (E16A5.C:560, 643), text through gDrawText ds:80CA for kind 2, a tile through
-   gDrawIndexedTile ds:805E for kind 3, the src10 pointer as a far callback for kind 4 (E16A5.C:655-657),
+   pointer (E16A5.C:577, 643), text through gDrawText ds:80CA for kind 2, a tile through
+   gDrawIndexedTile ds:805E for kind 3, the src10 pointer as a far callback for kind 4 (E16A5.C:672-674),
    and a box through DrawBox 1A1F:000C or gXorRect ds:8066 for kinds 5 and 0, where kind 0 draws
    the box only when the mode bytes say so (inside this both-clear gate): mode 2 draws with no
-   state test, and mode 3 also needs 0x0008 (modeB) or 0x0010 (modeC) set (E16A5.C:663-671).
+   state test, and mode 3 also needs 0x0008 (modeB) or 0x0010 (modeC) set (E16A5.C:680-671).
    The five state operations here (0073, 0154, 017B, 01E6, 02F5) and the dispatcher 16A5:00BD
    call it. ListAdd (1658:001E), used by other units, appends to a list; InsertNode (1658:03D6)
    here inserts in key order. Names and the unknown bit meanings are placeholders until the
@@ -30,21 +30,21 @@
    first, so when both bits are set only the gLeftButtonMode write happens and gRightButtonMode is written only when
    0x0400 (or 0x0100) is clear. The 0x80 of 0x81/0x83 then makes
    the whole block a no-op for the next state operation. While the mouse is enabled,
-   DispatchNodeEvent sets the mode on every call (E16A5.C:205-212, inside the gMouseDisabled
-   gate at E16A5.C:202-245); while it is disabled only a key match writes the mode
-   (E16A5.C:293, 299), which clears the latch. */
+   DispatchNodeEvent sets the mode on every call (E16A5.C:222-229, inside the gMouseDisabled
+   gate at E16A5.C:219-262); while it is disabled only a key match writes the mode
+   (E16A5.C:310, 299), which clears the latch. */
 
 /* The gLeftButtonMode/gRightButtonMode button modes. With the mouse enabled DispatchNodeEvent sets them to 2 or 4 from
-   GetKeyState on every call (E16A5.C:202-212), writes 1 or 3 on a button click (E16A5.C:217-223,
-   232-239; 3 when the key's 0x800 bit is set) and 1 on a key match (E16A5.C:293, 299). The
+   GetKeyState on every call (E16A5.C:219-229), writes 1 or 3 on a button click (E16A5.C:234-240,
+   232-239; 3 when the key's 0x800 bit is set) and 1 on a key match (E16A5.C:310, 299). The
    dispatcher then gives each mode a behaviour: BUTTON_MODE_NODE_OFF toggles the node's on bit on
-   its 0x0100 flag when the node's 0x0001 flag is clear (E16A5.C:347-365), and BUTTON_MODE_NODE_ON
+   its 0x0100 flag when the node's 0x0001 flag is clear (E16A5.C:364-382), and BUTTON_MODE_NODE_ON
    toggles it on its 0x0400 flag when the 0x0001 flag is set, with the 0x0002 flag clearing it
-   (E16A5.C:366-378). This unit writes 3 or 1 with the 0x80 latch bit set (0x83, 0x81) so the
+   (E16A5.C:383-395). This unit writes 3 or 1 with the 0x80 latch bit set (0x83, 0x81) so the
    block is a no-op for the next state operation. While the mouse is enabled, DispatchNodeEvent
-   sets the mode on every call (E16A5.C:205-212, inside the gMouseDisabled gate at
-   E16A5.C:202-245); while it is disabled only a key match writes the mode (E16A5.C:293, 299),
-   which clears the latch. E0ACD.C:369 reads the same value 1 in gLeftButtonMode as a slot choice
+   sets the mode on every call (E16A5.C:222-229, inside the gMouseDisabled gate at
+   E16A5.C:219-262); while it is disabled only a key match writes the mode (E16A5.C:310, 299),
+   which clears the latch. E0ACD.C:381 reads the same value 1 in gLeftButtonMode as a slot choice
    (ClickHandSlot, 0ACD:0415): (gLeftButtonMode & 0x7F) == 1 swaps the selected item, anything else uses it,
    so 0x80 is a flag beside the mode value and 1 is not only this dispatcher's mode. */
 #define BUTTON_MODE_NODE_OFF 1
@@ -54,17 +54,17 @@
 /* The +2E state word. Bit 0x0001 is the value 0073 toggles and 02F5 sets; 01E6 clears bits 0x0001
    and 0x0002. Bit 0x0008 is set to the OLD value of bit 0x0001 just before bit 0x0001 is changed,
    so a redraw can tell that the node changed; E16A5.C calls this bit NODE_STATE_8, sets it from
-   the on bit before toggling (E16A5.C:282-285, 294, 300) and redraws when bits 0x0008 and 0x0001
-   differ, or when bits 0x0010 and 0x0004 differ (E16A5.C:472-473); the second test is the one
+   the on bit before toggling (E16A5.C:299-302, 294, 300) and redraws when bits 0x0008 and 0x0001
+   differ, or when bits 0x0010 and 0x0004 differ (E16A5.C:489-490); the second test is the one
    01E6's 0x0004/0x0010 writes feed. That is the "previous on" reading below. The remaining bits
    (0x0004, 0x0010) are used only by 01E6 in this unit; E16A5.C sets and tests them too. */
 
 /* The two words at ds:5E1C and ds:5E1E, set here to 0x81 or 0x83 and compared with 1 or 3; bit
    0x80 of either makes the whole block a no-op. DispatchNodeEvent (16A5:00BD) sets them to the
    mouse button mode (1 to 4) from two sources: 2 or 4 from GetKeyState on every call
-   (E16A5.C:205-212), and 1 or 3 on a button click (the key codes 0x41/0x42 and 0xC6/0xC7,
-   E16A5.C:215-223, 231-239), and 1 on a key match (E16A5.C:293, 299). What drives them here is
-   unknown. Declared `unsigned` here and in E0ACD.C:104; E16A5.C:104-105 still calls them `int`. */
+   (E16A5.C:222-229), and 1 or 3 on a button click (the key codes 0x41/0x42 and 0xC6/0xC7,
+   E16A5.C:232-240, 231-239), and 1 on a key match (E16A5.C:310, 299). What drives them here is
+   unknown. Declared `unsigned` here and in E0ACD.C:104; E16A5.C:121-122 still calls them `int`. */
 extern unsigned gLeftButtonMode; /*@ ds:5E1C */
 extern unsigned gRightButtonMode; /*@ ds:5E1E */
 
@@ -86,9 +86,9 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
 
 /* 1658:001E: walks `head` to its tail, links `item` after it, clears item's own link and returns
    the original head. Used by other units: the BuildList functions (BuildList1 to BuildList5 in
-   E0CF7.C), BuildRowNodeList (ovl0:042F, EOV0.C:354-367) and _BuildMenuButtons (ovl1:1153,
+   E0CF7.C), BuildRowNodeList (ovl0:042F, EOV0.C:365-378) and _BuildMenuButtons (ovl1:1153,
    EOV1.ASM:2184, call at :2417); E0ACD.C reaches it only through its calls to BuildList1 to
-   BuildList4 (E0ACD.C:174, 239, 242, 276, 301, 315, 333 and 923). Called by InsertNode below. */
+   BuildList4 (E0ACD.C:186, 239, 242, 276, 301, 315, 333 and 923). Called by InsertNode below. */
 /*@ 1658:001E */ struct Node far *ListAdd(struct Node far *head, struct Node far *item)
 {
     struct Node far *first;
@@ -141,7 +141,7 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
 
 /* 1658:0154: if the node is not inactive, make it inactive (set flags bit 0x0008) and redraw it;
    returns the node. 04A7 returns the inverse of that bit. DispatchNodeEvent (16A5:00BD) skips a
-   node whose 0x0008 is set (E16A5.C:273-276). No direct caller was found in the resident code or
+   node whose 0x0008 is set (E16A5.C:290-293). No direct caller was found in the resident code or
    the overlays. */
 /*@ 1658:0154 */ struct Node far *DisableNode(struct Node far *node)
 {
@@ -154,7 +154,7 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
 
 /* 1658:017B: if the node is inactive, make it active again (clear flags bit 0x0008) and redraw
    it; returns the node. The counterpart of DisableNode, whose 0x0008 DispatchNodeEvent
-   (16A5:00BD) tests (E16A5.C:273-276). No direct caller was found in the resident code or the
+   (16A5:00BD) tests (E16A5.C:290-293). No direct caller was found in the resident code or the
    overlays. */
 /*@ 1658:017B */ struct Node far *EnableNode(struct Node far *node)
 {
@@ -168,7 +168,7 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
 /* 1658:01A2: returns the first node whose key equals `key`, or a null pointer. The search walks
    from `head`, comparing each node before stepping, then compares the last node's key after the
    loop, which is why the comparison appears twice. The callers found are in overlay 0
-   (EOV0.C:880, EditStatField) and overlay 1 (EOV1.ASM:1544, :1565, :1819, :1876, :3536, :3964,
+   (EOV0.C:965, EditStatField) and overlay 1 (EOV1.ASM:1544, :1565, :1819, :1876, :3536, :3964,
    :3988, :4049, :4317, :4334, :4434; the EXTRN is at :47).
    QUIRK 1658:01A2: when the walk starts on the last node of a list (its `next` is null) and that
    node's key does not match, which includes every one-node list, `head = head->next`
@@ -193,7 +193,7 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
 /* 1658:01E6: the counterpart of SetNode: if the node is not inactive, save its on bit into the
    previous-on bit, clear the on bit (NODE_STATE_ON) and NODE_STATE_2, mark NODE_STATE_10 and clear
    NODE_STATE_4. The 0x0004 set and the 0x0010 mark are the dispatcher's "0x0004 was set" mapping
-   (E16A5.C:286-289). Then redraw and fire the callback as in 0073. Returns the node. No direct
+   (E16A5.C:303-306). Then redraw and fire the callback as in 0073. Returns the node. No direct
    caller was found in the resident code or the overlays.
    QUIRK 1658:01E6: the `else` branch below never runs: `(node->state |= NODE_STATE_4)` sets
    0x0004, so the test is always true and NODE_STATE_10 is always set. A port must keep the dead
@@ -317,8 +317,8 @@ extern void DrawNode(struct Node far *node); /*@ 16A5:07C3 */
 }
 
 /* 1658:04CA: Purpose unknown: reads the node's state word and returns NODE_STATE_2. ClearNode
-   (1658:01E6) clears that bit, while DispatchNodeEvent sets it (E16A5.C:316) and reads it with
-   the flags 0x20 test to stop the walk (E16A5.C:477-478). Like 04BB it has no direct caller in
+   (1658:01E6) clears that bit, while DispatchNodeEvent sets it (E16A5.C:333) and reads it with
+   the flags 0x20 test to stop the walk (E16A5.C:494-495). Like 04BB it has no direct caller in
    the resident code. */
 /*@ 1658:04CA */ int GetNodeState1(struct Node far *node)
 {

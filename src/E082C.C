@@ -47,7 +47,7 @@ enum {
 };
 
 /* DrawFilledPanel's "draw no interior" value; its callers pass -1 for it, for example
-   src/EOV2.C:502, :503, src/E0D1C.C:720 and :725, src/E1547.C:226 and src/EOV2.C:364. */
+   src/EOV2.C:568, :503, src/E0D1C.C:720 and :725, src/E1547.C:265 and src/EOV2.C:430. */
 #define NO_FILL (-1)
 
 extern struct Region gRegions[]; /*@ ds:009F */
@@ -55,15 +55,15 @@ extern void (far *gDrawLine)(int x1, int y1, int x2, int y2, int colour); /*@ ds
 extern void (far *gFillRect)(int x1, int y1, int x2, int y2, int colour); /*@ ds:806A */
 extern void (far *gDrawText)(char far *text, int x, int y, int colour, int extra); /*@ ds:80CA */
 extern int gGraphicsChoice; /*@ ds:8102: the graphics mode chosen at start-up: 0 cga, 1 tandy, 2 ega,
-                             3 mcga/VGA, 4 vga (src/E07C8.C:39-43, the list at :42; src/E17A6.ASM:233
+                             3 mcga/VGA, 4 vga (src/E07C8.C:39-43, the list at :42; src/E17A6.ASM:252
                              names 3 MCGA; whitepaper 2.6: 1 Tandy, 3 VGA). LoadScreenImage picks CPS
                              for 3, the MCGA/VGA art suffix (the sprintf below) */
-extern int gClickX; /*@ ds:8140: x of the last click, written by src/E1AAD.ASM:396 and also read by src/E14EF.C:325 */
-extern int gClickY; /*@ ds:8142: y of the last click, written by src/E1AAD.ASM:405 and also read by src/E14EF.C:325 */
+extern int gClickX; /*@ ds:8140: x of the last click, written by src/E1AAD.ASM:435 and also read by src/E14EF.C:329 */
+extern int gClickY; /*@ ds:8142: y of the last click, written by src/E1AAD.ASM:444 and also read by src/E14EF.C:329 */
 extern int gDrawPage; /*@ ds:8115: the graphics driver's draw page (2 while LoadOverlayScreen draws off screen) */
 extern unsigned long gTicks; /*@ ds:848A: the game's own 32-bit tick counter, stepped by the INT 1Ch handler at src/E1D8F.ASM:76 (label 1D8F:0055); the increment of ds:848A is at src/E1D8F.ASM:91 (`inc word ptr ds:[848Ah]`) */
 extern char gFileNameBuf[]; /*@ ds:FE6E */ /* the shared text buffer the filename/format helpers and the memory report build into */
-extern char gCgaMapDefault[]; /*@ ds:113F */ /* a 32-byte CGA colour map (values 0..3), not an image buffer: passed as LoadScreenImage's extra pointer to CopyPage, which hands it to the far handler at ds:8046 only when two slots hold non-zero segments that differ (src/E19EC.C:29-35); overlays pass it as the colour-map argument of gGetSpriteCell (src/EOV2.C:181, src/EOV5.C:1008), which cuts the cells from the page after the draw page */
+extern char gCgaMapDefault[]; /*@ ds:113F */ /* a 32-byte CGA colour map (values 0..3), not an image buffer: passed as LoadScreenImage's extra pointer to CopyPage, which hands it to the far handler at ds:8046 only when two slots hold non-zero segments that differ (src/E19EC.C:29-35); overlays pass it as the colour-map argument of gGetSpriteCell (src/EOV2.C:227, src/EOV5.C:1040), which cuts the cells from the page after the draw page */
 extern char gCursorChar; /*@ ds:31AC: the one character drawn at the editing cursor */
 extern char gCursorOn; /*@ ds:FC4C: nonzero while the cursor is drawn (blinks in the editor) */
 
@@ -99,6 +99,18 @@ extern int WaitGameKey(void); /*@ 1AAD:053A */
 /* siblings of this file called before they are defined */
 void DrawShadowText(char far *text, int x, int y, int colour, int colour2);
 
+/*@data */
+/* the data of e082c, ds:31AC to ds:31F2 (70 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+char gCursorChar = 32; /*@ ds:31AC */
+unsigned char g31AD[2] = { 0x00, 0x00 }; /*@ ds:31AD */
+/* ds:31AF-31B5: the code's (a literal or template, '%s.%s'): written by its function */
+/* ds:31B5-31B9: the code's (a literal or template, 'CPS'): written by its function */
+/* ds:31B9-31BD: the code's (a literal or template, 'EGA'): written by its function */
+/* ds:31BD-31C5: the code's (a literal or template, '%lu:%lu'): written by its function */
+/* ds:31C5-31E9: the code's (a literal or template, 'HEAP CORRUPT!! (free memory) = %lu\n'): written by its function */
+/* ds:31E9-31F1: the code's (a literal or template, '%s%d.%s'): written by its function */
+/* ds:31F1: the pad byte to the next module (word alignment) */
+
 /* 082C:000B: the interactive text-field editor. Draws the string `text` at (x, y) (x in 8-pixel
    cells, y in lines) with the character under the cursor, then loops: it waits for a key
    (1AAD:038E) while blinking the cursor every two ticks through gCursorOn and the tick counter
@@ -110,7 +122,7 @@ void DrawShadowText(char far *text, int x, int y, int colour, int colour2);
    maxlen+2 by 9 clip rectangle (see the QUIRK below), and the text and cursor are drawn with
    DrawShadowText. `colour` is the text colour, `attr` is the second colour passed to the draw
    call (DrawShadowText's `colour2`, below) and `cursorAttr` is the cursor colour: ovl0 passes 0xf, 0
-   and 8 (src/EOV0.C:1312), ovl2 passes gTextAttr1, gTextAttr2 and 8 (src/EOV2.C:504).
+   and 8 (src/EOV0.C:1397), ovl2 passes gTextAttr1, gTextAttr2 and 8 (src/EOV2.C:570).
    Reached from FindWordPanel (ovl2:09ED) and ovl0:23EC. The unit is compiled
    with -v (debug information; the flags line), which keeps the insert path's `text[maxlen] = 0`
    and the append path's `text[cur] = 0` as two separate stores; without it TCC merges them into
@@ -321,8 +333,8 @@ done:
    page gDrawPage to 2. With mode -1 LoadScreenImage skips the 19EC:002A blit, so nothing
    is drawn here: the page reaches the screen only when `dstKind` is itself a screen slot (segment
    0xB800 or 0xA000, src/E19EC.C:5-7). Called by many overlays, all with dstKind 3, for example
-   src/EOV0.C:1289 and src/EOV2.C:180. `name` is the art name the caller passes (for example
-   "ITEMICN", src/EOV2.C:180); gCgaMapDefault, a 32-byte CGA colour map (ds:113F), is the `extra` pointer passed on to
+   src/EOV0.C:1374 and src/EOV2.C:226. `name` is the art name the caller passes (for example
+   "ITEMICN", src/EOV2.C:226); gCgaMapDefault, a 32-byte CGA colour map (ds:113F), is the `extra` pointer passed on to
    LoadScreenImage. The "Overlay" in this name is not a VROOMM code overlay: the function loads an art page. */
 /*@ 082C:05EC */ void LoadOverlayScreen(char far *name, int srcKind, int dstKind)
 {
@@ -332,7 +344,7 @@ done:
 
 /* 082C:0613: the point (x, y) is inside the inclusive rectangle built from its left, top, right
    and bottom edges: 1 when all four tests hold, 0 otherwise. The name is a second name for the same
-   test as IsPointInRect at 14EF:00E1 (src/E14EF.C:146); a naming pass should settle one name across
+   test as IsPointInRect at 14EF:00E1 (src/E14EF.C:150); a naming pass should settle one name across
    the project. This copy is reached with the last click (ClickInRect). */
 /*@ 082C:0613 */ int IsPointInsideRect(int x, int y, int left, int top, int right, int bottom)
 {
@@ -398,7 +410,7 @@ done:
 }
 
 /* 082C:07A4: exchange the bytes at the two far addresses. The only caller is SortSpellSlots
-   (src/E0EF3.C:442). */
+   (src/E0EF3.C:539). */
 /*@ 082C:07A4 */ void SwapChars(char far *pa, char far *pb)
 {
     char saved;
@@ -450,11 +462,11 @@ done:
    (x-1, y+1) in the shadow colour 0x0C, then the text itself in `colour`. `colour2` is forwarded as
    the fifth argument of the first shadow draw only, the argument of the draw hook gDrawText
    (ds:80CA) that is a colour in the hook's direct calls (gTextAttr2 at src/E1DE7.C:280 and :296,
-   hiColour and fill at src/E0EF3.C:1937/1946), so `colour2` is a second colour; what the hook does
+   hiColour and fill at src/E0EF3.C:2034/1946), so `colour2` is a second colour; what the hook does
    with it is unknown (Purpose unknown). Called by EditTextField in this unit (082C:000B,
-   src/E082C.C:129), the character panel (src/E1547.C:521-545), the name list (src/E14EF.C:208,
-   DrawOptionList at 14EF:0154), the word-find editor (src/EOV2.C:500), src/EOV6.C:399, the ovl0
-   panel (src/EOV0.C:387) and the ovl1 panels (src/EOV1.ASM:1259, :1672). */
+   src/E082C.C:141), the character panel (src/E1547.C:560-584), the name list (src/E14EF.C:212,
+   DrawOptionList at 14EF:0154), the word-find editor (src/EOV2.C:566), src/EOV6.C:411, the ovl0
+   panel (src/EOV0.C:398) and the ovl1 panels (src/EOV1.ASM:1259, :1672). */
 /*@ 082C:0898 */ void DrawShadowText(char far *text, int x, int y, int colour, int colour2)
 {
     gDrawText(text, x - 1, y, 0xc, colour2);
@@ -474,7 +486,7 @@ done:
 }
 
 /* 082C:0974: the width in pixels of the decimal form of the long `value`, at three pixels per
-   character (the same width appears in src/EOV5.C:413; the font's three-pixel cell is [H] until a
+   character (the same width appears in src/EOV5.C:425; the font's three-pixel cell is [H] until a
    font record names it). Formats into a 20-byte buffer with ltoa. Its callers draw at
    `0xf7 - NumberWidthLong(value)` and `0x11e - NumberWidthInt(value)` (src/E1547.C:571-573), so
    the number ends at a fixed column: it is right-aligned, not centred. */
@@ -511,7 +523,7 @@ done:
 }
 
 /* 082C:0A53: the thin wrapper that calls ShutdownGame (07C8:058A), whose body ends in exit(0)
-   (src/E07C8.C:478). No caller found in src/. */
+   (src/E07C8.C:501). No caller found in src/. */
 /*@ 082C:0A53 */ void QuitGame(void)
 {
     ShutdownGame();
@@ -525,7 +537,7 @@ done:
 }
 
 /* 082C:0A7D: read `len` bytes of the file `name` into `buf`: FileOpen in mode 1, FileRead, then
-   FileClose. `len` is a long, the type of FileRead's `len` (src/E1C0E.C:277); LoadFile takes an
+   FileClose. `len` is a long, the type of FileRead's `len` (src/E1C0E.C:327); LoadFile takes an
    `unsigned len` (src/E1B82.C:86) and only LoadPacked reads a length from the file
    (src/E1B82.C:95-96). QUIRK 082C:0A7D: the FileOpen result is not checked before FileRead, as in
    LoadFile/LoadPacked (src/E1B82.C:97-98), and the byte count FileRead returns is discarded, as
@@ -541,7 +553,7 @@ done:
 
 /* 082C:0AB4: fold `value` into the range [low, high]. With `wrap` 0 it clamps: below low gives
    low and above high gives high. With `wrap` 1 it wraps: below low gives high and above high
-   gives low. The only caller, src/E0EF3.C:2137, uses the wrap (a step of +-1 then a search
+   gives low. The only caller, src/E0EF3.C:2234, uses the wrap (a step of +-1 then a search
    loop). */
 /*@ 082C:0AB4 */ int ClampOrWrap(int value, int low, int high, int wrap)
 {
@@ -562,7 +574,7 @@ done:
 
 /* 082C:0AE8: format "%s%d.%s" into gFileNameBuf (a far string, an int and a far string): a numbered
    data file name, for example LEVEL<n>.INF (the only caller passes "LEVEL", a level number and
-   "INF" and opens the result: src/EOV3.C:568-569). */
+   "INF" and opens the result: src/EOV3.C:646-647). */
 /*@ 082C:0AE8 */ void FormatName(char far *prefix, int number, char far *suffix)
 {
     sprintf(gFileNameBuf, "%s%d.%s", prefix, number, suffix);
@@ -595,11 +607,11 @@ done:
 }
 
 /* 082C:0B8F: write `text` to the text window with the current attributes (DrawText, 1DE7:060A;
-   callers name it "the message", src/E0EF3.C:672-677) and play sound 0x4F; no constant in src/
-   names it, only a comment (src/E0EF3.C:672). */
+   callers name it "the message", src/E0EF3.C:769-774) and play sound 0x4F; no constant in src/
+   names it, only a comment (src/E0EF3.C:769). */
 /*@ 082C:0B8F */ void SayAndPlaySound(char far *text)
 {
     DrawText(text);
     PlaySound(0x4f);  /* the refuse sound; PromptSpellTarget plays it again after this call
-                         (src/E0EF3.C:677) */
+                         (src/E0EF3.C:774) */
 }
