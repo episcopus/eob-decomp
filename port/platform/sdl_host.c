@@ -153,6 +153,7 @@ int platform_init(const char *title, int scale)
     SDL_SetRenderLogicalPresentation(ren, FB_W, FB_H, SDL_LOGICAL_PRESENTATION_STRETCH);
     tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_XRGB8888, SDL_TEXTUREACCESS_STREAMING, FB_W, FB_H);
     SDL_HideCursor();                   /* the game draws its own pointer (src/E1BBE.ASM) */
+    SDL_RaiseWindow(win);               /* opened from a terminal, it would stay behind it on macOS */
     SDL_SetTextureScaleMode(tex, SDL_SCALEMODE_NEAREST);
     return tex != NULL ? 0 : -1;
 }
