@@ -5,6 +5,7 @@ A unit with a construct tc2c does not handle is refused by name, never translate
 Skipped where clang or SDL3 is missing (the playbook says what to install)."""
 import re
 import shutil
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -51,6 +52,32 @@ def test_the_port_replays_boot_title():
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
     assert r.stdout.count("the same") == 4, r.stdout
+
+
+@pytest.mark.slow
+def test_live_play_reaches_character_generation(tmp_path):
+    """M7 (playbook 80): live play (port/live.c) on the headless program, whose clock only its sleeps
+    move: the title menu, then keypad 2 and Enter from the null platform's scripted input
+    (TC_NULL_INPUT) choose "Start a new party", and 60 s on the screen is the golden's own character
+    generation screenshot but for the selection frame's outline, whose colour the ticks set."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    from port.replay import game_dir
+    from PIL import Image
+    gd = game_dir(tmp_path / "game")
+    shot = tmp_path / "shot.bin"
+    env = dict(os.environ, TC_NULL_INPUT="40000:50,40100:D0,41000:1C,41100:9C", TC_PLAY_SNAPSHOT="60000:%s" % shot)
+    try:
+        subprocess.run([str(ROOT / "build/port/eob-port-headless"), "--play", str(gd), "--no-mouse"], env=env,
+                       capture_output=True, timeout=60)
+    except subprocess.TimeoutExpired:
+        pass                                    # it plays on after the snapshot: the menu waits for a key
+    raw = shot.read_bytes()
+    rgb = bytes((c << 2) | (c >> 4) for c in raw[64000:64768])
+    gold = Image.open(ROOT / "tests/sessions/golden/new-party/character-generation.png").convert("RGB").load()
+    differ = [(i % 320, i // 320) for i, v in enumerate(raw[:64000])
+              if tuple(rgb[3 * v:3 * v + 3]) != gold[i % 320, i // 320]]
+    outline = {(x, y) for x in range(16, 49) for y in (63, 96)} | {(x, y) for y in range(63, 97) for x in (16, 48)}
+    assert set(differ) <= outline, differ[:10]
 
 
 def test_only_the_platform_directory_uses_sdl():

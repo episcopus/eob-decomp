@@ -24,7 +24,7 @@ sound and state.
 | D the program's data as C | done 2026-11-06 (section "Step D"): D0 the data map (`re/datamap.toml`, 34 modules); D1 the tools; D2 every module's data as definitions in `src/`, the data of all 34 modules proven by `make match`, `make rebuild` of both programs as before; D3 tc2c writes the port's image from them (`make port-image`: 64,446 bytes the same as EOB.EXE's). Left: the naming round for the 126 address names D2 kept (100 are E0CF7's screen-list nodes), with its independent review |
 | M5 the replay | done 2026-11-07 (section "Step M5"): `make port-replay` plays `boot-title` headless from the port's own image, all four checkpoints the oracle's (the state view and the golden's screens); the interrupts and checkpoints keyed by the game's accesses (the human, 2026-11-07); the program's start in `port/start.c`; the assembly units' code-segment data in the image (`port/asmdata.json`) |
 | M6 the other goldens | started 2026-11-07 (section "Step M6"): `boot-title`, `boot-adlib`, `new-party` and `mouse-party` replay as the oracle at every checkpoint under the relaxed check (the human, 2026-11-07); interrupts also placed by the library's file calls; Westwood's far data in `src/far/FARDATA.ASM`; `DispatchKeyWait`'s result fixed in `src/E16A5.C`. Left: `load-walk` (needs interrupts placed inside computation), `INTRO.EXE`, `make port-golden` in `make check` |
-| M7 | not started (section "Order of work") |
+| M7 live play | started 2026-11-07 (section "Step M7"): `make port-play` plays the game in a window from the port's own image (keyboard, mouse, the PIT's ticks from the wall clock); headless with scripted keys it reaches character generation and the dungeon. Left: sound (ymfm, which the human installs), and a human playing it |
 
 ## Why `src/` does not compile natively as it is
 
@@ -688,6 +688,46 @@ wait at access 61,403, the next interrupt being due after 61,432). No mask cover
 interrupts placed inside computation, by the loop turns (the oracle counting each C function's loop
 back edges, found by dominators, since Turbo C's switch dispatch also jumps backward) or by the
 instruction count. Not started; the human's call.
+
+## Step M7: live play (started 2026-11-07)
+
+`make port-play` (`tools/port/play.py`) opens the game in a window (`build/port/eob-port --play DIR`,
+SDL3), from the port's own image, in a game directory made of the pinned files of `eob/` (with
+`SAVE=tests/sessions/fixtures/EOBDATA.SAV` a saved game in it). The launcher's choices are VGA, the
+mouse unless `--no-mouse`, no sound unless `--adlib` (the game's own arguments, " 3 4 1 homie 3").
+The port's DOS keeps the game's writes in memory: a game saved in the window is gone when it closes.
+
+### How the live machine runs (`port/live.c`)
+
+The program is the replay's (`port/start.c`, then `Main`), and the machine delivers the interrupts the
+same lazy way, before an access or a file call or at a wait; only their source differs. Where the
+machine would deliver one it asks (`machine_more`, `port/runtime/irq.c`), and `live.c` pushes what has
+happened since: IRQ 0 at the rate the game programmed into the PIT, from the wall clock (the machine's
+clock, which the PIT counter, the retrace bit and the time of day read, is the wall clock's
+microseconds; one timer interrupt waits at a time, as on the PC, and a backlog over 0.1 s is dropped);
+IRQ 1 for each scancode the host gives; the INT 33h driver's event for a mouse move or button, when the
+game has a handler for it. Every 16 ms it presents A000:0000 through the DAC. At a wait with nothing
+due it sleeps until the next tick; a long computation still looks at the clock every 64K loop turns
+(`tc_live_poll`). The window's close ends the program; the game's own exit is DOS 4Ch, through the
+library's `exit`, now in the runtime (`port/runtime/tcdos.c`).
+
+### Checked so far
+
+- In the window (SDL3, macOS): the title menu at 38 s, the same screen as headless.
+- Headless, whose clock only the program's sleeps move, so a run is the same every time, with the
+  null platform's scripted scancodes (`TC_NULL_INPUT`) and a snapshot (`TC_PLAY_SNAPSHOT`): keypad 2
+  and Enter at the title menu reach character generation, the golden's own screenshot but for the
+  selection frame's outline (`test_live_play_reaches_character_generation`, slow set); Enter on "Load
+  game in progress" with the saved game reaches the dungeon with the party, and turning and stepping
+  work (the game answers "You can't go that way" at a wall).
+- Once, the first time the window opened, the game ended through `exit` within 45 s (the library's
+  `exit` was not in the runtime then); it did not happen again and why it chose to end is not known.
+
+### Left
+
+- Sound: the AdLib's register writes do not reach the host yet (`platform_adlib_write`), and the host
+  has no OPL emulator: ymfm (decision 7), which the human installs.
+- A human plays it (M7's check): the mouse, the menus, combat and spells, saving.
 
 ## Order of work
 
