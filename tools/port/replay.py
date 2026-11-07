@@ -43,7 +43,7 @@ def options(name: str) -> dict:
 def recording(name: str, clock: dict, golden: dict) -> str:
     from oracle import run
     opts = options(name)
-    for k in ("save", "clock", "program"):
+    for k in ("clock", "program"):
         if k in opts and not (k == "program" and opts[k] == "EOB.EXE"):
             raise SystemExit("%s: option %s is not in the port's replay yet" % (name, k))
     args = run.command_line(golden["args"], "mouse" in opts, opts.get("sound"))
@@ -65,7 +65,9 @@ def recording(name: str, clock: dict, golden: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def game_dir(where: Path) -> Path:
+def game_dir(where: Path, save: Path | None = None) -> Path:
+    """The pinned files of eob/, and with `save` the session's saved game as the oracle serves it
+    (run.use_save): EOBDATA.SAV, and LEVELS.TMP as saving that game leaves it."""
     from oracle import run
     if where.exists():
         shutil.rmtree(where)
@@ -74,7 +76,17 @@ def game_dir(where: Path) -> Path:
     for f in (ROOT / "eob").iterdir():
         if f.is_file() and f.name.upper() in keep:
             shutil.copyfile(f, where / f.name)
+    if save is not None:
+        sys.path.insert(0, str(ROOT / "tools" / "re"))
+        import eobfmt
+        shutil.copyfile(save, where / "EOBDATA.SAV")
+        (where / "LEVELS.TMP").write_bytes(bytes(eobfmt.save(save.read_bytes())["levels"]))
     return where
+
+
+def session_save(name: str) -> Path | None:
+    opts = options(name)
+    return SESSIONS / opts["save"] if "save" in opts else None
 
 
 def ranges(a: bytes, b: bytes, base: int, limit: int = 12) -> list[str]:
@@ -102,7 +114,7 @@ def replay(name: str, port: str) -> bool:
         return False
     work = WORK / name
     rec = work / "recording.txt"
-    gd = game_dir(work / "game")
+    gd = game_dir(work / "game", session_save(name))
     dumps = work / "dumps"
     dumps.mkdir(parents=True, exist_ok=True)
     for f in dumps.iterdir():
@@ -123,14 +135,17 @@ def replay(name: str, port: str) -> bool:
         raw = p.read_bytes()
         mem, dac, mode = raw[:0xB0000], raw[0xB0000:0xB0000 + 768], raw[0xB0000 + 768]
         ours = state.digest(mem)
-        scr = state.screen(mem[0xA0000:0xA0000 + 64000], dac) if mode == 0x13 else None
-        want_scr = images.get(cp) or screen
+        scr = state.screen(mem[0xA0000:0xA0000 + 64000], dac, mem) if mode == 0x13 else None
+        whole = state.screen(mem[0xA0000:0xA0000 + 64000], dac) if mode == 0x13 else None
         bad = []
         if ours != digest:
             bad.append("state")
-        if want_scr is not None and scr != want_scr:
+        if screen is not None and scr != screen:
             bad.append("screen (mode %02Xh)" % mode)
-        print("%s: %-16s %s" % (name, cp, "the same" if not bad else "DIFFERS: " + ", ".join(bad)))
+        note = ""
+        if not bad and images.get(cp):
+            note = " (the golden's screenshot too)" if whole == images[cp] else " (the screenshot but its tick-driven animations, tools/port/state.py)"
+        print("%s: %-16s %s%s" % (name, cp, "the same" if not bad else "DIFFERS: " + ", ".join(bad), note))
         if bad:
             ok = False
             if "state" in bad:
@@ -186,7 +201,7 @@ def views(name: str) -> None:
         opts = Script(text).options
         with tempfile.TemporaryDirectory() as tmp:
             run.run_session(text, out=Path(tmp), max_insns=int(opts.get("insns", 60_000_000)),
-                            mouse="mouse" in opts, sound=opts.get("sound"))
+                            mouse="mouse" in opts, sound=opts.get("sound"), save=session_save(name))
         held["cc"].recording()
     finally:
         run.build_machine = build
@@ -224,7 +239,7 @@ def probe(name: str, port: str, ks: list[int], by_access: bool = False) -> None:
     text += ["checkpoint probe-%d %d %d" % (k, k, places[k]) for k in sorted(ks)]
     rec = work / "probe.txt"
     rec.write_text("\n".join(text) + "\n")
-    gd = game_dir(work / "game")
+    gd = game_dir(work / "game", session_save(name))
     subprocess.run([port, "--replay", str(rec), str(gd), str(out)], capture_output=True, text=True)
     oracle = {}
     build = run.build_machine
@@ -272,7 +287,7 @@ def probe(name: str, port: str, ks: list[int], by_access: bool = False) -> None:
         opts = Script(txt).options
         with tempfile.TemporaryDirectory() as tmp:
             run.run_session(txt, out=Path(tmp), max_insns=int(opts.get("insns", 60_000_000)),
-                            mouse="mouse" in opts, sound=opts.get("sound"))
+                            mouse="mouse" in opts, sound=opts.get("sound"), save=session_save(name))
     finally:
         run.build_machine = build
     for k in sorted(ks):
@@ -325,14 +340,14 @@ def probe_files(name: str, port: str, fs: list[int]) -> None:
         opts = Script(txt).options
         with tempfile.TemporaryDirectory() as tmp:
             run.run_session(txt, out=Path(tmp), max_insns=int(opts.get("insns", 60_000_000)),
-                            mouse="mouse" in opts, sound=opts.get("sound"))
+                            mouse="mouse" in opts, sound=opts.get("sound"), save=session_save(name))
     finally:
         run.build_machine = build
     text = [l for l in recording(name, clock, golden).split("\n") if not l.startswith("checkpoint ")]
     text += ["checkpoint file-%d %d %d %d" % (f + 1, found[f][0], found[f][1], f) for f in sorted(found)]
     rec = work / "probe.txt"
     rec.write_text("\n".join(text) + "\n")
-    gd = game_dir(work / "game")
+    gd = game_dir(work / "game", session_save(name))
     r = subprocess.run([port, "--replay", str(rec), str(gd), str(out)], capture_output=True, text=True)
     for f in sorted(found):
         p = out / ("file-%d.bin" % (f + 1))

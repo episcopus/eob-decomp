@@ -23,7 +23,7 @@ sound and state.
 | M4 the MCGA driver | done 2026-11-05 (section "M4"): `MCGA.OVL` in C (`port/drivers/`, 40 exports), entered with its argument bytes, the same as the original on every direct call and every golden call tested. Next: step D, then M5 |
 | D the program's data as C | done 2026-11-06 (section "Step D"): D0 the data map (`re/datamap.toml`, 34 modules); D1 the tools; D2 every module's data as definitions in `src/`, the data of all 34 modules proven by `make match`, `make rebuild` of both programs as before; D3 tc2c writes the port's image from them (`make port-image`: 64,446 bytes the same as EOB.EXE's). Left: the naming round for the 126 address names D2 kept (100 are E0CF7's screen-list nodes), with its independent review |
 | M5 the replay | done 2026-11-07 (section "Step M5"): `make port-replay` plays `boot-title` headless from the port's own image, all four checkpoints the oracle's (the state view and the golden's screens); the interrupts and checkpoints keyed by the game's accesses (the human, 2026-11-07); the program's start in `port/start.c`; the assembly units' code-segment data in the image (`port/asmdata.json`) |
-| M6 the other goldens | started 2026-11-07 (section "Step M6"): `boot-adlib` is the oracle's at every checkpoint; interrupts also placed by the library's file calls; `new-party` and `mouse-party` wait on Westwood's far data in `src/` and on placing the interrupts that come during computation |
+| M6 the other goldens | started 2026-11-07 (section "Step M6"): `boot-title`, `boot-adlib`, `new-party` and `mouse-party` replay as the oracle at every checkpoint under the relaxed check (the human, 2026-11-07); interrupts also placed by the library's file calls; Westwood's far data in `src/far/FARDATA.ASM`; `DispatchKeyWait`'s result fixed in `src/E16A5.C`. Left: `load-walk` (needs interrupts placed inside computation), `INTRO.EXE`, `make port-golden` in `make check` |
 | M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
@@ -611,9 +611,11 @@ units. `make port-image` checks them and that the port writes no other byte belo
 
 ## Step M6: the other goldens (started 2026-11-07)
 
-`make port-replay NAME=...` on the other `EOB.EXE` goldens: `boot-title` and `boot-adlib` are the
-oracle's at every checkpoint; `new-party` and `mouse-party` reach every checkpoint at its place but
-differ there; `load-walk` needs the replay to serve a saved game (its `save` option).
+`make port-replay` plays `boot-title`, `boot-adlib`, `new-party` and `mouse-party` headless from the
+port's own image, and every checkpoint of the four is the oracle's under the relaxed check below
+(`boot-title` and `boot-adlib` exactly, screens included; `new-party` and `mouse-party` but for the
+tick-driven animations). `load-walk` does not replay yet ("What load-walk needs"); `INTRO.EXE` is not
+started.
 
 ### The library's file calls place interrupts too
 
@@ -639,22 +641,53 @@ same instruction with the same interrupts delivered, so any difference is the po
 interrupt K, compares only where both are at a wait.) `TC_TRACE=file` on `eob-port-headless --replay`
 writes the port's accesses, file calls and interrupts in the form of the oracle's.
 
-### What `new-party` and `mouse-party` still need
+### What the replays found and fixed
 
-1. **Westwood's far data in `src/`.** The load module has 22 data segments outside DGROUP, from 1F1D
-   to 20F5 (about 8 KB, `build/re/eob.json`: the panels' rectangles and icon definitions, the button
-   table, the camp strings, the cell bytes, the CGA sheet maps, ...); `src/` declares them `extern
-   far` at their addresses (`gPanelIconDefs`, 2084:0000) and `make rebuild` still generates them from
-   the original's bytes (`tools/rebuild/rebuild.py`, `far_objects`). Step D converted DGROUP only, so
-   the port's image has zeros there: its `BuildIconTable` reads widths of 0 and makes none of the 10
-   cells the original makes. With those segments filled from the original's bytes, as an experiment
-   (not committed), both sessions differ only in the item below. They are program data, so they belong
-   in `src/` as definitions, as DGROUP's are (decision C): a step D for the far segments.
-2. **Interrupts during computation with no access and no file call.** At the character panel the
-   original draws the panel while ticks come; the port, with nothing to place them by, delivers them in
-   the panel's wait loop, after `DrawRowList` has read the tick counter, so the selection frame
-   (`gSelectFrameStep`, ds:54F4) is 5 steps ahead in both sessions. Accesses and file calls cannot
-   place these: something that counts within computation is needed (decision pending with the human).
+- **Westwood's far data was not in `src/`.** The load module has 15 far data segments of Westwood's,
+  1F1D to 20AB (about 8 KB: the panels' rectangles and icon definitions, the button table, the camp
+  strings, the item names, the cell bytes, the CGA sheet maps), which `src/` declares `extern far` at
+  their addresses and `make rebuild` generated from the original's bytes. Step D converted DGROUP only,
+  so the port read zeros there (`BuildIconTable` made none of its 10 cells). They are now a module of
+  `src/`, `src/far/FARDATA.ASM` (bytes as drafted from the original, each object named and its users
+  listed): `make rebuild` links it in place of the generated module, with the same output, tc2c writes
+  it into the image and `make port-image` compares it with `EOB.EXE`'s. It lies in `src/far/`, which
+  `make match` does not read: the matcher proves DGROUP data only, and extending it was not needed.
+- **`DispatchKeyWait` returned nothing in C.** `src/E16A5.C` defined it `void`, but the original leaves
+  `DispatchNodeEvent`'s result in AX and its callers read it (`WaitKeyOrPause`, EOV1, E0ACD); tc2c gave
+  them 0, so a click on a character box did nothing. It now returns that result (the same bytes,
+  `make match`), and tc2c refuses a `void` function's call whose value is used instead of giving 0.
+- **Part of `E_TEXT`'s data was missing from the image.** A long comment that TASM's listing wraps onto
+  the next line began with "end", which `tools/port/asmlist.py` took for the `END` directive, so the
+  AdLib command table at 0000:4F94 and part of `E1990`'s data were left out; the directives are now
+  matched in upper case, as `src/` writes them (`port/asmdata.json`: 48 runs, 24,848 bytes with the far
+  data, each the same as `EOB.EXE`'s).
+- **The AdLib busy byte.** `PlaySoundAtCell` waits on `gBusyCountdown` (0000:3B36), which the AdLib
+  timer handler counts down; it is now among the bytes marked handler-written at the start
+  (`port/start.c`), so the wait is seen.
+
+### The relaxed check (the human, 2026-11-07)
+
+Placing every interrupt exactly where the original took it would need a clock inside computation (the
+loop turns, or the instruction count); the human chose instead to relax the session check: the port's
+view leaves out, on both sides, the state that only says when ticks landed, each item found by a
+replay and named in `tools/port/state.py` (`timing_masks`, `frame_outline`, `box_rect`): the selection
+frame's step and next tick and its outline on the screen; the member box animation's frame, next tick,
+cell in page 2 and box on the screen; the MCGA driver's line colour, kept inside its code; the pointer's
+save-under buffer; and where a mouse button's release lands against the game's reading of the ring
+(the last event read, the button changes not yet read). Everything else is compared, the far data
+included; a `shot` checkpoint is reported against the golden's own screenshot as well ("the golden's
+screenshot too", or "but its tick-driven animations").
+
+### What `load-walk` needs
+
+With the AdLib on, the timer interrupts come at 874 Hz, and many come while the C code computes with no
+access and no file call. At its 37,469th interrupt the original's AdLib tick ran before the C code
+queued a sound and found nothing to play; the port delivers that interrupt at the next wait, after the
+sound is queued, so its tick plays it, the accesses part and the replay cannot go on (it stops at a
+wait at access 61,403, the next interrupt being due after 61,432). No mask covers this: it needs the
+interrupts placed inside computation, by the loop turns (the oracle counting each C function's loop
+back edges, found by dominators, since Turbo C's switch dispatch also jumps backward) or by the
+instruction count. Not started; the human's call.
 
 ## Order of work
 

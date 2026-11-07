@@ -58,6 +58,12 @@ def code_segments(path: Path) -> int:
     ours, orig = path.read_bytes(), original_image()
     runs = [(int(sg, 16) * 16 + int(of, 16), len(hx) // 2, u) for u, rows in
             json.loads((ROOT / "port/asmdata.json").read_text())["units"].items() for sg, of, hx in rows]
+    import re
+    sys.path.insert(0, str(ROOT / "tools" / "port"))
+    from asmdata import module_data
+    far = ROOT / "src/far/FARDATA.ASM"
+    for seg in re.findall(r"^FAR_([0-9A-F]{4})\s+SEGMENT\b", far.read_text(errors="replace"), re.M):
+        runs.append((int(seg, 16) * 16, len(module_data(far, 0, "FAR_" + seg)[0]), "Westwood's far data " + seg))
     bad, inside = 0, bytearray(len(ours))
     for lin, n, u in runs:
         inside[lin:lin + n] = b"\1" * n
@@ -69,7 +75,7 @@ def code_segments(path: Path) -> int:
         bad += 1
         print("DIFFER  the code segments hold %d bytes no assembly unit's data put there, the first at %05X"
               % (len(stray), stray[0] + LOAD * 16))
-    print("port-image: the assembly units' data in their code segments, %d runs of %d bytes: %s" % (
+    print("port-image: the assembly units' data in their code segments and Westwood's far data, %d runs of %d bytes: %s" % (
         len(runs), sum(n for _, n, _ in runs), "the same" if not bad else "%d differ" % bad))
     return bad
 

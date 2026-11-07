@@ -767,6 +767,11 @@ def own_data_segment(c: "Copy", space: "Space", image: bytes, odg: int) -> None:
                             c.text_out, flags=re.M | re.I)
 
 
+# a program's far data as a module of src/ (src/far/, which make match does not read: it proves DGROUP
+# data only); the rebuild links it in place of far_objects' module of the original's bytes
+FAR_SOURCE = {"EOB.EXE": ROOT / "src" / "far" / "FARDATA.ASM"}
+
+
 def far_objects(program: str, space: "Space", far: dict, image: bytes) -> str | None:
     """FAR.ASM: the far objects src/ declares outside DGROUP. A data segment of the original's (0E6C,
     640 bytes in INTRO.EXE) is its bytes, class FAR_DATA, which TLINK places after the code; the two
@@ -1435,6 +1440,9 @@ def main(argv=None) -> int:
     # segment table); Westwood's own far data is a generated module of the original's bytes
     westwood = alias_far(program, w, exe, copies, far)
     far_mod = far_objects(program, space, westwood, oimg) if westwood else None
+    if far_mod and program in FAR_SOURCE and FAR_SOURCE[program].exists():
+        # Westwood's far data from src/ (playbook 80, M6), not from the original's bytes
+        far_mod = FAR_SOURCE[program].read_text(errors="replace")
     if far_mod:
         assemble(w, "FAR", far_mod)
     if westwood != far or far_mod:

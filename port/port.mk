@@ -38,7 +38,7 @@ DRV_C := $(wildcard port/drivers/*.c)
 # the library functions on the machine (M3); tc2c reads their `/*@ 0000:XXXX library */` addresses
 LIB_C := $(wildcard port/runtime/tcdos.c port/runtime/tcheap.c)
 TC2C_IN := port/units.txt tools/port/tc2c.py port/include/tc/prelude.h $(wildcard port/include/tc/sys/*.h) \
-	port/include/tclib.h port/literals.json port/asmdata.json build/re/eob.json eob/EOB.EXE $(wildcard src/*.H src/*.ASM) \
+	port/include/tclib.h port/literals.json port/asmdata.json build/re/eob.json eob/EOB.EXE $(wildcard src/*.H src/*.ASM src/far/*.ASM) \
 	$(ASM_C) $(LIB_C)
 
 GEN_C := $(addprefix $(GEN)/,$(UNITS:.C=.c)) $(GEN)/units.c $(GEN)/unported.c

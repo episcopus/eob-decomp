@@ -67,7 +67,9 @@ static farptr ds_at(u16 off) { return TC_MKFP(tc_ds, off); }
      - KeyboardIsr, INT 9 (port/asm/E1AAD.c): the event ring and its indexes, the modifier and shift
        state, the held-key bits and flags, the key mode and scancode words, the mouse buttons, and
        gSoundOn and gTunesOn, which Alt-S and Alt-M toggle (whitepaper 3.6.3).
-   The mouse callback and the sound drivers' timers are not here yet (M6). */
+     - AdlibTimerIsr, INT 8 with the AdLib (port/asm/E_TEXT.c): the driver's busy byte gBusyCountdown
+       (0000:3B36), on which PlaySoundAtCell waits (src/E177D.C, 177D:0135).
+   The mouse callback's bytes are the key ring's, above. */
 static void hot_seed(void)
 {
     const u16 ds = (u16)(MACHINE_LOAD_SEG + EOB_DGROUP_PARA), kb = (u16)(MACHINE_LOAD_SEG + 0x1AADu);
@@ -79,6 +81,7 @@ static void hot_seed(void)
     tc_hot_range(TC_MKFP(kb, 0x09F2u), 3);
     tc_hot_range(TC_MKFP(kb, 0x0C16u), 2);
     tc_hot_range(TC_MKFP(ds, 0x80E6u), 4);
+    tc_hot_range(TC_MKFP(MACHINE_LOAD_SEG, 0x3B36u), 1);
 }
 
 s16 tc_start(farptr *argv_out)
