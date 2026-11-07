@@ -7,6 +7,7 @@
 
      eob-port[-headless] --self-test EOB.EXE   run the checks below; exit 0 when they pass
      eob-port --window                       open the SDL3 window and show a test frame (Escape closes it)
+     eob-port[-headless] --replay REC DIR OUT play a golden's recording (port/replay.c, tools/port/replay.py)
 
    The checks are for the skeleton units, src/E0CF7.C and src/E1658.C: each BuildList links its
    table's records into a list at gList (ds:FB48) through ListAdd; the list must be the table's
@@ -24,6 +25,7 @@
 #include "platform.h"
 #include "ported.h"   /* build/port/gen: the translated functions */
 #include "tclib.h"
+#include "start.h"
 
 /* EOB.EXE: DGROUP is paragraph 212Eh of the load module (whitepaper 2.2). */
 #define EOB_DGROUP_PARA 0x212Eu
@@ -202,11 +204,27 @@ static int data_image(const char *out)
     }
     fclose(f);
     printf("eob-port: DGROUP %04X:0000 written to %s\n", tc_ds, out);
+    /* and the code segments below DGROUP, where only the assembly units' data is (port/asmdata.json) */
+    {
+        char code[1024];
+        u32 lo = (u32)LOAD_SEG * 16u, n = (u32)tc_ds * 16u - lo;
+        snprintf(code, sizeof code, "%s.code", out);
+        f = fopen(code, "wb");
+        if (f == NULL || fwrite(tc_mem + lo, 1, n, f) != n) {
+            fprintf(stderr, "eob-port: cannot write %s\n", code);
+            return 2;
+        }
+        fclose(f);
+        printf("eob-port: %04X:0000 to DGROUP written to %s\n", LOAD_SEG, code);
+    }
     return 0;
 }
 
 int main(int argc, char **argv)
 {
+    if (argc == 5 && strcmp(argv[1], "--replay") == 0) {
+        return replay_run(argv[2], argv[3], argv[4]);
+    }
     if (argc == 3 && strcmp(argv[1], "--data-image") == 0) {
         return data_image(argv[2]);
     }
@@ -216,6 +234,7 @@ int main(int argc, char **argv)
     if (argc == 2 && strcmp(argv[1], "--window") == 0) {
         return window_demo();
     }
-    fprintf(stderr, "usage: eob-port --self-test EOB.EXE | --data-image OUT | --window\n");
+    fprintf(stderr, "usage: eob-port --self-test EOB.EXE | --data-image OUT | --replay RECORDING GAME_DIR DUMP_DIR"
+                    " | --window\n");
     return 2;
 }

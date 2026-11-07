@@ -126,7 +126,7 @@ static int set_memory(u16 brk)
     r.ax = 0x4A00u;
     r.bx = paras;
     r.es = psp;
-    machine_int(0x21, &r);
+    machine_library_int(0x21, &r);
     if (r.flags & 1u) {
         return 0;
     }

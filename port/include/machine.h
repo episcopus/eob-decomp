@@ -61,6 +61,11 @@ void machine_boot(const char *exe_name, const u8 *cmdline, u16 cmdlen, int mouse
 /* A software interrupt from the game, through the vector table. */
 void machine_int(u8 n, tc_regs *r);
 
+/* The same from the port's runtime library (tcdos.c, tcheap.c): in a replay, a service it reaches is
+   counted with the library's accesses (machine_library_access), as the oracle counts the Borland
+   library's apart from the game's (tools/oracle/cclock.py). */
+void machine_library_int(u8 n, tc_regs *r);
+
 /* What the CPU runs for an interrupt whose handler is at seg:off, the registers in r (an IRQ, an INT,
    a handler chaining to the vector it saved with `jmp far` or `pushf; call far`): one of the
    machine's service stubs runs its service; the generic IRET nothing; the ROM's default INT 8 and its
@@ -83,6 +88,7 @@ u32 machine_time_of_day(void);
 
 /* the services, by file (machine.c dispatches) */
 void dos_reset(const u8 *cmdline, u16 cmdlen, const char *exe_name);
+int dos_reserve_handle(const char *path);    /* a handle taken, its file not read (port/start.c) */
 void dos_int20(tc_regs *r);
 void dos_int21(tc_regs *r);
 void dos_int29(tc_regs *r);
@@ -153,12 +159,32 @@ typedef struct {
     u32 access, insns;
 } machine_time_mark;
 
-extern u32 machine_cclock;     /* C-unit instructions run (tc2c's blocks add them, M5) */
-extern u32 machine_accesses;   /* the game's port accesses and service calls so far */
+extern u32 machine_cclock;     /* C-unit instructions run (not counted by the port: the replay sets it at
+                                  its top, so events go by their access counts alone, M5) */
+#define machine_accesses tc_accesses   /* the game's port accesses and service calls so far (tcport.h) */
+
+/* The replay (M5, playbook 80, "The replay's clock"): set, an event is delivered by its access count
+   alone and lazily: all those due before the next access is made (machine_access), else the next one
+   due when a loop of src/ is idle (tc_spin_idle) or a hand-written routine waits (machine_wait); none
+   after an access. Clear (the per-function test), the events go as before, after each access.
+   machine_point, when set, is called at each place a replay checkpoint can be taken: before an event is
+   delivered and before an access, with the events delivered and the accesses made so far; and at a
+   wait with nothing due (`idle` 1), where a replay ends. */
+extern int machine_replay;
+/* a debugging trace of the game's accesses and the interrupts delivered (eob-port --replay with
+   TC_TRACE=file): one line each, as tools/port/replay.py --trace writes the oracle's */
+extern void *machine_trace;
+void machine_trace_line(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+extern void (*machine_point)(u32 events, u32 accesses, int idle);
+u32 machine_events_delivered(void);
 
 void machine_events_reset(void);
 void machine_event_push(const machine_event *e);
 void machine_time_push(u32 access, u32 insns);
+/* the oracle's instruction count at the library's accesses (the recording's library_times) */
+void machine_library_time_push(u32 access, u32 insns);
+extern u32 machine_library_accesses;
+void machine_library_access(void);
 u32 machine_events_left(void);
 
 /* An access of the game (machine_port_in/out, a service called through machine_int): counts it and

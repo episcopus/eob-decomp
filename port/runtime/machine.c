@@ -8,6 +8,7 @@
 
 machine_clock machine_time = {0, 0, 1000000u, 0, 0, 0, 0};
 int machine_exit_code = -1;
+static int library_call;            /* machine_library_int: the service is the library's access */
 
 typedef void (*service_fn)(tc_regs *r);
 static service_fn services[256];
@@ -127,7 +128,12 @@ void machine_call_handler(u16 seg, u16 off, tc_regs *r)
     if (seg == MACHINE_ROM_SEG) {
         if (off >= MACHINE_STUB_OFF0 && off < MACHINE_STUB_OFF0 + 0x400u && (off - MACHINE_STUB_OFF0) % 4u == 0) {
             u8 k = (u8)((off - MACHINE_STUB_OFF0) / 4u);
-            machine_access();                  /* a service the game calls */
+            if (library_call) {
+                machine_library_access();      /* the runtime's library calls it, as the Borland library did */
+            } else {
+                machine_access();              /* a service the game calls */
+                machine_trace_line("%lu int %02X %04X", (unsigned long)machine_accesses, k, r->ax);
+            }
 #ifdef TC_HYBRID
             if (!tc_hybrid_oracle_int(seg, off, r))
 #endif
@@ -182,6 +188,14 @@ void machine_int(u8 n, tc_regs *r)
 {
     farptr v = tc_ld_u32(TC_MKFP(0, (u16)(n * 4u)));
     machine_call_handler(TC_SEG(v), TC_OFF(v), r);
+}
+
+void machine_library_int(u8 n, tc_regs *r)
+{
+    int was = library_call;
+    library_call = machine_replay;      /* the per-function test counts them as before */
+    machine_int(n, r);
+    library_call = was;
 }
 
 void machine_irq(u8 n)

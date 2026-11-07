@@ -22,7 +22,8 @@ sound and state.
 | M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), and the interrupt handlers' units `E1D8F`, `E1AAD`, `E1948`, `E_TEXT` with the retrace `E1DE4` (35 routines in all), each the same as the original on every call tested; the C-unit clock in the oracle and the five `.clock.json` recordings ("The interrupts and the C clock"); the machine boots to the oracle's memory byte for byte, and its DOS, INT 10h for MCGA, BIOS time, INT 33h driver and ports (PIC, PIT, 61h, 60h, retrace, DAC, AdLib) answer every one of the 335,055 service calls and port accesses of the five goldens as the oracle does. the machine's wait delivers the recorded interrupts to spinning routines (`port/runtime/irq.c`); 19 library functions on the machine (`port/runtime/tcdos.c`: the files, `int86`, `time`, `rand`; `tcheap.c`: the far heap), each the same as the original's on every call tested; every assembly routine the C calls is in C (63, section "The other units") |
 | M4 the MCGA driver | done 2026-11-05 (section "M4"): `MCGA.OVL` in C (`port/drivers/`, 40 exports), entered with its argument bytes, the same as the original on every direct call and every golden call tested. Next: step D, then M5 |
 | D the program's data as C | done 2026-11-06 (section "Step D"): D0 the data map (`re/datamap.toml`, 34 modules); D1 the tools; D2 every module's data as definitions in `src/`, the data of all 34 modules proven by `make match`, `make rebuild` of both programs as before; D3 tc2c writes the port's image from them (`make port-image`: 64,446 bytes the same as EOB.EXE's). Left: the naming round for the 126 address names D2 kept (100 are E0CF7's screen-list nodes), with its independent review |
-| M5 to M7 | not started (section "Order of work") |
+| M5 the replay | done 2026-11-07 (section "Step M5"): `make port-replay` plays `boot-title` headless from the port's own image, all four checkpoints the oracle's (the state view and the golden's screens); the interrupts and checkpoints keyed by the game's accesses (the human, 2026-11-07); the program's start in `port/start.c`; the assembly units' code-segment data in the image (`port/asmdata.json`) |
+| M6 and M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
 
@@ -187,7 +188,7 @@ The implementations of `platform.h`, as poolrad's three:
   M7), linked into `build/port/eob-port`.
 - `port/platform/null.c`: headless, no input, a clock only `platform_sleep_ms` advances; linked into
   `build/port/eob-port-headless`, on which the self-test runs and on which M2's per-function tests build.
-- `port/platform/replay.c` (M5): headless; answers from a golden's recording and checks its checkpoints.
+- The replay (M5) is not a platform: the machine plays a recording back (rule 3), so it is `port/replay.c`, beside `main.c`, linked into the headless program (`eob-port-headless --replay`).
 
 Another host (another windowing library, a console, a browser through Emscripten) is one more file in
 `port/platform/`. The rules, which the build checks:
@@ -524,6 +525,89 @@ function of the port: the rest of the start-up code's data (ds:0000 to 008F, Bor
 string among it) and of the library's (ds:84B2 to 88A0); a golden's state digest that covers them is
 M5's to settle. `INTRO.EXE` follows at M6.
 
+## Step M5: the replay (done 2026-11-07)
+
+`make port-replay` (`tools/port/replay.py`) plays `boot-title` headless on the port, started from its
+own image (step D: no byte of `EOB.EXE` is loaded), and its four checkpoints are the oracle's: the
+port's view of the state the same, and the screens the golden's own image hashes. A test in the slow
+set runs it (`tests/unit/test_port.py`, `test_the_port_replays_boot_title`).
+
+### The replay's clock (the human, 2026-11-07)
+
+The goldens' checkpoints and the recordings' interrupts are placed on the C-unit clock (decision A).
+The port counts no machine instructions, and counting them exactly would mean tc2c knowing, for every
+path through 609 functions, the original's instruction count. The human chose instead (2026-11-07):
+**the replay keys the interrupts and the checkpoints by the game's accesses.** The recordings keep
+their C-clock positions, which the oracle's tools still use, but the port does not read them.
+
+- An access is a port access or a service call of the game's code, as `tools/oracle/cclock.py` counts
+  them (the start-up code's, the library's and now the overlay manager's apart: the port's overlays are
+  plain code and never read the program file). Each interrupt is recorded after so many accesses.
+- The port delivers an interrupt lazily (`machine_replay`, `port/runtime/irq.c`): every one recorded
+  after the last access before the next access is made; otherwise the next one when the game waits for
+  it. A hand-written routine that spins on what a handler writes waits as before (`machine_wait`). A
+  loop of `src/` waits when its last turn changed no byte of the arena, made no access and read a byte a
+  handler writes: tc2c gives every loop a `tc_loop` and calls `tc_spin` before each test of its
+  condition, and at each label (a backward `goto`); the arena counts the stores that change a byte and
+  the loads of a byte a handler wrote (`tcport.h`: the handlers' stores mark the bytes, and the bytes
+  a wait can read before any handler has run are marked at the start, `port/start.c`).
+- Eager delivery at every loop test does not work: each timer interrupt's handler ends with an EOI, an
+  access, which makes the next interrupt due at once, so a drawing loop would take a whole wait's
+  interrupts before the wait begins.
+- A checkpoint is recorded with its place, how many interrupts were delivered and how many accesses
+  made before it, and the port's view where the port takes it: just before the next interrupt or the
+  next access (`tests/sessions/golden/<name>.clock.json`, `port`). The oracle also takes the view at
+  the checkpoint itself and the two are the same for every checkpoint of the five `EOB.EXE` goldens:
+  each is at a wait (`port_not_at_a_wait` is empty in every recording).
+- The library's accesses in the port (`machine_library_int`: `tcdos.c`, `tcheap.c`) are counted with
+  the library's, and the oracle's instruction count at them (`library_times`) is set from their
+  ordinal. `int86` is the exception: the Borland library runs its `INT` from a stub on the stack, so
+  the oracle counts it with the game's, and so does the port.
+
+### The program's start (`port/start.c`)
+
+What the start-up code (C0L), the library's initialisers and the overlay manager leave before `main`
+was read off the oracle at `main`'s entry: every service call with its registers, and the memory that
+differs from the loaded image. The port writes the start-up's variables its runtime reads (`_psp`, the
+version, the heap's base, break level and top), makes the same DOS calls through the machine (counted
+as the library's), allocates the three heap blocks the original has at `main` (the overlay buffer,
+2CC0h bytes: `_ovrbuffer`'s 02CBh paragraphs and one more; a stream's 200h buffer; the environment
+array), keeps handle 5 taken as the overlay manager keeps the program file open (`dos_reserve_handle`:
+the file is not read), sets INT 0 and INT 3Fh where C0 and the overlay manager set them, and builds
+`argv` at the top of the stack segment. Where an access is the original's but the port has no reason to
+make it (the overlay manager's file reads), only its place in the count is kept.
+
+### The view the port is compared on (`tools/port/state.py`)
+
+The golden's state digest covers the registers and all of memory, code included; the port has neither
+the code nor the original's stack. The view is conventional memory from 0500h to A0000h without: the
+load module's code; the start-up code's and the library's data, but for the variables the port's
+runtime keeps there; the stack segment, and E1C00's SS:SP saved in DGROUP across the driver's EXEC;
+the overlay buffer. The screen is compared apart, rendered as the golden's screenshots are, so a `shot`
+is compared with the golden's own image hash.
+
+### The assembly units' data in their code segments (`port/asmdata.json`)
+
+The hand-written routines read their unit's tables where the original has them, in its code segment
+(`E1AAD`'s key tables, `E_TEXT`'s AdLib tables): the first replay went wrong at the first key, which
+translated to 0. These bytes are now in the port's image too, from `src/`: `make port-asmdata`
+(`tools/port/asmlist.py`) assembles each unit with the matcher's switches and a listing, takes each
+`db`, `dw` and `dd` line of its code segment at its offset (the unit's code begins at its start in
+`re/units.toml`), checks each run against `EOB.EXE`, and writes `port/asmdata.json`, which tc2c reads
+(committed, as `port/literals.json`, so `make port` needs no assembler): 32 runs, 17,493 bytes, in 18
+units. `make port-image` checks them and that the port writes no other byte below DGROUP.
+
+### Left for M6
+
+- The other goldens: the mouse callback's and the sound drivers' bytes to mark at the start
+  (`port/start.c`, `hot_seed`); a session's `save` and `clock` options in `replay.py`; the AdLib
+  register stream compared.
+- The code segments are masked in the view: the assembly units' variables there could be compared now
+  that the port writes their initial values.
+- `make port-golden` in `make check`, then `INTRO.EXE`.
+- The per-function test (`make port-hybrid`) still delivers its bench's interrupts after each access
+  (`machine_replay` clear), as M2 and M3 left it.
+
 ## Order of work
 
 Every step's check runs on macOS (arm64). Linux and Windows are deferred (the human, 2026-11-05): the
@@ -537,7 +621,7 @@ them until the human brings them back.
 | M3 | the machine: vector table, PIT, ports, INT 33h, INT 10h, DOS memory, files and 4B03h; the 19 assembly units hand-written in `port/asm/`; the C-unit clock in the oracle and the `.clock.json` recordings | M2's test of each hand-written routine |
 | M4 | the MCGA driver, hand-written from `MCGA.ASM` | screens of `boot-title` |
 | D | the program's data as C definitions in `src/` (question C): a P6 task after the review of `work/p6-review.md`, proven by `make match` and `make rebuild`; then tc2c places the initialisers and the port's runtime writes the library's own data; the generated image is checked against `EOB.EXE`'s | the generated image equals the original's load module, but for the library data listed |
-| M5 | `port/platform/replay.c`: headless replay of `boot-title` to the title menu, from the generated image (step D comes first) | its checkpoints |
+| M5 | `port/replay.c` and `port/start.c` (at the program's level beside `main.c`, not in `port/platform/`: the replay is the machine's, rule 3, and its dumps read the arena): headless replay of `boot-title` to the title menu, from the generated image (step D comes first) | its checkpoints (`make port-replay`) |
 | M6 | every `EOB.EXE` golden (`boot-adlib`, `load-walk`, `mouse-party`, `new-party`); then `INTRO.EXE` (the twin map of `make twin` gives its addresses for the shared units) | `make port-golden` in `make check` |
 | M7 | live play: real-time pacing from the PIT, AdLib synthesis with ymfm, the launcher's choices (VGA, AdLib, mouse) | a human plays |
 
@@ -569,6 +653,7 @@ enforced by the build.
 | C | The data of a generated image | **convert the data first**: the program's data becomes C definitions in `src/` (step D of "Order of work") before the port runs from its own image; the port program never loads `EOB.EXE`. Tests keep reading `eob/` as the oracle does (the self-test, M2's per-function tests on the oracle's memory), since they compare with the original |
 | D | Where Linux and Windows build | a Linux container from M1, Windows from M5; **superseded 2026-11-05**: both deferred |
 | E | The recording file | `tests/sessions/golden/<name>.clock.json`, beside each golden |
+| (M5) | The replay's clock (2026-11-07) | **by the game's accesses**: the interrupts and the checkpoints are placed by how many accesses the game made, delivered lazily, at the next access or when the game waits; the port counts no instructions (section "Step M5") |
 
 Step D changes `src/`, so it waits for the independent review (`work/p6-review.md`) to finish; M1 to M4
 do not need it, since none of them runs the port from its own image.

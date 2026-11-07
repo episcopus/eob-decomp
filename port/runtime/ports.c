@@ -281,6 +281,7 @@ u16 machine_port_in(u16 port, int size)
 {
     u16 v;
     machine_access();
+    machine_trace_line("%lu in %04X", (unsigned long)machine_accesses, port);
 #ifdef TC_HYBRID
     if (!tc_hybrid_oracle_port(0, port, size, &v))
 #endif
@@ -292,6 +293,7 @@ u16 machine_port_in(u16 port, int size)
 void machine_port_out(u16 port, int size, u16 value)
 {
     machine_access();
+    machine_trace_line("%lu out %04X %X", (unsigned long)machine_accesses, port, value);
 #ifdef TC_HYBRID
     if (!tc_hybrid_oracle_port(1, port, size, &value))
 #endif

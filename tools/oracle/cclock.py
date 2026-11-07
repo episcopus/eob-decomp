@@ -20,16 +20,22 @@ tests/sessions/golden/<name>.clock.json, decision E):
     the game's accesses: `[position, access]` for IRQ 0, `[position, access, "irq1", scancode]`,
     `[position, access, "mouse", condition, buttons, x, y]`. An access is a port access or a service
     call made by the game's code, the library's excepted (its CS:IP, or for a service the return
-    address of the INT, outside the start-up and the library, re/units.toml): the C units' and the
-    assembly units' code, and the handlers'. The port's library is its own and makes other calls, so
-    the library's accesses are counted apart. The port delivers an event once its C clock and its
-    access count have both reached the event's: an interrupt that came while assembly code spun (the C
-    clock still) comes after the same access;
+    address of the INT, outside the start-up, the library and the overlay manager, re/units.toml): the
+    C units' and the assembly units' code, and the handlers'. The port's library is its own and makes
+    other calls, and its overlays are plain code, which the overlay manager (e1e8b) never has to read,
+    so the library's and the manager's accesses are counted apart. The port delivers an event by its
+    access count (playbook 80, M5, "The replay's clock"): after the same number of accesses, before the
+    next, at a wait;
   - the oracle's instruction count (`Machine.insns`, which moves by chunks: the timer, the retrace bit, the
     AdLib's timers and the time of day read it) at each access where it changed since the previous one,
     keyed by the access's ordinal (`times`; the library's in `library_times`): the port's machine sets its
     clock from it, since the chunks are the oracle's scheduling and no C clock gives them;
-  - the C-clock position of each checkpoint of the session.
+  - the C-clock position of each checkpoint of the session;
+  - for the port's checkpoints (`port`): each checkpoint's place in the recording (how many interrupts
+    were delivered and how many accesses made before it) and the port's view of the state there
+    (tools/port/state.py: its digest and the mode 13h screen's), taken where the port takes it, just
+    before the next interrupt or access; the view at the checkpoint itself is kept to check that the
+    two are the same (the checkpoint is at a wait).
 """
 from __future__ import annotations
 
@@ -58,11 +64,15 @@ def c_units() -> set[str]:
     return out
 
 
+# the overlay manager (VROOMM, src/E1E8B.ASM): its file reads load overlays, which the port has as code
+OVERLAY_MANAGER = {"EOB.EXE": "e1e8b"}
+
+
 def library_ranges(program: str = "EOB.EXE") -> list[tuple[int, int]]:
-    """Load-relative linear [start, end) of the start-up and the library."""
+    """Load-relative linear [start, end) of the start-up, the library and the overlay manager."""
     out = []
     for u in tomllib.loads(UNITS_TOML.read_text())["unit"]:
-        if u["program"] == program and u["kind"] in ("startup", "library"):
+        if u["program"] == program and (u["kind"] in ("startup", "library") or u["id"] == OVERLAY_MANAGER.get(program)):
             seg, off = (int(x, 16) for x in u["start"].split(":"))
             out.append((seg * 16 + off, seg * 16 + off + u["bytes"]))
     return sorted(out)
@@ -103,6 +113,8 @@ class CClock:
         base = LOAD_SEG * 16
         self.library = [(base + a, base + b) for a, b in library_ranges(program)]
         self.checkpoints: list[list] = []
+        self.marks: list[dict] = []     # the port's checkpoints (mark)
+        self._pending: list[dict] = []  # marks waiting for the next interrupt or access
         self._overlays = []
         if program == "EOB.EXE" and LAYOUT.exists():
             lay = json.loads(LAYOUT.read_text())
@@ -176,6 +188,7 @@ class CClock:
 
         def deliver_interrupt(n, clear_if=True):
             if hw["on"]:
+                self._resolve()
                 at = [self.count, self.accesses]
                 if n == 0x09:
                     self.events.append(at + ["irq1", m.kbd_data])
@@ -206,6 +219,7 @@ class CClock:
                     self._last_library_insns = m.insns
                     self.library_times.append([self.library_accesses, m.insns])
                 return
+            self._resolve()
             self.accesses += 1
             if m.insns != self._last_insns:
                 self._last_insns = m.insns
@@ -233,7 +247,31 @@ class CClock:
     def checkpoint(self, name: str) -> None:
         self.checkpoints.append([name, self.count])
 
+    # ---- the port's checkpoints
+    def _port_view(self) -> tuple[str, str | None]:
+        import sys
+        sys.path.insert(0, str(ROOT / "tools"))
+        from port import state
+        mem = bytes(self.m.uc.mem_read(0, state.TOP))
+        ega = self.m.ega
+        return state.digest(mem), (state.screen(bytes(ega.vga), bytes(ega.dac)) if ega.mode == 0x13 else None)
+
+    def mark(self) -> None:
+        """A checkpoint now: its place in the recording and the port's view here, and (at the next
+        interrupt or access) the view where the port takes it."""
+        d = {"events": len(self.events), "accesses": self.accesses, "here": self._port_view()}
+        self.marks.append(d)
+        self._pending.append(d)
+
+    def _resolve(self) -> None:
+        if self._pending:
+            now = self._port_view()
+            for d in self._pending:
+                d["next"] = now
+            self._pending = []
+
     def recording(self) -> dict:
+        self._resolve()                 # the last checkpoints: the end of the run
         return {"clock": "instructions executed in the code of the C units of port/units.txt (playbook 80)",
                 "checkpoints": self.checkpoints, "interrupts": self.events, "times": self.times,
                 "accesses": self.accesses, "library_times": self.library_times,

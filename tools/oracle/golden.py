@@ -93,6 +93,7 @@ def play_clock(name: str, out: Path) -> tuple[dict, dict] | None:
 
         def counted(*aa, **kk):
             held.setdefault("at", []).append([m.insns, cc.count])
+            cc.mark()
             return digest(*aa, **kk)
         m.state_digest = counted
         return m
@@ -109,6 +110,9 @@ def play_clock(name: str, out: Path) -> tuple[dict, dict] | None:
     rec = held["cc"].recording()
     names = [c["name"] for c in s["checkpoints"]] + ["end"]
     rec["checkpoints"] = [[n, i, c] for n, (i, c) in zip(names, held.get("at", []))]
+    cc = held["cc"]
+    rec["port"] = [[n, d["events"], d["accesses"], *d["next"]] for n, d in zip(names, cc.marks)]
+    rec["port_not_at_a_wait"] = [n for n, d in zip(names, cc.marks) if d["here"] != d["next"]]
     return g, {"session": name, **rec}
 
 
@@ -151,6 +155,9 @@ def clock(name: str, verify: bool) -> bool:
         print("%s: clock %s" % (name, "OK" if not bad else "DIFFERS: " + ", ".join(bad)))
         return not bad
     write_clock(p, rec)
+    if rec["port_not_at_a_wait"]:
+        print("%s: the port's view changes between these checkpoints and the next interrupt or access: %s" % (
+            name, ", ".join(rec["port_not_at_a_wait"])))
     print("%s: clock recorded: %d C-unit instructions of %d, %d interrupts, %d clock changes over %d accesses" % (
         name, rec["checkpoints"][-1][2], rec["checkpoints"][-1][1], len(rec["interrupts"]), len(rec["times"]),
         rec["accesses"]))
