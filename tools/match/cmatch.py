@@ -19,6 +19,9 @@ of the declaration or definition (`;` comments in assembly):
     /*@flags -ml -O -Z -G */                          the file's switches (default: cflags); -B: compiled
                                                         through the assembler (TCC -S, then TASM /ml /jNOSMART /m2)
     PUBLIC Blit ; @ 19EA:0000                          the same in assembly
+    /*@data */                                        the file defines its unit's whole _DATA (step D of
+                                                        playbook 80): `int gA = 1; /*@ ds:3066 */` is a
+                                                        definition, and the data are proven too (below)
 
 How it proves: the unit is compiled once (TCC with `cflags` of tools/re/tc_toolchain.toml, or TASM
 for .ASM) and linked twice with C0L, a generated assembly stub that defines every extern it names,
@@ -44,6 +47,17 @@ changes whatever the segment alignment). Over each function, byte by byte:
     push ax; mov cx,n; call F_SCOPY@`) holds the same n bytes; a far pointer in it (a relocated
     segment word in the original's load module) must name the same function, an overlay function
     as its stub entry (the overlay manifest of `make overlays`).
+
+With `/*@data */` (`; @data` in assembly) the unit's _DATA (its initialised globals and the
+templates of its initialised locals, in source order, then its string pool) is compared with the
+original's bytes at the unit's span in re/datamap.toml (make datamap): the same length (but a pad
+byte to the next even offset, zero), every byte the same in A and B the original's byte, a far
+pointer naming the same function (an overlay function as its stub entry) or the same data, a word
+that moves an offset into DGROUP naming the same data, the relocations at the same places and in
+the same order in the relocation table (Turbo C writes a module's data fixups downward, TASM
+upward), and every definition at its annotation. A file with no functions is a data-only module
+(D07C8.C: the map's d07c8). The code's references to the unit's own data are then resolved by
+their place in it, every other reference as before.
 
   cmatch.py FILE [--program eob/EOB.EXE (default: the program of the file's unit)] [--flags="-ml -O -Z"] [--write] [--show NAME] [--unit ID]
 --write records level L2 and the name of every matched function in re/symbols.toml.
@@ -96,6 +110,9 @@ PAD_CODE_SMALL = 0x133
 DRAFTS: set = set()
 LITERALS: dict = {}   # offset of a literal in our unit's data -> the original's DGROUP offset of it
 FARDATA: set = set()   # externs annotated seg:off that are data, not functions: far objects in another segment
+DEFDATA: dict = {}     # data this file defines (with /*@data */): name -> its DGROUP offset in the original
+DATA_MARK = re.compile(r"(?:/\*|;)\s*@data\b")
+OWN: dict = {}         # with /*@data */: {"lo", "hi" (our unit's _DATA in link A), "place" (the original's)}
 FAR_BASE = 0x8000
 # each extern of DGROUP data is a block of 256 bytes in the stub DGROUP, after a guard of GUARD bytes,
 # so a reference a little below a symbol's start (a table indexed from 1, `gFlameShapes[n - 1]` folding
@@ -117,6 +134,11 @@ def parse_annotations(src: str, asm: bool = False) -> tuple[dict, dict, set, set
     funcs, data, defined, stubs = {}, {}, set(), set()
     DRAFTS.clear()
     FARDATA.clear()
+    DEFDATA.clear()
+    OWN.clear()
+    whole = bool(DATA_MARK.search(src))
+    if whole:
+        OWN["on"] = True
     for line in src.splitlines():
         m = ANNOT.search(line)
         if not m:
@@ -135,6 +157,11 @@ def parse_annotations(src: str, asm: bool = False) -> tuple[dict, dict, set, set
         name, addr = names[0], m.group(1)
         if addr.lower().startswith("ds:"):
             data[name] = int(addr[3:], 16)
+            if whole and (not re.search(r"\bextrn\b", decl, re.I) if asm else not decl.strip().startswith("extern")):
+                if not asm and re.match(r"\s*static\b", decl):
+                    raise SystemExit("cmatch: %s is static: a definition is proven by its public's place, "
+                                     "so make it public (the bytes are the same)" % name)
+                DEFDATA[name] = data[name]      # defined here: the stub leaves it out
             continue
         seg, off = addr.split(":")
         funcs[name] = (seg.lower(), int(off, 16)) if seg.lower().startswith("ovl") else (int(seg, 16), int(off, 16))
@@ -160,8 +187,12 @@ def stub_source(funcs: dict, data: dict, defined: set, pad: bool, cname: bool = 
     out = [".MODEL SMALL" if small else ".MODEL LARGE", ".DATA"]
     if pad:
         out.append("padd db %d dup (0)" % PAD)
-    for n in sorted(data):
+    for n in sorted(set(data) - set(DEFDATA)):
         out += ["db %d dup (0)" % GUARD, "PUBLIC %s" % sym(n), "%s db 256 dup (0)" % sym(n)]
+    if OWN:
+        # the unit's own data follows: a reference a little below its start (or past the last block)
+        # is told apart from the block before
+        out.append("db %d dup (0)" % GUARD)
     out.append(".CODE")
     if pad:
         out.append("padc db %d dup (90h)" % (PAD_CODE_SMALL if small else PAD_CODE))
@@ -191,6 +222,7 @@ class Build:
         mz = read_mz((w / exe).read_bytes())
         self.image = mz["image"]
         self.relocs = {s * 16 + o for o, s in mz["relocs"]}
+        self.reloc_seq = [s * 16 + o for o, s in mz["relocs"]]     # in the table's order
         self.publics, self.dgroup, self.unit, self.lits = {}, None, None, (0, 0)
         self.far_frames: dict[int, int] = {}       # frame of a FAR_SSSS stub segment -> SSSS
         for line in (w / exe.replace(".EXE", ".MAP")).read_text("latin-1").splitlines():
@@ -280,6 +312,7 @@ class Original:
         self.library = json.loads(lib.read_text())["tc100"].get("symbols", {}) if lib.exists() else {}
         # data of the load module (initialiser templates in DGROUP hold relocated far pointers)
         self.lm_relocs = {s * 16 + o for o, s in mz["relocs"]}
+        self.lm_seq = [s * 16 + o for o, s in mz["relocs"]]        # in the table's order
         man_path = ROOT / "build" / "re" / ("%s.json" % program.stem.lower())
         man = json.loads(man_path.read_text()) if man_path.exists() else {"overlays": []}
         # an overlay function is reached through its stub entry: (overlay, code offset) -> (stub, entry offset)
@@ -407,7 +440,17 @@ def compare(fname, a: Build, b: Build, at_a: int, at_b: int, length: int, orig: 
         delta = (vb - va) & 0xFFFF
         if PAD <= delta < PAD + 16:  # DGROUP moved by the pad, plus the alignment of later segments
             g = next(((off, n) for n, (off, _) in data_a.items() if off - GUARD <= va < off + 256), None)
-            if g:
+            own = own_data(va)
+            if own is not None:                     # the unit's own data (/*@data */): by its place in it
+                if vo != own:
+                    return fail(k, "%s is ds:%04X, original ds:%04X" % (own_name(a, va), own, vo))
+                # the literal map (make rebuild, make port-literals) keeps literals and templates, not
+                # the unit's globals
+                pubs = {a.publics[a.name(x)] - a.dgroup * 16 for x in DEFDATA if a.name(x)}
+                if OWN["lo"] <= va < OWN["hi"] and va not in pubs and (
+                        template_size(a, pa) or a.cstr(va) == orig.cstr(vo)):
+                    LITERALS[va - OWN["lo"]] = vo
+            elif g:
                 want = data_a[g[1]][1] + (va - g[0])
                 if vo != want:
                     return fail(k, "%s%+d is ds:%04X, original ds:%04X" % (g[1].lstrip("_"), va - g[0], want, vo))
@@ -441,6 +484,140 @@ def compare(fname, a: Build, b: Build, at_a: int, at_b: int, length: int, orig: 
         else:
             return fail(k, "field %04X moved by %04X: not explained" % (va, delta))
         k += 2
+    return None
+
+
+def own_data(va: int) -> int | None:
+    """With /*@data */: the original's DGROUP offset of a reference to our unit's own _DATA (a little
+    below its start or past its end too: a table indexed from 1), or None."""
+    if OWN.get("place") is None or not OWN["lo"] - GUARD <= va < OWN["hi"] + GUARD:
+        return None
+    return (OWN["place"] + va - OWN["lo"]) & 0xFFFF
+
+
+def own_name(a: Build, va: int) -> str:
+    """A reference into our own _DATA, for a message: the definition at or below it, or the offset."""
+    below = [(a.publics[a.name(n)] - a.dgroup * 16, n) for n in DEFDATA if a.name(n)]
+    below = [(o, n) for o, n in below if OWN["lo"] <= o <= va]
+    if below:
+        o, n = max(below)
+        return "%s%+d" % (n, va - o)
+    return "the unit's data%+d" % (va - OWN["lo"])
+
+
+def data_ref(a: Build, va: int, data_a: dict) -> tuple[int | None, str]:
+    """The original's DGROUP offset that our DGROUP offset va names: the unit's own data, or an extern
+    (its annotation plus the same distance). (None, why) when it names neither."""
+    own = own_data(va)
+    if own is not None:
+        return own, own_name(a, va)
+    g = next(((off, n) for n, (off, _) in data_a.items() if off - GUARD <= va < off + 256), None)
+    if g:
+        return (data_a[g[1]][1] + va - g[0]) & 0xFFFF, "%s%+d" % (g[1].lstrip("_"), va - g[0])
+    return None, "ds:%04X of our link, no data of this file or extern" % va
+
+
+def compare_data(a: Build, b: Build, orig: Original, funcs: dict, data: dict, unit_frame: int | None) -> str | None:
+    """With /*@data */: None when our unit's _DATA is the original's at OWN["place"] (class
+    docstring); otherwise the first difference."""
+    lo, hi, place, span = OWN["lo"], OWN["hi"], OWN["place"], OWN["span"]
+    n = hi - lo
+    pa0, pb0, po0 = a.dgroup * 16 + lo, b.dgroup * 16 + b.lits[0], orig.dgroup * 16 + place
+    om = orig.load_module
+    at = lambda k: "data ds:%04X" % (place + k)
+    if n != span and not (n % 2 and n + 1 == span):
+        return "data: ours %d bytes, the unit's span in re/datamap.toml ds:%04X-%04X is %d" % (n, place, place + span, span)
+    if span == n + 1 and om[po0 + n]:
+        return "%s: the pad byte to the next module is %02X in the original, not 0" % (at(n), om[po0 + n])
+    data_a = {a.name(x): (a.publics[a.name(x)] - a.dgroup * 16, d) for x, d in data.items()
+              if a.name(x) and x not in DEFDATA}
+    func_of = {a.name(x): x for x in funcs if a.name(x)}
+    for x, want in sorted(DEFDATA.items(), key=lambda t: t[1]):
+        pub = a.name(x)
+        if not pub:
+            return "data: %s is not public in our build" % x
+        o = a.publics[pub] - a.dgroup * 16
+        if not lo <= o < hi:
+            return "data: %s is not in the unit's _DATA (ds:%04X of our link): uninitialised data stays extern" % (x, o)
+        if place + o - lo != want:
+            return "data: %s is at ds:%04X by its place in the unit's data, annotated ds:%04X" % (x, place + o - lo, want)
+    ours = []
+    k = 0
+    while k < n:
+        pa, pb, po = pa0 + k, pb0 + k, po0 + k
+        if pa + 2 in a.relocs and pa not in a.relocs and pa + 1 not in a.relocs and k + 4 <= n:
+            seg, off = a.word(pa + 2), a.word(pa)
+            got = struct.unpack_from("<HH", om, po)
+            if po + 2 not in orig.lm_relocs:
+                return "%s: a far pointer, the original has no relocation at +2 (%04X:%04X)" % (at(k), got[1], got[0])
+            if seg == a.dgroup:
+                want, what = data_ref(a, off, data_a)
+                if want is None:
+                    return "%s: far pointer to %s" % (at(k), what)
+                if got != (want, orig.dgroup):
+                    return "%s: far pointer to %s (%04X:%04X), original %04X:%04X" % (
+                        at(k), what, orig.dgroup, want, got[1], got[0])
+            else:
+                pub = a.by_linear.get(seg * 16 + off)
+                if pub in func_of:
+                    fs, fo = funcs[func_of[pub]]
+                    if isinstance(fs, str):
+                        e = orig.stub_entry.get((int(fs[3:]), fo))
+                        want = (e[1], e[0]) if e else None
+                    else:
+                        want = (fo, fs)
+                    if got != want:
+                        return "%s: far pointer to %s, original %04X:%04X" % (at(k), func_of[pub], got[1], got[0])
+                elif pub in orig.library:
+                    if got[1] * 16 + got[0] != orig.library[pub]:
+                        return "%s: far pointer to %s, original %04X:%04X" % (at(k), pub.lstrip("_"), got[1], got[0])
+                elif seg in a.far_frames:                # a far object of another segment (FARDATA)
+                    objs = [(a.publics[a.name(x)] - seg * 16, x) for x in FARDATA if a.name(x)]
+                    o, x = min(objs, key=lambda t: abs(off - t[0])) if objs else (None, None)
+                    if o is None or not o - GUARD <= off < o + 256:
+                        return "%s: far pointer to %04X:%04X of our link, no far object there" % (at(k), seg, off)
+                    fs, fo = funcs[x]
+                    if got != ((fo + off - o) & 0xFFFF, fs):
+                        return "%s: far pointer to %s%+d (%04X:%04X), original %04X:%04X" % (
+                            at(k), x, off - o, fs, (fo + off - o) & 0xFFFF, got[1], got[0])
+                else:
+                    return "%s: far pointer to %04X:%04X of our link, not an annotated function or data" % (at(k), seg, off)
+            ours.append(k + 2)
+            k += 4
+            continue
+        if pa in a.relocs:
+            v = a.word(pa)
+            want = orig.dgroup if v == a.dgroup else unit_frame if a.unit and v == a.unit[0] else None
+            if want is None or po not in orig.lm_relocs or struct.unpack_from("<H", om, po)[0] != want:
+                return "%s: segment word %04X, original %04X%s" % (
+                    at(k), v, struct.unpack_from("<H", om, po)[0], "" if po in orig.lm_relocs else " (no relocation)")
+            ours.append(k)
+            k += 2
+            continue
+        if a.image[pa] == b.image[pb]:
+            if a.image[pa] != om[po]:
+                return "%s: byte %02X, original %02X" % (at(k), a.image[pa], om[po])
+            k += 1
+            continue
+        va, vb, vo = a.word(pa), b.word(pb), struct.unpack_from("<H", om, po)[0]
+        if PAD <= (vb - va) & 0xFFFF < PAD + 16:         # a near pointer into DGROUP
+            want, what = data_ref(a, va, data_a)
+            if want is None or vo != want:
+                return "%s: offset of %s%s, original %04X" % (at(k), what, "" if want is None else " (ds:%04X)" % want, vo)
+            k += 2
+            continue
+        return "%s: a word that moves by %04X between our links, not data" % (at(k), (vb - va) & 0xFFFF)
+    theirs = [x - po0 for x in orig.lm_seq if po0 <= x < po0 + n]
+    extra = sorted(set(theirs) - set(ours))
+    if extra:
+        return "%s: the original relocates the word there, ours does not" % at(extra[0])
+    mine = [x - pa0 for x in a.reloc_seq if pa0 <= x < pa0 + n]
+    if mine != theirs:
+        i = next(i for i, (p, q) in enumerate(zip(mine, theirs)) if p != q)
+        return "data: relocation order: ours %s, original %s (from relocation %d of the unit's data; Turbo C writes a " \
+               "module's data fixups downward, TASM upward)" % (
+                   " ".join("ds:%04X" % (place + x) for x in mine[i:i + 4]),
+                   " ".join("ds:%04X" % (place + x) for x in theirs[i:i + 4]), i + 1)
     return None
 
 
@@ -658,9 +835,29 @@ def main() -> int:
     unit_frame, unit_base = (None, 0)
     if u and ovl is None:
         unit_frame, unit_base = (int(x, 16) for x in u["start"].split(":"))
+    bad, matched, covered, lengths, data_bad = 0, [], [], {}, 0
+    if OWN:
+        # the unit's data (/*@data */): its span in the data map, by the unit's id
+        uid = (u["id"] if u else (a.unit or path.stem)).lower()
+        dm = ROOT / "re" / "datamap.toml"
+        mods = {m["id"]: m for m in tomllib.loads(dm.read_text())["module"]} if dm.exists() else {}
+        if uid not in mods:
+            print("DIFFER  data: %s has no span in re/datamap.toml (make datamap WRITE=1)" % uid)
+            return 1
+        mod = mods[uid]
+        OWN.update(lo=A.lits[0], hi=A.lits[1], place=int(mod["start"][3:], 16), span=mod["bytes"])
+        err = compare_data(A, B, orig, funcs, data, unit_frame)
+        if err:
+            print("DIFFER  " + err)
+            data_bad = 1
+        else:
+            nrel = sum(1 for x in A.reloc_seq if A.dgroup * 16 + A.lits[0] <= x < A.dgroup * 16 + A.lits[1])
+            print("ok      data %s-ds:%04X (%d bytes, %d definitions, %d relocations)" % (
+                mod["start"], OWN["place"] + mod["bytes"], OWN["hi"] - OWN["lo"], len(DEFDATA), nrel))
+    if A.unit is None:                              # a data-only module: no code
+        A.unit = B.unit = (0, 0, 0)
     ours_end = A.unit[0] * 16 + A.unit[1] + A.unit[2]
     starts = sorted(A.publics[A.name(n)] for n in defined if A.name(n))
-    bad, matched, covered, lengths = 0, [], [], {}
     for n in sorted(defined - stubs, key=lambda n: A.publics.get(A.name(n) or "", 1 << 30)):
         pub = A.name(n)
         if not pub:
@@ -694,11 +891,13 @@ def main() -> int:
         whole = A.unit[2] == u["bytes"] and ovl is None and gaps_match(A, B, orig, covered, u)
         print("unit %s %s: ours %d bytes, the unit %d" % (
             u["id"], "complete" if whole else "not complete", A.unit[2], u["bytes"]))
-    print("cmatch: %d of %d functions match%s%s" % (
+    print("cmatch: %d of %d functions match%s%s%s" % (
         len(defined - stubs) - bad - drafts, len(defined - stubs),
+        "" if not OWN else ", the data %s" % ("differ" if data_bad else "match"),
         ", %d drafts" % drafts if drafts else "", ", %d stubs" % len(stubs) if stubs else ""))
     if __import__("os").environ.get("CMATCH_LITERALS"):
         Path(__import__("os").environ["CMATCH_LITERALS"]).write_text(json.dumps({str(k): v for k, v in LITERALS.items()}))
+    bad += data_bad
     if a.write and program.name.upper() in ("EOB.EXE", "INTRO.EXE", "START1.EXE"):
         n = write_levels({funcs[k]: k for k in matched}, "tasm /mx" if asm else " ".join(flags),
                          u["id"] if whole else None, program.name.upper(), lengths)

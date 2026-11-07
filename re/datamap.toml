@@ -1,0 +1,319 @@
+# The data map of EOB.EXE (playbook 80, step D0): each module's initialised data in DGROUP, in
+# link order, from the start-up code's _DATA to the library's. Written by `make datamap WRITE=1`
+# (tools/rebuild/datamap.py). start_by: settled (the previous module's pool ends there), settled [H]
+# (the same, the modules between taken to have no data), touching (the anchors meet), free (no
+# relocation inside the stretch, so the image cannot tell; placed by the default rule).
+# A module of the form dSSSS is a data-only module, from the empty code segment at SSSS. A module's
+# end is the next one's start: the pad byte after an odd end of a pool is counted with it.
+
+[[module]]
+id = "e07a9"
+start = "ds:0090"
+end = "ds:009E"
+bytes = 14
+start_by = "settled"
+start_why = "the start-up code's _DATA ends at ds:008F"
+evidence = ["pool ds:0090-009D (2 literals)"]
+
+[[module]]
+id = "d07c8"
+start = "ds:009E"
+end = "ds:3056"
+bytes = 12216
+start_by = "settled"
+start_why = "e07a9's pool ends at ds:009D; _DATA is word aligned"
+evidence = ["relocations ds:0201-049C (36, a record of the run after e07a9's code)", "relocations ds:04AD-089E (54, a record of the run after e07a9's code)", "relocations ds:08AF-0C8D (53, a record of the run after e07a9's code)", "relocations ds:0C9E-108F (54, a record of the run after e07a9's code)", "relocations ds:10A0-1498 (161, a record of the run after e07a9's code)", "relocations ds:149C-174B (90, a record of the run after e07a9's code)"]
+
+[[module]]
+id = "e07c8"
+start = "ds:3056"
+end = "ds:31AC"
+bytes = 342
+start_by = "free"
+start_why = "no relocation between ds:174B and ds:3056; the stretch goes to d07c8"
+evidence = ["relocations ds:3076-3088 (5)", "pool ds:3067-31AC (12 literals)", "name ds:3056 declared only by e07c8", "name ds:3057 declared only by e07c8"]
+
+[[module]]
+id = "e082c"
+start = "ds:31AC"
+end = "ds:31F2"
+bytes = 70
+start_by = "settled"
+start_why = "e07c8's pool ends at ds:31AC; _DATA is word aligned"
+evidence = ["pool ds:31AF-31F1 (6 literals)", "name ds:31AC declared only by e082c"]
+
+[[module]]
+id = "e08e6"
+start = "ds:31F2"
+end = "ds:337A"
+bytes = 392
+start_by = "settled"
+start_why = "e082c's pool ends at ds:31F1; _DATA is word aligned"
+evidence = ["pool ds:3303-3379 (5 literals)", "name ds:31F2 declared only by e08e6", "name ds:31F6 declared only by e08e6", "name ds:31FE declared only by e08e6", "name ds:320E declared only by e08e6", "name ds:321E declared only by e08e6", "name ds:3220 declared only by e08e6", "name ds:3223 declared only by e08e6", "name ds:3226 declared only by e08e6", "name ds:322F declared only by e08e6", "name ds:3234 declared only by e08e6", "name ds:3237 declared only by e08e6", "name ds:323B declared only by e08e6", "name ds:324B declared only by e08e6", "name ds:325B declared only by e08e6", "name ds:328B declared only by e08e6", "name ds:329B declared only by e08e6", "name ds:32BB declared only by e08e6", "name ds:32C3 declared only by e08e6"]
+
+[[module]]
+id = "e0a72"
+start = "ds:337A"
+end = "ds:36B0"
+bytes = 822
+start_by = "settled"
+start_why = "e08e6's pool ends at ds:3379; _DATA is word aligned"
+evidence = ["relocations ds:3408-35D4 (12)", "pool ds:36A4-36AF (2 literals)", "name ds:337A declared only by e0a72", "name ds:339D declared only by e0a72", "name ds:33BB declared only by e0a72", "name ds:33ED declared only by e0a72", "name ds:3406 declared only by e0a72"]
+
+[[module]]
+id = "e0acd"
+start = "ds:36B0"
+end = "ds:37B4"
+bytes = 260
+start_by = "settled"
+start_why = "e0a72's pool ends at ds:36AF; _DATA is word aligned"
+evidence = ["pool ds:3752-37B3 (5 literals)", "name ds:36B0 declared only by e0acd", "name ds:36D0 declared only by e0acd", "name ds:373C declared only by e0acd", "name ds:3744 declared only by e0acd", "name ds:374A declared only by e0acd"]
+
+[[module]]
+id = "e0bd2"
+start = "ds:37B4"
+end = "ds:3A62"
+bytes = 686
+start_by = "settled"
+start_why = "e0acd's pool ends at ds:37B3; _DATA is word aligned"
+evidence = ["pool ds:3901-3A62 (20 literals)", "name ds:37B4 declared only by e0bd2", "name ds:37E1 declared only by e0bd2", "name ds:3837 declared only by e0bd2", "name ds:3875 declared only by e0bd2", "name ds:3890 declared only by e0bd2", "name ds:3893 declared only by e0bd2", "name ds:38FA declared only by e0bd2"]
+
+[[module]]
+id = "e0cf7"
+start = "ds:3A62"
+end = "ds:547E"
+bytes = 6684
+start_by = "settled"
+start_why = "e0bd2's pool ends at ds:3A62; _DATA is word aligned"
+evidence = ["relocations ds:3AD0-547E (354)"]
+notes = ["ds:3A62 is declared by eov0, eov1, not by this module"]
+
+[[module]]
+id = "e0d1c"
+start = "ds:547E"
+end = "ds:5536"
+bytes = 184
+start_by = "touching"
+start_why = "e0cf7's last anchor ends at ds:547E"
+evidence = ["pool ds:550A-5535 (2 literals)", "name ds:547E declared only by e0d1c", "name ds:5482 declared only by e0d1c", "name ds:54F2 declared only by e0d1c", "name ds:54F4 declared only by e0d1c"]
+notes = ["ds:552F is declared by e0de8, not by this module"]
+
+[[module]]
+id = "e0de8"
+start = "ds:5536"
+end = "ds:55E6"
+bytes = 176
+start_by = "settled"
+start_why = "e0d1c's pool ends at ds:5535; _DATA is word aligned"
+evidence = ["pool ds:5543-55E5 (3 literals)", "name ds:553E declared only by e0de8"]
+
+[[module]]
+id = "e0ef3"
+start = "ds:55E6"
+end = "ds:59B0"
+bytes = 970
+start_by = "settled"
+start_why = "e0de8's pool ends at ds:55E5; _DATA is word aligned"
+evidence = ["relocations ds:5617-579B (12)", "name ds:55E6 declared only by e0ef3", "name ds:55EF declared only by e0ef3", "name ds:5615 declared only by e0ef3", "name ds:579B declared only by e0ef3", "name ds:57A3 declared only by e0ef3", "name ds:57C3 declared only by e0ef3", "name ds:57C8 declared only by e0ef3", "name ds:57D9 declared only by e0ef3", "name ds:57F1 declared only by e0ef3", "name ds:5809 declared only by e0ef3", "name ds:5830 declared only by e0ef3", "name ds:5859 declared only by e0ef3", "name ds:587A declared only by e0ef3", "name ds:5899 declared only by e0ef3", "name ds:58AF declared only by e0ef3", "name ds:58BB declared only by e0ef3", "name ds:58C6 declared only by e0ef3", "name ds:58D1 declared only by e0ef3", "name ds:58ED declared only by e0ef3", "name ds:592B declared only by e0ef3", "name ds:5937 declared only by e0ef3", "name ds:5943 declared only by e0ef3", "name ds:596E declared only by e0ef3", "name ds:599D declared only by e0ef3", "name ds:59AB declared only by e0ef3"]
+
+[[module]]
+id = "e122e"
+start = "ds:59B0"
+end = "ds:5BA8"
+bytes = 504
+start_by = "free"
+start_why = "no relocation between ds:59AC and ds:59B0; the stretch goes to e0ef3"
+evidence = ["relocations ds:5A1A-5AB5 (33)", "pool ds:5AB7-5BA1 (7 literals)", "name ds:59B0 declared only by e122e", "name ds:59D8 declared only by e122e", "name ds:59F8 declared only by e122e", "string ds:5BA1-5BA8 declared only by e122e (its pool goes on)"]
+
+[[module]]
+id = "e1414"
+start = "ds:5BA8"
+end = "ds:5D1A"
+bytes = 370
+start_by = "settled"
+start_why = "e122e's pool ends at ds:5BA8; _DATA is word aligned"
+evidence = ["relocations ds:5BAA-5C9C (16)", "pool ds:5CBB-5D1A (3 literals)"]
+notes = ["ds:5C74 is declared by e122e, eov3, not by this module", "ds:5C77 is declared by e122e, eov3, not by this module"]
+
+[[module]]
+id = "e14ef"
+start = "ds:5D1A"
+end = "ds:5D1C"
+bytes = 2
+start_by = "settled"
+start_why = "e1414's pool ends at ds:5D1A; _DATA is word aligned"
+evidence = ["name ds:5D1A declared only by e14ef"]
+
+[[module]]
+id = "e1547"
+start = "ds:5D1C"
+end = "ds:5DE0"
+bytes = 196
+start_by = "free"
+start_why = "no relocation between ds:5D1A and ds:5D1C; the first name only e1547 declares"
+evidence = ["pool ds:5D52-5DE0 (19 literals)", "name ds:5D1C declared only by e1547", "name ds:5D1F declared only by e1547", "name ds:5D21 declared only by e1547", "name ds:5D24 declared only by e1547", "name ds:5D26 declared only by e1547", "name ds:5D29 declared only by e1547", "name ds:5D2C declared only by e1547", "name ds:5D2E declared only by e1547", "name ds:5D31 declared only by e1547", "name ds:5D33 declared only by e1547", "name ds:5D39 declared only by e1547", "name ds:5D3F declared only by e1547", "name ds:5D42 declared only by e1547", "name ds:5D48 declared only by e1547", "name ds:5D4B declared only by e1547", "name ds:5D4D declared only by e1547", "name ds:5D4F declared only by e1547"]
+
+[[module]]
+id = "e16a5"
+start = "ds:5DE0"
+end = "ds:5E22"
+bytes = 66
+start_by = "settled [H]"
+start_why = "e1547's pool ends at ds:5DE0; the modules between are taken to have no data"
+evidence = ["name ds:5DE0 declared only by e16a5", "name ds:5DE4 declared only by e16a5", "name ds:5DE8 declared only by e16a5", "name ds:5DEA declared only by e16a5", "name ds:5DF2 declared only by e16a5", "name ds:5E10 declared only by e16a5"]
+
+[[module]]
+id = "e177d"
+start = "ds:5E22"
+end = "ds:5E44"
+bytes = 34
+start_by = "free"
+start_why = "no relocation between ds:5E11 and ds:5E22; the stretch goes to e16a5"
+evidence = ["pool ds:5E2C-5E43 (2 literals)", "name ds:5E22 declared only by e177d", "name ds:5E24 declared only by e177d", "name ds:5E26 declared only by e177d", "name ds:5E28 declared only by e177d", "name ds:5E2A declared only by e177d"]
+
+[[module]]
+id = "eov0"
+start = "ds:5E44"
+end = "ds:628C"
+bytes = 1096
+start_by = "settled"
+start_why = "e177d's pool ends at ds:5E43; _DATA is word aligned"
+evidence = ["name ds:5E44 declared only by eov0", "name ds:5E4C declared only by eov0", "name ds:5E54 declared only by eov0", "name ds:5E5C declared only by eov0", "name ds:5E64 declared only by eov0", "name ds:5EAC declared only by eov0", "name ds:5EB0 declared only by eov0", "name ds:5EB1 declared only by eov0", "name ds:5EF9 declared only by eov0", "name ds:5EFC declared only by eov0", "name ds:5F35 declared only by eov0", "name ds:5F7D declared only by eov0", "name ds:5FC5 declared only by eov0", "name ds:6079 declared only by eov0", "name ds:607D declared only by eov0", "name ds:6081 declared only by eov0", "name ds:6099 declared only by eov0", "name ds:60D5 declared only by eov0", "name ds:6101 declared only by eov0", "name ds:613D declared only by eov0", "name ds:618C declared only by eov0", "name ds:6197 declared only by eov0", "name ds:61A1 declared only by eov0", "name ds:61B3 declared only by eov0", "name ds:61B9 declared only by eov0", "name ds:61BC declared only by eov0", "name ds:61C2 declared only by eov0", "name ds:61CB declared only by eov0", "name ds:6207 declared only by eov0", "name ds:6227 declared only by eov0", "name ds:622A declared only by eov0", "name ds:622D declared only by eov0", "name ds:6230 declared only by eov0", "name ds:6233 declared only by eov0", "name ds:6236 declared only by eov0", "name ds:6239 declared only by eov0", "name ds:623C declared only by eov0", "name ds:623F declared only by eov0", "name ds:624C declared only by eov0", "name ds:625A declared only by eov0", "name ds:626C declared only by eov0", "name ds:6272 declared only by eov0", "name ds:627B declared only by eov0", "name ds:6283 declared only by eov0"]
+
+[[module]]
+id = "eov1"
+start = "ds:628C"
+end = "ds:64F8"
+bytes = 620
+start_by = "free"
+start_why = "no relocation between ds:6284 and ds:628C; the stretch goes to eov0"
+evidence = ["pool ds:645B-64F8 (12 literals)", "name ds:628C declared only by eov1", "name ds:62AF declared only by eov1", "name ds:62C9 declared only by eov1", "name ds:62E2 declared only by eov1", "name ds:62F2 declared only by eov1", "name ds:62F8 declared only by eov1", "name ds:62FE declared only by eov1", "name ds:6330 declared only by eov1", "name ds:6358 declared only by eov1", "name ds:6394 declared only by eov1", "name ds:6457 declared only by eov1", "name ds:6459 declared only by eov1"]
+
+[[module]]
+id = "eov2"
+start = "ds:64F8"
+end = "ds:6840"
+bytes = 840
+start_by = "settled"
+start_why = "eov1's pool ends at ds:64F8; _DATA is word aligned"
+evidence = ["pool ds:6669-683F (15 literals)", "relocations ds:65E0-65EA (3, a record of the run after e177d's code)", "name ds:64F8 declared only by eov2", "name ds:6534 declared only by eov2", "name ds:65AC declared only by eov2", "name ds:65B0 declared only by eov2", "name ds:65B8 declared only by eov2", "name ds:65C0 declared only by eov2", "name ds:65C3 declared only by eov2", "name ds:65C6 declared only by eov2", "name ds:65DE declared only by eov2"]
+
+[[module]]
+id = "eov3"
+start = "ds:6840"
+end = "ds:6B82"
+bytes = 834
+start_by = "settled"
+start_why = "eov2's pool ends at ds:683F; _DATA is word aligned"
+evidence = ["pool ds:6A98-6B81 (26 literals)", "relocations ds:6A82-6A8C (3, a record of the run after e177d's code)", "name ds:6840 declared only by eov3", "name ds:68A0 declared only by eov3", "name ds:6900 declared only by eov3", "name ds:6930 declared only by eov3", "name ds:69C0 declared only by eov3", "name ds:6A50 declared only by eov3"]
+
+[[module]]
+id = "eov4"
+start = "ds:6B82"
+end = "ds:7298"
+bytes = 1814
+start_by = "settled"
+start_why = "eov3's pool ends at ds:6B81; _DATA is word aligned"
+evidence = ["name ds:6B82 declared only by eov4", "name ds:6CC6 declared only by eov4", "name ds:6F4E declared only by eov4", "name ds:6F6D declared only by eov4", "name ds:6F79 declared only by eov4", "name ds:6F86 declared only by eov4", "name ds:6F98 declared only by eov4", "name ds:6FA8 declared only by eov4", "name ds:6FAE declared only by eov4", "name ds:6FBE declared only by eov4", "name ds:6FC1 declared only by eov4", "name ds:6FE1 declared only by eov4", "name ds:7001 declared only by eov4", "name ds:7015 declared only by eov4", "name ds:7018 declared only by eov4", "name ds:70A8 declared only by eov4", "name ds:70CC declared only by eov4", "name ds:70F0 declared only by eov4", "name ds:70F4 declared only by eov4", "name ds:70F8 declared only by eov4", "name ds:70FC declared only by eov4", "name ds:70FF declared only by eov4", "name ds:7102 declared only by eov4", "name ds:7106 declared only by eov4", "name ds:7108 declared only by eov4", "name ds:714E declared only by eov4", "name ds:716E declared only by eov4", "name ds:718E declared only by eov4", "name ds:7192 declared only by eov4", "name ds:7196 declared only by eov4", "name ds:719A declared only by eov4", "name ds:719E declared only by eov4", "name ds:71A2 declared only by eov4", "name ds:71A6 declared only by eov4", "name ds:71EE declared only by eov4", "name ds:71FE declared only by eov4", "name ds:7246 declared only by eov4", "name ds:725A declared only by eov4", "name ds:725E declared only by eov4", "name ds:7262 declared only by eov4", "name ds:7272 declared only by eov4", "name ds:7275 declared only by eov4", "name ds:7278 declared only by eov4", "name ds:728A declared only by eov4", "name ds:7290 declared only by eov4", "name ds:7296 declared only by eov4", "relocations ds:7022-70A8 (26, a record of the run after eov4's code)"]
+notes = ["ds:71A7 is declared by eov5, not by this module"]
+
+[[module]]
+id = "eov5"
+start = "ds:7298"
+end = "ds:7F46"
+bytes = 3246
+start_by = "touching"
+start_why = "eov4's last anchor ends at ds:7297"
+evidence = ["name ds:7298 declared only by eov5", "name ds:7B23 declared only by eov5", "name ds:7B2B declared only by eov5", "name ds:7B89 declared only by eov5", "name ds:7B94 declared only by eov5", "name ds:7B9F declared only by eov5", "name ds:7BA6 declared only by eov5", "name ds:7BB2 declared only by eov5", "name ds:7BBA declared only by eov5", "name ds:7BC2 declared only by eov5", "name ds:7BCA declared only by eov5", "name ds:7BD2 declared only by eov5", "name ds:7BDE declared only by eov5", "name ds:7BE6 declared only by eov5", "name ds:7BEE declared only by eov5", "name ds:7BF2 declared only by eov5", "name ds:7BFA declared only by eov5", "name ds:7C32 declared only by eov5", "name ds:7CB7 declared only by eov5", "name ds:7CBC declared only by eov5", "name ds:7D0E declared only by eov5", "name ds:7D77 declared only by eov5", "name ds:7D9E declared only by eov5", "name ds:7E43 declared only by eov5", "name ds:7E4B declared only by eov5", "name ds:7E53 declared only by eov5", "name ds:7E5C declared only by eov5", "name ds:7EDB declared only by eov5", "name ds:7EDD declared only by eov5", "name ds:7EEF declared only by eov5", "name ds:7EF7 declared only by eov5", "name ds:7EFF declared only by eov5", "name ds:7F07 declared only by eov5", "name ds:7F0F declared only by eov5", "name ds:7F18 declared only by eov5", "name ds:7F20 declared only by eov5", "name ds:7F27 declared only by eov5", "name ds:7F30 declared only by eov5", "name ds:7F38 declared only by eov5", "relocations ds:7B25-7C06 (26, a record of the run after eov4's code)"]
+
+[[module]]
+id = "eov6"
+start = "ds:7F46"
+end = "ds:7FBC"
+bytes = 118
+start_by = "free"
+start_why = "no relocation between ds:7F39 and ds:7F46; the stretch goes to eov5"
+evidence = ["pool ds:7F46-7FBC (5 literals)"]
+
+[[module]]
+id = "e17a6"
+start = "ds:7FBC"
+end = "ds:7FEC"
+bytes = 48
+start_by = "settled"
+start_why = "eov6's pool ends at ds:7FBC; _DATA is word aligned"
+evidence = ["name ds:7FBC declared only by e17a6", "name ds:7FCC declared only by e17a6", "name ds:7FDC declared only by e17a6"]
+
+[[module]]
+id = "e19bc"
+start = "ds:7FEC"
+end = "ds:8024"
+bytes = 56
+start_by = "free"
+start_why = "no relocation between ds:7FDD and ds:7FEC; the stretch goes to e17a6"
+evidence = ["pool ds:7FEC-8023 (1 literals)"]
+
+[[module]]
+id = "e1a72"
+start = "ds:8024"
+end = "ds:802A"
+bytes = 6
+start_by = "settled [H]"
+start_why = "e19bc's pool ends at ds:8023; the modules between are taken to have no data"
+evidence = ["name ds:8026 declared only by e1a72", "name ds:8028 declared only by e1a72"]
+
+[[module]]
+id = "d1aad"
+start = "ds:802A"
+end = "ds:80EC"
+bytes = 194
+start_by = "free"
+start_why = "no relocation between ds:8028 and ds:802A; d1aad's first far pointer"
+evidence = ["relocations ds:802C-8046 (7) (written upward, by TASM: d1aad)"]
+
+[[module]]
+id = "e1aad"
+start = "ds:80EC"
+end = "ds:8104"
+bytes = 24
+start_by = "free"
+start_why = "no relocation between ds:8046 and ds:80ED; the stretch goes to d1aad"
+evidence = ["name ds:80ED declared only by e1aad", "name ds:80EF declared only by e1aad", "name ds:80F1 declared only by e1aad", "name ds:80F3 declared only by e1aad", "name ds:80F5 declared only by e1aad", "name ds:80F7 declared only by e1aad"]
+notes = ["ds:80FA is declared by e07c8, not by this module", "ds:80FE is declared by e1c0e, not by this module", "ds:8100 is declared by e14ef, e1a47, e1de7, eov0, not by this module", "ds:8101 is declared by e14ef, e1a47, e1de7, eov5, not by this module", "ds:8102 is declared by e07a9, e07c8, e082c, e08e6, e0bd2, e0d1c, e0ef3, e14ef, e1547, e17a6, e1c0e, e1de7, eov0, eov1, eov2, eov3, eov4, not by this module"]
+
+[[module]]
+id = "d1b82"
+start = "ds:8104"
+end = "ds:8176"
+bytes = 114
+start_by = "free"
+start_why = "no relocation between ds:80F8 and ds:8104; the stretch goes to e1aad"
+evidence = ["relocations ds:8106-8129 (4) (written downward, by Turbo C: d1b82)"]
+
+[[module]]
+id = "e1bbe"
+start = "ds:8176"
+end = "ds:8196"
+bytes = 32
+start_by = "free"
+start_why = "no relocation between ds:8129 and ds:8176; the stretch goes to d1b82"
+evidence = ["name ds:8176 declared only by e1bbe", "name ds:8178 declared only by e1bbe", "name ds:817A declared only by e1bbe", "name ds:817C declared only by e1bbe", "name ds:817E declared only by e1bbe", "name ds:8180 declared only by e1bbe", "name ds:8182 declared only by e1bbe", "name ds:8184 declared only by e1bbe", "name ds:8186 declared only by e1bbe", "name ds:8188 declared only by e1bbe"]
+
+[[module]]
+id = "e1c0e"
+start = "ds:8196"
+end = "ds:8484"
+bytes = 750
+start_by = "free"
+start_why = "no relocation between ds:8189 and ds:8196; the stretch goes to e1bbe"
+evidence = ["relocations ds:8198-81E6 (20)", "pool ds:8466-8483 (2 literals)", "name ds:8196 declared only by e1c0e"]
+
+[[module]]
+id = "e1ddd"
+start = "ds:8484"
+end = "ds:84B2"
+bytes = 46
+start_by = "settled [H]"
+start_why = "e1c0e's pool ends at ds:8483; the rest, to the library's data, taken as e1ddd's"
+evidence = ["names ds:84A2 declared only by e1ddd"]
+notes = ["ds:8488 is declared by e1aad, not by this module", "ds:848A is declared by e082c, e0d1c, eov0, not by this module", "ds:8492 is declared by e08e6, e0acd, e1414, eov3, eov6, not by this module", "ds:849A is declared by e08e6, eov4, not by this module", "ds:849E is declared by e08e6, e0ef3, eov1, eov3, not by this module"]

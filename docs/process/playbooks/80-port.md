@@ -20,7 +20,8 @@ sound and state.
 | M1 tc2c for every C unit | done 2026-11-05 except the LLVM pin, which waits for the human's install: `make port` translates all 41 C units of `EOB.EXE` (609 functions) with none refused, compiles them with `-Werror` and links them; what is still a stub is 63 assembly routines (M3) and 23 library functions that need the machine (section "M1") |
 | M2 the per-function test | the machinery done 2026-11-05: `make port-hybrid` (section "M2"); on the five `EOB.EXE` goldens 129 of the 594 functions with an entry are reached, 118 are the same as the original on every call tested (635 calls), none differ, 11 are reached only where they wait for an interrupt (M3). The rest of the check, every function of `src/`, needs sessions that reach them |
 | M3 the machine and the assembly units | started 2026-11-05 (section "M3"): `port/asm/` has the four units that touch no hardware, `E1BA8`, `E1D8C`, `E19FC` and `E1D9A` (8 routines), and the interrupt handlers' units `E1D8F`, `E1AAD`, `E1948`, `E_TEXT` with the retrace `E1DE4` (35 routines in all), each the same as the original on every call tested; the C-unit clock in the oracle and the five `.clock.json` recordings ("The interrupts and the C clock"); the machine boots to the oracle's memory byte for byte, and its DOS, INT 10h for MCGA, BIOS time, INT 33h driver and ports (PIC, PIT, 61h, 60h, retrace, DAC, AdLib) answer every one of the 335,055 service calls and port accesses of the five goldens as the oracle does. the machine's wait delivers the recorded interrupts to spinning routines (`port/runtime/irq.c`); 19 library functions on the machine (`port/runtime/tcdos.c`: the files, `int86`, `time`, `rand`; `tcheap.c`: the far heap), each the same as the original's on every call tested; every assembly routine the C calls is in C (63, section "The other units") |
-| M4 the MCGA driver | done 2026-11-05 (section "M4"): `MCGA.OVL` in C (`port/drivers/`, 40 exports), entered with its argument bytes, the same as the original on every direct call and every golden call tested. Next: step D, the program's data as C (it waits for the P6 review), then M5 |
+| M4 the MCGA driver | done 2026-11-05 (section "M4"): `MCGA.OVL` in C (`port/drivers/`, 40 exports), entered with its argument bytes, the same as the original on every direct call and every golden call tested. Next: step D, then M5 |
+| D the program's data as C | started 2026-11-06 (section "Step D"): 33,826 bytes and 969 relocations of initialised data, four sub-steps (D0 the data map, D1 the tools, D2 per unit, D3 tc2c and the generated image); D0 done: `re/datamap.toml`, 34 modules, every boundary settled or free; D1 done: `make match` proves a unit's data (`/*@data */`), `make data-skeleton`, `make rebuild` links it; pilots E0A72 and D1AAD |
 | M5 to M7 | not started (section "Order of work") |
 
 ## Why `src/` does not compile natively as it is
@@ -337,6 +338,135 @@ Whatever the clock, the proof has two levels:
 The new recording artefacts (per golden: the clock positions of each interrupt and input) are files
 beside the goldens, `tests/sessions/golden/<name>.clock.json`; the human approved this change to the
 golden format (decision 5). The goldens themselves do not change.
+
+## Step D: the program's data as C (planned 2026-11-06)
+
+Question C's answer: before the port runs from its own image, the program's data becomes C
+definitions in `src/`, so the port program never loads `EOB.EXE`. P6 is signed off (2026-11-06), so
+`src/` is open for it.
+
+**What there is.** `EOB.EXE`'s own initialised data is ds:0090 to ds:84B2 (33,826 bytes, 969
+relocations: far pointers in tables), between the start-up code's `_DATA` (to ds:008F, the
+rebuild's map) and the library's. Its uninitialised data (_BSS, ds:8A6C up) is zero at start: those globals stay
+`extern` and `make rebuild` keeps reserving them; the port clears the arena. The rebuild fills the
+initialised data today with the original's bytes, in 18 fillers cut by the relocation runs; that cut
+is good enough for bytes but not for definitions. E0A72's far-pointer table at ds:3406 points at
+ds:337A to 33ED, below the cut the rebuild puts at ds:3406, and ds:36B0 to 36BB above its string pool
+is E0ACD's `gHandSplitY`, so a unit's data is not the rebuild's piece.
+
+**Where a unit's data is.** Turbo C writes a module's `_DATA` as its initialised globals and the
+templates of its initialised locals in source order, then its string pool, word aligned, and TLINK
+lays the modules out in link order. So each unit's data ends with its pool (the matcher's literal map,
+`port/literals.json`: E08E6's ends at ds:3378, E0A72's runs ds:36A4 to 36AE) and starts after the
+previous unit's (and its pad byte). Units with no literal (E0CF7, the data-only modules) are
+bounded by the other anchors: the relocation runs, the alignment pads and the names (D0 below).
+
+| Sub-step | Deliverable | Check |
+|---|---|---|
+| D0 | the data map: each unit's exact range of initialised data, with the evidence for each boundary (pool, template, relocation run, pad, reader), written by a tool and kept in `re/` | it covers ds:0090 to 84B2 with no gap or overlap; every boundary settled by an anchor or free (no relocation inside it); the names a module's span holds that it does not declare listed |
+| D1 | the tools: `make match` compiles a unit's definitions, places its `_DATA` at the map's address and compares every byte and relocation with the original (code's references to the unit's own data resolve by the annotation); `make rebuild` links a unit's own data where the unit defines it and a filler where it does not yet; `make data-skeleton UNIT=` drafts the definitions from the bytes, typed by the declarations, a far pointer by the name at its target | a negative fixture per kind of defect (a byte, a relocation, the order); `make match-gate`, `make rebuild` as before |
+| D2 | per unit: the externs of its range become definitions in address order, the unnamed bytes between them named from their readers (playbook 65's rules, `make rename`), the far-pointer tables written as tables of names; claimable and reviewed like a lift (playbooks 30, 70) | `make match` with the data; `make rebuild` identical but for the documented differences, with one filler fewer |
+| D3 | tc2c translates the definitions (each initialiser written at its annotated arena address before `main`), the runtime writes the library's data (C0's, the RTL's: `_streams`, the ctype table, the heap and overlay variables), and the port starts from its own image | the generated image equals `EOB.EXE`'s load module but for the library data listed |
+
+**D0, the data map (done 2026-11-06; two fixes from D1, below).** `re/datamap.toml` gives each of the 34 modules with
+initialised data its span, in link order, covering ds:0090 to 84B2 with no gap; `make datamap`
+shows how each boundary is placed and `make datamap WRITE=1` writes the file
+(`tools/rebuild/datamap.py`; `tests/unit/test_datamap.py` checks the coverage, that a free
+boundary has no relocation inside, and that the file is what the tool writes). What places a
+boundary:
+
+- **A pool closes its module.** Turbo C writes a module's `_DATA` as its globals and templates,
+  then its string literals, so the next module starts at the end of the pool, rounded up to even.
+  The literal map (`port/literals.json`) knows only the literals the matcher saw referenced, so a
+  pool goes on over the strings the unit declares `extern` right after it (E122E's "INVENT" at
+  ds:5BA1).
+- **The relocation table, by module.** TLINK writes it module by module, and Turbo C writes a
+  module's data fixups downward, one object-file record (about 1 KB) at a time, so a run of data
+  relocations after a unit's code relocations is that unit's, or a code-less module's after it.
+  Every C unit's run falls; the driver slot table's (ds:802C-8046) rises, as TASM writes them (checked
+  in D1 by assembling a test file), so it is an assembled data-only module's, not E1AAA's (C).
+- **The link order.** The resident units by address; a **data-only module** (`dSSSS` in the map)
+  at each of the four empty code segments (07C8:0001, 177D:000A, 1AAD:000C, 1B82:0009), before the
+  unit that starts there; and the seven overlays after E177D, in number order (their pools, EOV1's
+  at ds:645B to EOV6's at 7F46, lie after E177D's, and the one run of relocations after E177D's code
+  falls into one record per overlay). The rebuild's own order (EOV0 to EOV2 before E14EF) works for
+  its fillers but is not the original's.
+- **Names.** A name only one unit declares places that unit when it is one of a cluster of three or
+  more, or next to the unit's other anchors, and the link order allows it; a name alone is weak (the
+  driver's slots at ds:802A are declared one by one by their callers). A name alone does place a
+  module the map took to have no data when it lies between a pool's end and the next module's first
+  name or far pointer and only that module, which comes between them in link order, declares it
+  (E14EF's `gHoverSelectsOption`, ds:5D1A, after E1414's pool and before E1547's names); the
+  boundary after it is then free.
+
+Of the 33 boundaries, 17 are settled (a pool's end), 3 settled [H] (a pool's end with modules
+between that the map takes to have no data), 2 touching (two anchors meet), and 12 free. A free
+boundary has no relocation inside it, so the image cannot tell where it is: any even cut gives the
+same bytes and the same relocation order, and `make rebuild` proves D2's data either way. The map
+places a free boundary by a default rule (the stretch goes to the module before, unless the module
+after declares names in it) and D2 may move it for readability. Each module's `notes` list the names
+in its span that it does not declare: shared data other units read, or a boundary to move.
+
+The largest data-only module is the one after E07A9: ds:009E to 3056, 12,216 bytes and 448
+relocations (the region table, the panels, the file table, the game's tables). D2 creates the four
+data-only files. ds:552F (E0DE8's `gLauncherAmmoType`) lies inside E0D1C's string at ds:550E: a
+table read from a base below its start, as ds:FB34 was; E0DE8's D2 settles it.
+
+**D1, the tools (done 2026-11-06).**
+
+- **How the toolchain writes data, settled by compiling and assembling test files.** Turbo C++ 1.00
+  writes a module's `_DATA` as its initialised globals and the templates of its initialised locals
+  in source order, with no padding between them, then its string pool; so a definition goes in the
+  file before the function whose template follows it (EOV5.C's `gMenuRowX` after 00A1's templates).
+  It writes a module's data fixups downward; TASM 2.0 writes them upward (`dd` fixups at +2, +6, +12,
+  +16 come out in that order), which D0 had as [H].
+- **`make match` proves a unit's data** when its file has the line `/*@data */` (`; @data` in
+  assembly). A definition (`signed char gSaveMaxLevel[6] = { 17, ... }; /*@ ds:341E */`) is then left
+  out of the stub, and the unit's `_DATA` is compared with the original's at the unit's span in
+  `re/datamap.toml`: the same length (but a zero pad byte to the next even offset), every
+  definition at its annotation (a `static` is refused: its place cannot be checked), every byte the
+  same in links A and B the original's, a far pointer naming the same function (an overlay function
+  as its stub entry, a library function by `rtl_compare.json`) or the same data (the unit's own by
+  its place in it, an extern by its annotation), a near offset naming the same data, the same
+  relocated words, and the same relocation order. The code's references to the unit's own data are
+  resolved by their place in it. A file of no functions is a data-only module (`src/D1AAD.ASM`,
+  the map's `d1aad`). Without the marker nothing changes: EOV5.C's one definition is still compared
+  by its content. `make match-gate` counts the modules whose data it proved.
+- **`make data-skeleton UNIT=`** (`tools/rebuild/dataskel.py`) drafts a module's data from the
+  original's bytes, cut at every name `src/` declares in the span (typed by the C declaration, the
+  unit's own first), at the literals and templates the unit's code owns (left to the functions, with
+  a comment where they fall), at runs of far pointers and at unnamed pointer targets (`g33BB`, typed
+  by the table that points at it: E0A72's `long g34D0[12]`). A far pointer is written by the name at
+  its target, and the declarations the file lacks are listed. The draft is C, or TASM source when
+  the module's relocations rise (`--c` forces C). What it cannot type (a struct) is bytes with a
+  comment. A draft is stable: drafted again from a file that holds it, it is the same text.
+- **`make rebuild`** links a module whose file has the marker with its own data, literals included,
+  at its span, and fills the rest as before; a data-only file (`src/DSSSS.C` or `.ASM`) goes before
+  the unit that starts at its empty code segment, and brings that segment itself.
+- **The pilots**, to prove the tools: `src/E0A72.C` with the draft unedited (821 bytes, 26
+  definitions, 12 relocations, then its pad byte) and `src/D1AAD.ASM`, the driver slot table as an
+  assembled data-only module (194 bytes, 36 definitions, 7 relocations). Both match; `make rebuild`
+  gives the same result as before them (the overlay stub entries and the link date differ, the
+  relocation table is in the original's order). Their naming is D2's: the names other files
+  declare are used, the rest are named by their address.
+- **Negative fixtures**, one per kind of defect: a byte (`e0a72-data-byte.C`), a far pointer to the
+  wrong table (`e0a72-data-pointer.C`), a pointer written as a number, without its relocation
+  (`e0a72-data-relocation.C`), two definitions in the wrong order (`e0a72-data-place.C`), and d1aad in
+  C (`d1aad-data-order.C`: every byte and pointer right, the relocation order downward).
+- **Two fixes to D0.** The map's name scan read `/*@ ds:XXXX */` only and missed 21 annotations with
+  text after the address; reading them gives E14EF, E16A5 and E1A72 data of their own (34 modules,
+  E07C8 from ds:3056, E1C0E from ds:8196). And a free boundary could fall between a far pointer's
+  offset and its relocated segment word (d1b82's at ds:8106, now ds:8104). `tests/unit/test_datamap.py`
+  checks both.
+- **Found for D2.** E07A9's `SetMouseItem` passes `""` where the original passes ds:0090, and matched
+  because the byte there is 0; the data show a 4-byte global {0, 55h, 55h, FFh} at ds:0090, before
+  " taken.\r" at ds:0094. Defined, and passed instead of the literal, E07A9 matches whole with its
+  data (checked on a copy); its D2 makes the change and corrects the QUIRK comment. Strings a unit
+  declares `extern` after its pool (E122E's "INVENT") are literals of its code, so its D2 writes them
+  as literals.
+
+The four sub-steps go in this order; D2's units are independent once D1 is in. `INTRO.EXE` follows at
+M6.
 
 ## M4: the MCGA driver (2026-11-05)
 

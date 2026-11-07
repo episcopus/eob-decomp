@@ -4,7 +4,7 @@
 Three things must hold, or the gate fails:
 
   1. every unit in src/ matches (cmatch exits 0: no function that is neither a stub nor a draft
-     differs);
+     differs, and a file that defines its unit's data, `/*@data */`, has the original's data);
   2. every function that re/symbols.toml records at L2 is still proven: some file of src/ defines it
      (not as a stub or a draft) and cmatch printed `ok` for it in this run, or it is an entry of a unit
      that matched whole (cmatch: `unit <id> complete`, the bytes between functions included), or it
@@ -61,7 +61,7 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("-v", "--verbose", action="store_true")
     a = ap.parse_args(argv)
-    problems, proven, whole = [], set(), set()
+    problems, proven, whole, data = [], set(), set(), []
     for f in sources(ROOT / "src"):
         code, out = run(f)
         if code:
@@ -71,6 +71,8 @@ def main(argv=None) -> int:
         drafts = set(cmatch.DRAFTS)
         ok = set(re.findall(r"^ok\s+(\S+)", out, re.M))
         whole.update(re.findall(r"^unit (\w+) complete:", out, re.M))
+        if re.search(r"^ok      data ", out, re.M):
+            data.append(f.stem)
         u = cmatch.unit_of(f)
         for n in defined - stubs - drafts:
             if n in ok:
@@ -110,8 +112,8 @@ def main(argv=None) -> int:
             print("%-40s rejected: %s" % (rel(f), differ[0][:90]))
     for p in problems:
         print("match-gate: " + p)
-    print("match-gate: %d units, %d functions at L2 proven, %d negative fixtures rejected: %s" % (
-        len(sources(ROOT / "src")), len(l2 & proven), len(fixtures) - sum(p.startswith("negative") for p in problems),
+    print("match-gate: %d units, %d functions at L2 proven, the data of %d modules proven, %d negative fixtures rejected: %s" % (
+        len(sources(ROOT / "src")), len(l2 & proven), len(data), len(fixtures) - sum(p.startswith("negative") for p in problems),
         "OK" if not problems else "FAILED"))
     return 1 if problems else 0
 
