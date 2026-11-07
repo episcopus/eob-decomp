@@ -176,6 +176,84 @@ struct WallDec {            /* the 52-byte wall-set decorations LoadWallSet read
     int field20[10];        /* +0x20: ten words the self-assignment loop passes through */
 };
 
+/*@data */
+/* the data of eov3, ds:6840 to ds:6B82 (834 bytes, 3 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+unsigned char gDoorRects[96] = { /*@ ds:6840 */
+    0, 0, 0x0A, 0x48, 0x11, 0x98, 7, 0x2F, 0x19, 0x48, 4, 0x1D,
+    0x0A, 0, 0x0A, 0x48, 0x1D, 0x48, 7, 0x2F, 0x19, 0x68, 4, 0x1D,
+    0x14, 0, 6, 0x48, 0x24, 0x48, 4, 0x2F, 0x1E, 0x78, 3, 0x1D,
+    0x1A, 0, 0x0C, 0x48, 0, 0x90, 7, 0x29, 0x21, 0x78, 4, 0x1B,
+    0, 0xBC, 0x0A, 0x0C, 0x0A, 0xBC, 6, 8, 0x0A, 0xC4, 4, 2,
+    7, 0x4A, 9, 0x37, 0, 0x4A, 7, 0x25, 7, 0xA0, 5, 0x17,
+    7, 0x82, 9, 0x1C, 0, 0x70, 7, 0x13, 0x0C, 0xA0, 5, 0x0B,
+    0x10, 0x48, 9, 0x4B, 0x18, 0x98, 7, 0x2E, 0x1F, 0x98, 4, 0x1D
+};
+unsigned char gDoorButtonRects[96] = { /*@ ds:68A0 */
+    0x25, 0x78, 1, 7, 0x25, 0x88, 1, 3, 0x25, 0x90, 1, 1,
+    0x25, 0x78, 1, 7, 0x25, 0x88, 1, 3, 0x25, 0x90, 1, 1,
+    0x26, 0x78, 1, 0x0B, 0x26, 0x88, 1, 6, 0x26, 0x90, 1, 4,
+    0x27, 0x78, 1, 0x0E, 0x27, 0x88, 1, 8, 0x25, 0x90, 1, 1,
+    0x25, 0x78, 1, 7, 0x25, 0x88, 1, 3, 0x25, 0x90, 1, 1,
+    0x25, 0x98, 1, 0x0B, 0x25, 0xA8, 1, 6, 0x25, 0xB0, 1, 4,
+    0x25, 0x98, 1, 0x0B, 0x25, 0xA8, 1, 5, 0x25, 0xB0, 1, 4,
+    0x26, 0x98, 1, 0x0A, 0x26, 0xA8, 1, 4, 0x25, 0x90, 1, 1
+};
+unsigned char gDoorButtonPos[48] = { /*@ ds:6900 */
+    0x82, 0x24, 0x74, 0x27, 0, 0, 0x82, 0x24, 0x74, 0x27, 0, 0,
+    0x5B, 0x36, 0x5A, 0x33, 0x5A, 0x2D, 0x88, 0x26, 0x74, 0x29, 0, 0,
+    0, 0, 0, 0, 0, 0, 0x7E, 0x24, 0x73, 0x26, 0, 0,
+    0, 0, 0, 0, 0, 0, 0x80, 0x2B, 0x74, 0x2B, 0, 0
+};
+int gMonsterRectsA[72] = { /*@ ds:6930 */
+    0, 0, 7, 96, 7, 40, 12, 56, 19, 40, 12, 56,
+    31, 0, 7, 96, 0, 96, 7, 96, 7, 96, 7, 96,
+    14, 96, 5, 56, 7, 0, 7, 40, 14, 0, 7, 40,
+    19, 96, 5, 56, 24, 96, 5, 56, 29, 96, 5, 56,
+    14, 152, 3, 32, 17, 160, 4, 24, 21, 160, 4, 24,
+    25, 152, 3, 32, 28, 152, 3, 32, 31, 152, 3, 32
+};
+int gMonsterRectsB[72] = { /*@ ds:69C0 */
+    0, 0, 7, 96, 7, 0, 7, 96, 14, 0, 7, 96,
+    21, 0, 7, 96, 28, 0, 7, 96, 0, 96, 7, 96,
+    7, 96, 5, 56, 12, 96, 5, 56, 17, 96, 5, 56,
+    22, 96, 5, 56, 27, 96, 5, 56, 32, 96, 5, 56,
+    7, 152, 3, 32, 10, 152, 3, 32, 13, 152, 3, 32,
+    16, 152, 3, 32, 19, 152, 3, 32, 22, 152, 3, 32
+};
+int gMonsterRectsC[24] = { /*@ ds:6A50 */
+    0, 0, 10, 88, 10, 0, 10, 88, 20, 0, 10, 88,
+    30, 0, 10, 88, 0, 88, 10, 88, 10, 88, 10, 88
+};
+/* ds:6A80-6A8C: LoadLevel's template (its local `handlers`, the three far pointers relocated at
+   ds:6A82, 6A86, 6A8A): written by its function, so gBlockSizes, after it, follows LoadLevel */
+/* ds:6A98-6A9D: the code's (a literal or template, 'DOOR'): written by its function */
+/* ds:6A9D-6AA1: the code's (a literal or template, '%s1'): written by its function */
+/* ds:6AA1-6AA7: the code's (a literal or template, '%s.%s'): written by its function */
+/* ds:6AA7-6AAB: the code's (a literal or template, 'VCN'): written by its function */
+/* ds:6AAB-6AAF: the code's (a literal or template, 'ECN'): written by its function */
+/* ds:6AAF-6AB5: the code's (a literal or template, 'LEVEL'): written by its function */
+/* ds:6AB5-6AB9: the code's (a literal or template, 'INF'): written by its function */
+/* ds:6AB9-6ABF: the code's (a literal or template, '%s.%s'): written by its function */
+/* ds:6ABF-6AC3: the code's (a literal or template, 'VMP'): written by its function */
+/* ds:6AC3-6AC7: the code's (a literal or template, 'EMP'): written by its function */
+/* ds:6AC7-6ACE: the code's (a literal or template, '%s.PAL'): written by its function */
+/* ds:6ACE-6AD5: the code's (a literal or template, 'INVENT'): written by its function */
+/* ds:6AD5-6AFF: the code's (a literal or template, 'Map compression failure: size of map = %'): written by its function */
+/* ds:6AFF-6B0A: the code's (a literal or template, 'LEVELS.TMP'): written by its function */
+/* ds:6B0A-6B15: the code's (a literal or template, 'LEVELS.TMP'): written by its function */
+/* ds:6B15-6B20: the code's (a literal or template, 'LEVELS.TMP'): written by its function */
+/* ds:6B20-6B2C: the code's (a literal or template, 'EOBDATA.SAV'): written by its function */
+/* ds:6B2C-6B38: the code's (a literal or template, 'EOBDATA.SAV'): written by its function */
+/* ds:6B38-6B3F: the code's (a literal or template, 'INVENT'): written by its function */
+/* ds:6B3F-6B4B: the code's (a literal or template, 'EOBDATA.SAV'): written by its function */
+/* ds:6B4B-6B56: the code's (a literal or template, 'LEVELS.TMP'): written by its function */
+/* ds:6B56-6B61: the code's (a literal or template, 'LEVELS.TMP'): written by its function */
+/* ds:6B61-6B6A: the code's (a literal or template, 'CHARGENA'): written by its function */
+/* ds:6B6A-6B72: the code's (a literal or template, 'OUTTAKE'): written by its function */
+/* ds:6B72-6B7A: the code's (a literal or template, 'PLAYFLD'): written by its function */
+/* ds:6B7A-6B81: the code's (a literal or template, 'INVENT'): written by its function */
+/* ds:6B81: the pad byte to the next module (word alignment) */
+
 /* ovl3:0000: frees every far pointer in the 200-entry table at ds:EFD4 (farfree), clears each slot
    and resets the wall-record slot count ds:F538. gWallRecs itself is not cleared: it is only read
    through gWallRecCount (DefineWallType, :326-340), so the old records stay in memory until the next
@@ -651,6 +729,9 @@ done:
     PlaySound(0);
     gLevelPalettePending = 1;
 }
+
+unsigned gBlockSizes[6] = { 0x05B2, 0x0040, 0x1B58, 0x5FA0, 3, 0x0060 }; /*@ ds:6A8C */  /* after LoadLevel's template at ds:6A80 */
+
 /* ovl3:0FD1: packs the level state into `buf`. It copies the four gMaze bytes of each of the 0x400
    records into gScratchBuf, compresses gScratchBuf (0x1000 bytes) into `buf` with CompressLcw and, when
    the stream is longer than 0x4B0, prints "Map compression failure: size of map = %d" and shuts the

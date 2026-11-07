@@ -63,44 +63,22 @@ extern unsigned char gMenuRowX[]; /*@ ds:7B89 */
 extern char gMenuRowYOffset[]; /*@ ds:7B94 */
 extern char far *gYesNoMenu[]; /*@ ds:7B23 */  /* the two-entry "yes"/"no" menu table */
 extern char gStrCancel[]; /*@ ds:7B9F */
-extern char gProposalMenu[]; /*@ ds:7BBA */
-extern char gHelpHimMenu[]; /*@ ds:7BC2 */
-extern char gStrMore[]; /*@ ds:7CB7 */
-extern char gStrPartyFull[]; /*@ ds:7CBC */
-extern char gStrJoinsParty[]; /*@ ds:7D0E */
-extern char gStrFarewell[]; /*@ ds:7D77 */
-extern char gStrWhichResurrect[]; /*@ ds:7D9E */
-extern char gFileNameText[]; /*@ ds:7E53 */
-extern char gStrWinnerTitle[]; /*@ ds:7E5C */
-extern char gStrWinnerNameBreak[]; /*@ ds:7EDB */
-extern char gStrPasswordFormat[]; /*@ ds:7EDD */
-extern char gFileNameXDeath2[]; /*@ ds:7EEF */
-extern char gFileNameXDeath3[]; /*@ ds:7EF7 */
-extern char gFileNameXDeath1[]; /*@ ds:7EFF */
-extern char gFileNamePortalA[]; /*@ ds:7E43 */
-extern char gFileNamePortalB[]; /*@ ds:7E4B */
+extern char far *gProposalMenu[]; /*@ ds:7BBA */
+extern char far *gHelpHimMenu[]; /*@ ds:7BC2 */
 extern char gPortalAnimScript[]; /*@ ds:7C32 */
-extern char gTendTalkMenu[]; /*@ ds:7BA6 */
-extern char gTendLeaveMenu[]; /*@ ds:7BB2 */
-extern char gHealMenu[]; /*@ ds:7BCA */
-extern char gHealResurrectMenu[]; /*@ ds:7BD2 */
-extern char gAttackBribeMenu[]; /*@ ds:7BDE */
-extern char gKillHerMenu[]; /*@ ds:7BE6 */
-extern char gKillHerMenuLetGo[]; /*@ ds:7BEE */
-extern char gSurrenderMenu[]; /*@ ds:7BF2 */
-extern char gFreeHimMenu[]; /*@ ds:7BFA */
+extern char far *gTendTalkMenu[]; /*@ ds:7BA6 */
+extern char far *gTendLeaveMenu[]; /*@ ds:7BB2 */
+extern char far *gHealMenu[]; /*@ ds:7BCA */
+extern char far *gHealResurrectMenu[]; /*@ ds:7BD2 */
+extern char far *gAttackBribeMenu[]; /*@ ds:7BDE */
+extern char far *gKillHerMenu[]; /*@ ds:7BE6 */
+extern char far *gSurrenderMenu[]; /*@ ds:7BF2 */
+extern char far *gFreeHimMenu[]; /*@ ds:7BFA */
 extern char gFileNameBuf[]; /*@ ds:FE6E */
 extern void far *gCurFont; /*@ ds:FE4E */
 extern void far *gFont6x6; /*@ ds:A9C0 */
 extern char gPanelMode; /*@ ds:FB44 */
 extern char gFlag; /*@ ds:F3B9 */
-extern char gFileNameOuttake[]; /*@ ds:7F07 */
-extern char gFileNameText2[]; /*@ ds:7F0F */
-extern char gFileNamePlayfld[]; /*@ ds:7F18 */
-extern char gFileNameInvent[]; /*@ ds:7F20 */
-extern char gFileNameText3[]; /*@ ds:7F27 */
-extern char gFileNamePlayfld2[]; /*@ ds:7F30 */
-extern char gFileNameInvent2[]; /*@ ds:7F38 */
 extern int far *gScratchBuf; /*@ ds:DCFC */
 extern int (far *gGetPixel)(int x, int y); /*@ ds:8072 */
 extern void (far *gPutPixel)(int x, int y, int handle); /*@ ds:809E */
@@ -184,6 +162,38 @@ void ShuffleGrid(int x, int y, unsigned cols, unsigned rows, int saveStatus, int
 
 void PrintTableString(int index, int flag);
 
+/*@data */
+/* the data of eov5, ds:7298 to ds:7F40 (3240 bytes, 26 relocations; re/datamap.toml has ds:7F46, see eov6):
+   drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order.
+   The globals and the templates come first in source order, then the pool from ds:7CB0, where every string
+   the code or a menu table names lies in the order the source writes it (a table's literals where the
+   table stands), duplicates included. So
+   the menus are tables of literals defined where their strings fall in the pool, between the functions
+   whose literals come before and after them, and the strings the code passes are literals. */
+struct CharRec gCharPool[9] = { /*@ ds:7298 */
+    { 0, 1, "Anya", 18, 18, 59, 59, 8, 8, 11, 11, 14, 14, 16, 16, 9, 9, 45, 45, 10, 0, 1, 0, 2, -1, 0x64, { 4, 0, 0 }, { 0x00001F40UL, 0L, 0L }, 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0L, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L }, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0, 0, 0, 0, 0L, 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+    { 0, 1, "Beohram", 17, 17, 0, 0, 9, 9, 15, 15, 13, 13, 18, 18, 17, 17, 95, 95, 10, 0, 0, 2, 0, -2, 0x64, { 8, 0, 0 }, { 0x000249F0UL, 0L, 0L }, 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0L, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L }, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0, 0, 0, 0, 0L, 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+    { 0, 1, "Kirath", 11, 11, 0, 0, 17, 17, 13, 13, 18, 18, 8, 8, 12, 12, 32, 32, 10, 0, 2, 3, 4, -3, 0x64, { 11, 0, 0 }, { 0x0005B8D8UL, 0L, 0L }, 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 11735659L, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L }, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0, 0, 0, 0, 0L, 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+    { 0, 1, "Ileria", 10, 10, 0, 0, 12, 12, 14, 14, 15, 15, 17, 17, 17, 17, 52, 52, 10, 0, 1, 4, 0, -4, 0x64, { 6, 0, 0 }, { 0x0000CF08UL, 0L, 0L }, 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, -1L, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L }, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0, 0, 0, 0, 0L, 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+    { 0, 1, "Tyrra", 16, 16, 0, 0, 14, 14, 16, 16, 18, 18, 17, 17, 9, 9, 98, 98, 10, 0, 3, 1, 2, -5, 0x64, { 10, 0, 0 }, { 0x000927C0UL, 0L, 0L }, 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0L, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L }, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0, 0, 0, 0, 0L, 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+    { 0, 1, "Tod Uphill", 17, 17, 0, 0, 11, 11, 14, 14, 19, 19, 18, 18, 16, 16, 30, 30, 10, 0, 10, 5, 5, -6, 0x64, { 4, 0, 0 }, { 0x00001388UL, 0L, 0L }, 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0L, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L }, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0, 0, 0, 0, 0L, 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+    { 0, 1, "Taghor", 17, 17, 0, 0, 11, 11, 15, 15, 15, 15, 19, 19, 9, 9, 3, 58, 3, 0, 6, 0, 1, -7, 0x19, { 5, 0, 0 }, { 0x00003F6AUL, 0L, 0L }, 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0L, { 36, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 41, 0, 43, 0, 0, 0, 0, 0, 0, 0 }, { 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L }, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0, 0, 0, 0, 0L, 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+    { 0, 1, "Dohrum", 18, 18, 29, 29, 13, 13, 11, 11, 16, 16, 17, 17, 14, 14, 28, 28, 10, 0, 6, 0, 0, -8, 0x64, { 3, 0, 0 }, { 0x000013A0UL, 0L, 0L }, 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0L, { 36, 0, 48, 55, 55, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 41, 0, 43, 0, 0, 0, 0, 0, 0, 0 }, { 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L }, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0, 0, 0, 0, 0L, 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } },
+    { 0, 1, "Keirgar", 18, 18, 92, 92, 15, 15, 15, 15, 12, 12, 19, 19, 17, 17, 10, 72, 3, 0, 6, 0, 1, -9, 0x19, { 5, 0, 0 }, { 0x00004E20UL, 0L, 0L }, 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0L, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, { 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L, 0L }, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, 0, 0, 0, 0, 0L, 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } }
+};
+char far *gYesNoMenu[2] = { "yes", "no" }; /*@ ds:7B23 */  /* the pool's first two strings, ds:7CB0 */
+unsigned char gOuttakeCellRects[76] = { /*@ ds:7B2B */
+    0, 0, 6, 0x40, 6, 0, 7, 0x48, 0x0D, 0, 6, 0x30,
+    0x13, 0, 5, 0x38, 0x18, 0, 5, 0x38, 0x1D, 0, 5, 0x38,
+    0x22, 0, 6, 0x48, 0, 0x48, 6, 0x56, 6, 0x48, 5, 0x40,
+    0x0B, 0x48, 5, 0x40, 0x10, 0x48, 5, 0x30, 6, 0x88, 3, 0x18,
+    9, 0x88, 3, 0x18, 0x0C, 0x88, 3, 0x18, 0x0F, 0x88, 3, 0x18,
+    0x12, 0x88, 3, 0x18, 0x15, 0x88, 3, 0x18, 0x18, 0x48, 6, 0x58,
+    0x1E, 0x48, 0x0A, 0x48
+};
+/* ds:7B77-7B89: DrawCharPortrait's three templates (cellIdxA, cellIdxB, yOff): written by its function,
+   so gMenuRowX and the data after it follow DrawCharPortrait */
+
 /* ovl5:0000: draws sprite cell `index` of the ds:7B2B table out of the overlay buffer gCgaMapDefault
    at (x, y), moved left by the returned cell's byte +2 (times four) and up by its byte +1, into
    region 5. Sets gDrawPage for the draw and frees the sliced cell. Called by DrawCharPortrait
@@ -265,9 +275,11 @@ void PrintTableString(int index, int flag);
     }
 }
 
-/* The menu x-position table ds:7B89, defined here because the original lays it out right after
-   00A1's three array initialisers (the matcher compares that block by content); 0455 reads it. */
+/* The menu x-position table ds:7B89 and the data after it, defined here because the original lays
+   them out right after 00A1's three array initialisers; 0455 reads gMenuRowX and gMenuRowYOffset. */
 unsigned char gMenuRowX[] = { 0x3B, 0xA6, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC, 0x04, 0x70, 0xDC }; /*@ ds:7B89 */
+char gMenuRowYOffset[11] = { 0, 0, 0, 0, 0, 12, 12, 12, 24, 24, 24 }; /*@ ds:7B94 */
+char gStrCancel[7] = "CANCEL"; /*@ ds:7B9F */  /* an array, not a literal: it lies before the module's last global */
 
 /* ovl5:021C: clears the character panel (1, 0x7a)-(0x13e, 0xc7): hides the pointer, clears the
    text region, fills the rectangle with gPanelFillColour and shows the pointer again. Called before every
@@ -329,7 +341,7 @@ enum {
     }
     HidePointerZone(left, top, right, bottom);
     DrawFilledPanel(left, top, right, bottom, gPanelHighlight, gPanelShadow, gPanelFillColour);
-    gDrawText(gStrMore, left + 4, top + 2, 0xF, 0);
+    gDrawText("MORE", left + 4, top + 2, 0xF, 0);
     ShowPointerZone();
     FlushKeyBuffer();
     redraws = gHideDepth;
@@ -503,7 +515,7 @@ enum {
     names[6] = gStrCancel;
     if (count > 5) {
         ClearPanel();
-        DrawText(gStrPartyFull);
+        DrawText("You may only have six characters in your party.  Select the one you wish to drop.");
         sel = SelectMenu(2, 7, names);
         if (sel == 6)
             return 0;
@@ -565,7 +577,7 @@ enum {
         if (yesMsg != -1) {
             PrintTableString(yesMsg, 1);
         } else {
-            sprintf(gFileNameBuf, gStrJoinsParty, gCharPool[who].name);
+            sprintf(gFileNameBuf, "%s joins the party.\r", gCharPool[who].name);
             DrawText(gFileNameBuf);
             MessagePanel();
         }
@@ -590,6 +602,13 @@ enum {
     InsertListItem(&gMazeItems[gPartyCell * 9], gPartyCell, item, sound);
 }
 
+/* The menus of TemplePanel and GiveItemPanel: their literals lie in the pool after AddCharPanel's
+   "%s joins the party.\r" (ds:7D0E) and before ItemPanelDispatch's farewell line (ds:7D77). */
+char far *gTendTalkMenu[3] = { "Tend his wounds", "Talk", "Leave" }; /*@ ds:7BA6 */
+char far *gTendLeaveMenu[2] = { "Tend his wounds", "Leave" }; /*@ ds:7BB2 */
+char far *gProposalMenu[2] = { "Hear proposal", "Leave" }; /*@ ds:7BBA */
+char far *gHelpHimMenu[2] = { "Help him", "Leave" }; /*@ ds:7BC2 */
+
 /* ovl5:0924: the temple/NPC panel. Clears the panel, draws message 8 and shows the menu ds:7BB2
    ("Tend his wounds"/"Leave") when gGameFlags bit 0x2000 is set, otherwise ds:7BA6 ("Tend his
    wounds"/"Talk"/"Leave"). Choice 0 runs the character panel 0828 and sets bit 0x4000 and returns;
@@ -603,11 +622,11 @@ enum {
         ClearPanel();
         PrintTableString(8, 0);
         if (gGameFlags & 0x2000L) {
-            sel = SelectMenu(0, 2, (void far *)gTendLeaveMenu);
+            sel = SelectMenu(0, 2, gTendLeaveMenu);
             if (sel == 1)
                 sel = 2;
         } else {
-            sel = SelectMenu(2, 3, (void far *)gTendTalkMenu);
+            sel = SelectMenu(2, 3, gTendTalkMenu);
         }
         switch (sel) {
         case 0:
@@ -640,7 +659,7 @@ enum {
     if (!(gGameFlags & 0x8000L)) {
         gGameFlags |= 0x8000L;
         PrintTableString(3, 0);
-        sel = SelectMenu(0, 2, (void far *)gProposalMenu);
+        sel = SelectMenu(0, 2, gProposalMenu);
         if (sel == 0)
             PrintTableString(4, 0);
         else if (sel == 1)
@@ -649,7 +668,7 @@ enum {
         PrintTableString(0xd, 0);
     }
     if (showSecond)
-        sel = SelectMenu(0, 2, (void far *)gHelpHimMenu);
+        sel = SelectMenu(0, 2, gHelpHimMenu);
     else
         sel = 1;
     if (sel == 0) {
@@ -699,7 +718,7 @@ enum {
 
 /* ovl5:0B58: the item-panel dispatcher. When bit 0x10000 of gGameFlags is clear it runs the give-item
    panel 09C5, when 0x80000 is clear it runs 0AB1, when 0x100000 is clear it runs 0B16; if none of
-   them did anything it draws the farewell line gStrFarewell ("I wish you luck in your travels.") and
+   them did anything it draws the farewell line ("I wish you luck in your travels.", ds:7D77) and
    the modal message panel 025F. Called from the menu dispatcher 1A82. */
 /*@ ovl5:0B58 */ void ItemPanelDispatch(void)
 {
@@ -715,7 +734,7 @@ enum {
     if (!(gGameFlags & 0x100000L))
         done |= CheckRemove6();
     if (!done) {
-        DrawText(gStrFarewell);
+        DrawText("\r     I wish you luck in your travels.");
         MessagePanel();
     }
 }
@@ -815,7 +834,7 @@ enum {
     int n;
 
     ClearPanel();
-    DrawText(gStrWhichResurrect);
+    DrawText("Which should be resurrected?");
     for (i = 0; i < gDeathListCount; i++) {
         if (gDeathList[i] < 0)
             names[i] = gPoolNameBase[-gDeathList[i]].name;
@@ -834,6 +853,19 @@ enum {
         gChars[n].hp = gChars[n].maxHp;
     }
 }
+
+/* The menus of ResurrectPanel, AttackPanel, KillHerPanel, SurrenderPanel and FreeHimPanel: their
+   literals lie in the pool after ResurrectPicker's "Which should be resurrected?" (ds:7D9E) and
+   before TileAnimation's "PORTALA" (ds:7E43). */
+char far *gHealMenu[2] = { "Heal Party", "Leave" }; /*@ ds:7BCA */
+char far *gHealResurrectMenu[3] = { "Heal Party", "Resurrect Dead", "Leave" }; /*@ ds:7BD2 */
+char far *gAttackBribeMenu[2] = { "Attack", "Bribe" }; /*@ ds:7BDE */
+char far *gKillHerMenu[3] = { "Kill her", "Hear her out", "Let her go" }; /*@ ds:7BE6 */
+char far *gSurrenderMenu[2] = { "Surrender", "Attack" }; /*@ ds:7BF2 */
+char far *gFreeHimMenu[3] = { "Free Him", "Kill Him", "Leave" }; /*@ ds:7BFA */
+/* ds:7C06-7C32: TileAnimation's template (its local `extra`, 44 zero bytes): written by its function,
+   so gPortalAnimScript, after it, follows TileAnimation */
+
 /* ovl5:0EB9: the resurrect/heal NPC panel. When gGameFlags bit 0x10000 is clear it draws message
    0x18; when bit 0x20000 is set it draws message 0xb; otherwise it draws message 9 and shows the
    menu ds:7BD2 ("Heal Party"/"Resurrect Dead"/"Leave") when BuildDeathList found something, or
@@ -850,9 +882,9 @@ enum {
         } else {
             PrintTableString(9, 0);
             if (BuildDeathList()) {
-                sel = SelectMenu(2, 3, (void far *)gHealResurrectMenu);
+                sel = SelectMenu(2, 3, gHealResurrectMenu);
             } else {
-                sel = SelectMenu(0, 2, (void far *)gHealMenu);
+                sel = SelectMenu(0, 2, gHealMenu);
                 if (sel == 1)
                     sel = 2;
             }
@@ -882,7 +914,7 @@ enum {
     int i;
 
     PrintTableString(0x12, 0);
-    sel = SelectMenu(0, 2, (void far *)gAttackBribeMenu);
+    sel = SelectMenu(0, 2, gAttackBribeMenu);
     switch (sel) {
     case 0:
         gGameFlags |= 0x8000000L;
@@ -910,7 +942,7 @@ enum {
     int sel;
 
     PrintTableString(0xe, 0);
-    sel = SelectMenu(2, 3, (void far *)gKillHerMenu);
+    sel = SelectMenu(2, 3, gKillHerMenu);
     switch (sel) {
     case 0:
         gGameFlags |= 0x200000L;
@@ -941,7 +973,7 @@ enum {
     int j;
 
     PrintTableString(0x10, 0);
-    sel = SelectMenu(0, 2, (void far *)gSurrenderMenu);
+    sel = SelectMenu(0, 2, gSurrenderMenu);
     if (sel == 0) {
         PrintTableString(0x11, 1);
         for (i = 0; i < 6; i++) {
@@ -967,7 +999,7 @@ enum {
     int sel;
 
     PrintTableString(0x16, 0);
-    sel = SelectMenu(2, 3, (void far *)gFreeHimMenu);
+    sel = SelectMenu(2, 3, gFreeHimMenu);
     switch (sel) {
     case 0:
         AddCharPanel(8, 0x1b, 0x2c, 0x2d);
@@ -1003,14 +1035,14 @@ enum {
     FreeSlotTables();
     FreeMonsterShapes(0, 0x24);
     FreePtrTable();
-    LoadOverlayScreen(gFileNamePortalA, 5, 3);
+    LoadOverlayScreen("PORTALA", 5, 3);
     for (i = 0; i < 5; i++) {
         stripA[i] = gGetSpriteCell(i * 3, 0, 3, 0x4b, gCgaMapDefault);
         stripB[i] = gGetSpriteCell(i * 3, 0x50, 3, 0x4b, gCgaMapDefault);
         block[i] = gGetSpriteCell(0xf, i * 0x12, 0xf, 0x12, gCgaMapDefault);
     }
     extra[0] = gGetSpriteCell(0x1e, 0, 8, 0x4d, gCgaMapDefault);
-    LoadScreenImage(gFileNamePortalB, gCgaMapDefault, 5, 3, 2);
+    LoadScreenImage("PORTALB", gCgaMapDefault, 5, 3, 2);
     PlaySound(0x21);
     PlaySound(0x13);
     gDrawPage = 2;
@@ -1053,6 +1085,20 @@ enum {
         farfree(stripA[i]);
     }
 }
+
+char gPortalAnimScript[126] = { /*@ ds:7C32 */  /* the module's last global; the pool follows at ds:7CB0 */
+    1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+    2, 0, 1, 0, 0, 0, 1, 0, 2, 0, 3, 0,
+    2, 0, 1, 0, 2, 0, 3, 0, 4, 0, 3, 0,
+    2, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+    0, 1, 0, 2, 0, 1, 0, 0, 0, 1, 0, 2,
+    0, 3, 0, 4, 0, 1, 1, 0, 2, 1, 3, 2,
+    2, 3, 1, 4, 0, 2, 1, 3, 2, 4, 3, 2,
+    4, 3, 3, 4, 2, 2, 1, 1, 0, 0, 0, 0,
+    0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 4, 5,
+    4, 6, 3, 7, 2, 8, 2, 8, 1, 9, 1, 9,
+    1, 9, 0, 10, -1, -1
+};
 /* ovl5:160A: the winning-party password screen at the end of the game. It loads TEXT.DAT
    (ds:7E53) into the string base gStagingPage, sets up the panel, and when gGameFlags bits 1..12 are all
    set (gGameFlags & 0x1FFE == 0x1FFE) draws the winner title ds:7E5C, the first four party members'
@@ -1067,7 +1113,7 @@ enum {
     int i;
     int j;
 
-    handle = FileOpen(gFileNameText, 1);
+    handle = FileOpen("TEXT.DAT", 1);
     FileRead(handle, gStagingPage, 0x7d00L);
     FileClose(handle);
     PlaySound(0x14);
@@ -1083,9 +1129,9 @@ enum {
     LockShowPointer();
     PrintTableString(0x33, 1);
     if ((gGameFlags & 0x1ffe) == 0x1ffe) {
-        DrawText(gStrWinnerTitle);
+        DrawText("Congratulations on completing all 12 Beholder Bonuses.\r\rThe names of the character in your winning Beholder Bonus party are:\r\r");
         for (i = 0; i < 4; i++) {
-            DrawText(gStrWinnerNameBreak);
+            DrawText("\r");
             if (gChars[i].status & 1)
                 DrawText(gChars[i].name);
         }
@@ -1096,7 +1142,7 @@ enum {
                     sum += (long)gChars[i].name[j] * gChars[i].name[j];
             }
         }
-        sprintf(gFileNameBuf, gStrPasswordFormat, sum);
+        sprintf(gFileNameBuf, "\r\rPassword: %04x\r", sum);
         DrawText(gFileNameBuf);
         WaitTicks(0xa);
         FlushKeyBuffer();
@@ -1124,12 +1170,12 @@ enum {
     FreeSlotTables();
     FreeMonsterShapes(0, 0x24);
     FreePtrTable();
-    LoadOverlayScreen(gFileNameXDeath2, 5, 3);
+    LoadOverlayScreen("XDEATH2", 5, 3);
     for (i = 0; i < 4; i++)
         sprites[i] = gGetSpriteCellRle((i % 2) * 0xe, (i / 2) * 0x58, 0xe, 0x58, gCgaMapDefault);
-    LoadOverlayScreen(gFileNameXDeath3, 5, 3);
+    LoadOverlayScreen("XDEATH3", 5, 3);
     cell = gGetSpriteCellRle(0x16, 0, 0x10, 0x5f, gCgaMapDefault);
-    LoadScreenImage(gFileNameXDeath1, gCgaMapDefault, 5, 3, -1);
+    LoadScreenImage("XDEATH1", gCgaMapDefault, 5, 3, -1);
     CopyPage(3, 2, FP_OFF(gCgaMapDefault), FP_SEG(gCgaMapDefault));
     for (i = 0; i < 0xa; i++) {
         if (i == 2)
@@ -1205,11 +1251,11 @@ enum {
         FindWordPanel();
         break;
     default:
-        LoadOverlayScreen(gFileNameOuttake, 5, 3);
+        LoadOverlayScreen("OUTTAKE", 5, 3);
         CopyRegion(0, 0, 0, 0, 0x16, 0x78, 0, 6);
         DrawCharPortrait(mode);
         LockShowPointer();
-        handle = FileOpen(gFileNameText2, 1);
+        handle = FileOpen("TEXT.DAT", 1);
         FileRead(handle, gStagingPage, 0x7d00L);
         FileClose(handle);
         SetFont(gFont6x6);
@@ -1251,8 +1297,8 @@ enum {
         gScrollOn = 0;
         LockHidePointer();
         LoadWallTextures(0, gWallSetCgaMaps + (gLevelCgaMapIndex[gCurLevel - 1] << 5));
-        LoadScreenImage(gFileNamePlayfld, gCgaMapPlayfld, 5, 3, 0);
-        LoadScreenImage(gFileNameInvent, gCgaMapInvent, 5, 3, 2);
+        LoadScreenImage("PLAYFLD", gCgaMapPlayfld, 5, 3, 0);
+        LoadScreenImage("INVENT", gCgaMapInvent, 5, 3, 2);
         gDrawPage = 0;
         RedrawCharacters();
         DrawViewFrame(1);
@@ -1277,7 +1323,7 @@ enum {
         RestorePortraitPanel(gDirectAction);
     if (gFlag)
         RedrawPartyPanel(gDirectAction);
-    handle = FileOpen(gFileNameText3, 1);
+    handle = FileOpen("TEXT.DAT", 1);
     FileRead(handle, gStagingPage, 0x7d00L);
     FileClose(handle);
     gScrollOn = 1;
@@ -1291,8 +1337,8 @@ enum {
     gScrollOn = 0;
     LockHidePointer();
     LoadWallTextures(0, gCgaMapDefault);
-    LoadScreenImage(gFileNamePlayfld2, gCgaMapPlayfld, 5, 3, 0);
-    LoadScreenImage(gFileNameInvent2, gCgaMapInvent, 5, 3, 2);
+    LoadScreenImage("PLAYFLD", gCgaMapPlayfld, 5, 3, 0);
+    LoadScreenImage("INVENT", gCgaMapInvent, 5, 3, 2);
     gDrawPage = 0;
     RedrawCharacters();
     DrawViewFrame(1);
