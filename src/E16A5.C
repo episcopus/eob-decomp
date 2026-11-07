@@ -125,9 +125,12 @@ char gNodeListChanged = 0; /*@ ds:5E20 */
 /* 16A5:005A: wait for a key event and dispatch it to the node list `head`. 1AAD:0471 says a key
    is waiting and 1AAD:05D3 reads it; the event is passed on unchanged, except that an event with
    bit 0x100 whose low byte is in 0x11..0x1a, 0x1f..0x27 or 0x2e..0x34 loses that bit first
-   (nothing is rejected). Called by overlay 0 (ovl0:00F7 WaitKeyOrPause), overlay 1 (ovl1:0416,
-   097A, 1551, 1ACD, 243A) and 0ACD:0E6C, each passing the list head at ds:FB48. */
-/*@ 16A5:005A */ void DispatchKeyWait(struct Node far *head)
+   (nothing is rejected). Returns what the dispatcher returns: its AX is still there at the RET,
+   and the callers read it (WaitKeyOrPause in src/EOV0.C, src/EOV1.C, src/E0ACD.C:940; the port
+   took it as 0 while this was declared void, playbook 80, M6). Called by overlay 0 (ovl0:00F7
+   WaitKeyOrPause), overlay 1 (ovl1:0416, 097A, 1551, 1ACD, 243A) and 0ACD:0E6C, each passing the
+   list head at ds:FB48. */
+/*@ 16A5:005A */ int DispatchKeyWait(struct Node far *head)
 {
     int key;
     unsigned char code;
@@ -143,7 +146,7 @@ char gNodeListChanged = 0; /*@ ds:5E20 */
             }
         }
     }
-    DispatchNodeEvent(head, key);
+    return DispatchNodeEvent(head, key);
 }
 
 /* 16A5:00BD: the event dispatcher (1798 bytes). `head` is the list to walk and `key` one key
@@ -153,7 +156,7 @@ char gNodeListChanged = 0; /*@ ds:5E20 */
    itself, except that the mouse branch sets the tagged 0xC6/0xC7 pair and the untagged 0x41/0x42
    pair to 0, so those come back as 0; with the mouse disabled both come back as passed (a
    DispatchKey key still tagged: key &= 0xff and the mouse zeroing sit inside !gMouseDisabled). A
-   mouse-only call that no node takes returns 0; both callers ignore the value. First
+   mouse-only call that no node takes returns 0; DispatchKey ignores the value and DispatchKeyWait returns it. First
    it maps the mouse buttons: while the mouse is enabled (not gMouseDisabled) each call sets
    ds:5E1C and ds:5E1E to 2 or 4 from GetKeyState of the codes 0x41 and 0x42; then the codes
    0x41/0x42 and the negative pair 0xC6/0xC7 override

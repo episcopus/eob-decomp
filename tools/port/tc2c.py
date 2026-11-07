@@ -468,6 +468,7 @@ class Unit:
         self.vars: dict[str, tuple] = {}    # decl id -> ("var", cname, type) | ("mem", offset, type)
         self.frame = 0
         self.labels: dict[str, str] = {}
+        self.discarded = None           # the call of the expression statement being translated
         self.blocks: list[str] = []
         self.line = 0
 
@@ -954,9 +955,13 @@ class Unit:
             if rt[0] == "void":
                 return call
             if canon[0] == "func" and canon[1][0] == "void":
-                # declared here returning a value, defined returning none: the original's AX is
-                # whatever the callee left in it [H]
-                return "(%s, (%s)0)" % (call, self.cname(rt))
+                # declared here returning a value, defined returning none: harmless where the value
+                # is thrown away (a call statement); used, it would be whatever the callee left in AX,
+                # which a 0 would not be (DispatchKeyWait passed DispatchNodeEvent's on, playbook 80,
+                # M6): refused, so src/ says what is returned
+                if self.discarded is n:
+                    return call
+                self.fail("%s is defined returning void and used here as a value" % name)
             return "CALL_%s_(%s)" % (self.cname(rt), call)
         # a far function pointer: find the C function by the address it holds
         argv = ", ".join(self.rv(a) for a in args)
@@ -1135,7 +1140,10 @@ class Unit:
         elif k == "ContinueStmt":
             self.emit(depth, "continue;")
         elif k.endswith("Operator") or k.endswith("Expr"):
+            top = strip(n)
+            self.discarded = top if top.get("kind") == "CallExpr" else None
             self.emit(depth, "%s;" % self.rv(n))
+            self.discarded = None
         else:
             self.fail("statement %s" % k)
 
