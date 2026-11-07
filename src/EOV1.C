@@ -222,6 +222,53 @@ void FreeFarList(struct Node far *list);
 void DrawListNode(struct Node far *node, int first, int highlight, int second);
 int AskYesNo(int message);
 
+/*@data */
+/* the data of eov1, ds:628C to ds:64F8 (620 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+struct Menu gMenus[7] = { /*@ ds:628C */
+    { 1, 10, 0, 7, 9 }, { 1, 10, 7, 5, 9 }, { 1, 10, 12, 5, 9 }, { 0, 10, 17, 7, 15 },
+    { 37, 10, 24, 8, 9 }, { 0, 11, 32, 2, 15 }, { 48, 10, 34, 2, 9 }
+};
+char gMageSpellLevels[26] = { /*@ ds:62AF */
+    1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3,
+    3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 5, 5,
+    5, 0
+};
+char gClericSpellLevels[25] = { /*@ ds:62C9 */
+    1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3,
+    3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5, 1,
+    0
+};
+struct Box gMemberBoxes[2] = { { 183, 105, 247, 156 }, { 255, 105, 319, 156 } }; /*@ ds:62E2 */
+unsigned char gMemberBoxColumn[6] = { 0x17, 0x20, 0x17, 0x20, 0x17, 0x20 }; /*@ ds:62F2 */
+unsigned char gMemberBoxTop[6] = { 2, 2, 0x36, 0x36, 0x6A, 0x6A }; /*@ ds:62F8 */
+unsigned char gClericSpellsPerLevel[50] = { /*@ ds:62FE */
+    1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 1,
+    0, 0, 0, 3, 2, 0, 0, 0, 3, 3, 1, 0,
+    0, 3, 3, 2, 0, 0, 3, 3, 2, 1, 0, 3,
+    3, 3, 2, 0, 4, 4, 3, 2, 1, 4, 4, 3,
+    3, 2
+};
+char gClericWisdomBonus[40] = { /*@ ds:6330 */
+    0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 2, 0,
+    0, 0, 0, 2, 1, 0, 0, 0, 2, 2, 0, 0,
+    0, 2, 2, 1, 0, 0, 2, 2, 1, 1, 0, 3,
+    2, 1, 2, 0
+};
+unsigned char gPaladinSpellsPerLevel[60] = { /*@ ds:6358 */
+    1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0,
+    0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0,
+    0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
+    0, 0, 0, 0, 1, 0, 0, 0, 0, 2, 0, 0,
+    0, 0, 2, 1, 0, 0, 0, 2, 2, 0, 0, 0
+};
+unsigned char gMageSpellsPerLevel[55] = { /*@ ds:6394 */
+    1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 1,
+    0, 0, 0, 3, 2, 0, 0, 0, 4, 2, 1, 0,
+    0, 4, 2, 2, 0, 0, 4, 3, 2, 1, 0, 4,
+    3, 3, 2, 0, 4, 3, 3, 2, 1, 4, 4, 3,
+    2, 2, 4, 4, 4, 3, 3
+};
+
 /* ovl1:0000: drops party member `who` (0 to 5) from the party: the "Drop Character" button of the camp
    menu (RunCampMenu passes the member SelectPartyMember(0x35) picked, "Select the character you wish to
    drop."). Nothing happens when `who` is negative or the slot holds no character (0D1C:0670 flag 1).
@@ -1149,6 +1196,23 @@ int AskYesNo(int message);
     }
     FreeFarList(list);
 }
+
+/* the rest of the data follows ScribeScrolls: its local templates scroll[32], owner[32] and rows[6] (140 zero bytes) lie at ds:63CB to ds:6457. */
+char gKeyRemapFrom[2] = "n"; /*@ ds:6457 */
+char gKeyRemapTo[2] = { 6, 0 }; /*@ ds:6459 */
+/* ds:645B-6465: the code's (a literal or template, '%-18s %1d'): written by its function */
+/* ds:6465-647B: the code's (a literal or template, '%d of %d Remaining.  '): written by its function */
+/* ds:647B-648D: the code's (a literal or template, 'Far heap corrupt!'): written by its function */
+/* ds:648D-649C: the code's (a literal or template, 'Tunes are %-3s'): written by its function */
+/* ds:649C-64AC: the code's (a literal or template, 'Sounds are %-3s'): written by its function */
+/* ds:64AC-64C0: the code's (a literal or template, 'Bar Graphs are %-3s'): written by its function */
+/* ds:64C0-64CE: the code's (a literal or template, 'Mouse is %-3s'): written by its function */
+/* ds:64CE-64D6: the code's (a literal or template, 'PLAYFLD'): written by its function */
+/* ds:64D6-64DD: the code's (a literal or template, 'INVENT'): written by its function */
+/* ds:64DD-64E9: the code's (a literal or template, 'EOBDATA.SAV'): written by its function */
+/* ds:64E9-64F1: the code's (a literal or template, 'PLAYFLD'): written by its function */
+/* ds:64F1-64F8: the code's (a literal or template, 'INVENT'): written by its function */
+
 /* ovl1:1ACD: the camp menu, entered from the camp button on the game screen: it is the callback30 of
    the screen node at ds:3B8E (the far pointer 2102:0020 sits at ds:3BBE; the argument is that
    node, which the function overwrites and uses as a local). It saves the font and text window, shows

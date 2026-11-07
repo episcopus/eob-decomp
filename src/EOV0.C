@@ -184,6 +184,17 @@ extern struct RowDef8 far gRowNodeDefs[]; /*@ 206B:0000 */
 
 extern void far *gPanelIconCells[0x11]; /*@ ds:5E64 */ /* the 17 sliced icon pointers this unit builds and draws */
 
+/*@data */
+/* the data of eov0, ds:5E44 to ds:628C (1096 bytes, 0 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+int gNamePosX[4] = { 2, 66, 2, 66 }; /*@ ds:5E44 */
+int gNamePosY[4] = { 107, 107, 171, 171 }; /*@ ds:5E4C */
+int gChargenBoxX[4] = { 16, 80, 16, 80 }; /*@ ds:5E54 */
+int gChargenBoxY[4] = { 63, 63, 127, 127 }; /*@ ds:5E5C */
+void far *gPanelIconCells[0x11] = { /*@ ds:5E64 */
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0
+};
+
 /* ovl0:0000: builds the 17-entry far-pointer table gPanelIconCells. For each of the 17 icon
    definitions in
    gPanelIconDefs whose +2 byte (the width) is nonzero, it slices a sprite cell out of the overlay buffer
@@ -534,6 +545,80 @@ int PickAlignment(int classIndex); /* ovl0:2238, defined below */
     Unpack0(gPortraitCells[taken[cur]], gChars[gChargenMember].portrait, 0x514);
     DrawCharPanel(gChargenMember, 1);
 }
+
+/* the rest of the data follows PickPortrait: its local template taken[4] (four zero bytes) lies at ds:5EA8, before gMemberPortraits. */
+char gMemberPortraits[4] = { -1, -1, -1, -1 }; /*@ ds:5EAC */
+signed char gBoxAnimMember = 6; /*@ ds:5EB0 */
+int gRaceAbilityBonus[6][6] = { /*@ ds:5EB1 */
+    { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 1, -1, 0 }, { 0, 0, 0, 0, 0, 0 }, { 0, 0, 0, 0, 1, -1 },
+    { 0, 1, -1, 0, 0, 0 }, { -1, 0, 0, 1, 0, 0 }
+};
+unsigned char gClassStartLevels[3] = { 3, 0, 0 }; /*@ ds:5EF9 */
+unsigned char gClassStartLevelsNumClasses[57] = { /*@ ds:5EFC */
+    1, 3, 0, 0, 1, 3, 0, 0, 1, 3, 0, 0,
+    1, 3, 0, 0, 1, 4, 0, 0, 1, 2, 2, 0,
+    2, 2, 3, 0, 2, 2, 2, 0, 2, 1, 1, 2,
+    3, 3, 2, 0, 2, 2, 3, 0, 2, 1, 2, 1,
+    3, 2, 2, 0, 2, 2, 2, 0, 2
+};
+int gRaceMinAbilities[6][6] = { /*@ ds:5F35 */
+    { 3, 3, 3, 3, 3, 3 }, { 3, 8, 3, 7, 6, 8 }, { 3, 4, 3, 6, 6, 3 }, { 8, 3, 3, 3, 12, 2 },
+    { 6, 7, 2, 3, 8, 3 }, { 7, 6, 3, 8, 10, 6 }
+};
+int gRaceMaxAbilities[6][6] = { /*@ ds:5F7D */
+    { 25618, 18, 18, 18, 18, 18 }, { 25618, 18, 18, 19, 17, 18 }, { 25618, 18, 18, 18, 18, 18 }, { 25618, 18, 18, 17, 19, 16 },
+    { 25618, 19, 17, 18, 18, 18 }, { 17, 18, 17, 19, 18, 18 }
+};
+int gClassMinAbilities[15][6] = { /*@ ds:5FC5 */
+    { 9, 0, 0, 0, 0, 0 }, { 13, 0, 14, 13, 14, 0 }, { 12, 0, 13, 0, 9, 17 }, { 0, 9, 0, 0, 0, 0 },
+    { 0, 0, 9, 0, 0, 0 }, { 0, 0, 0, 9, 0, 0 }, { 9, 0, 9, 0, 0, 0 }, { 9, 0, 0, 9, 0, 0 },
+    { 9, 9, 0, 0, 0, 0 }, { 9, 9, 0, 9, 0, 0 }, { 0, 9, 0, 9, 0, 0 }, { 0, 0, 9, 9, 0, 0 },
+    { 9, 9, 9, 0, 0, 0 }, { 13, 0, 14, 13, 14, 0 }, { 0, 9, 9, 0, 0, 0 }
+};
+unsigned char gMemberBoxX[4] = { 0x10, 0x50, 0x10, 0x50 }; /*@ ds:6079 */
+unsigned char gMemberBoxY[4] = { 0x3F, 0x3F, 0x7F, 0x7F }; /*@ ds:607D */
+long gRaceClassMasks[6] = { 63L, 1979L, 30715L, 241L, 2289L, 177L }; /*@ ds:6081 */
+long gClassAlignmentMasks[15] = { /*@ ds:6099 */
+    511L, 7L, 1L, 511L, 511L, 510L, 511L, 510L, 511L, 510L, 510L, 510L,
+    511L, 7L, 511L
+};
+struct ItemSlot gStartItems[11] = { /*@ ds:60D5 */
+    { 1, 17 }, { 2, 17 }, { 46, -1 }, { 4, -1 },
+    { 5, -1 }, { 6, 2 }, { 7, -1 }, { 8, -1 },
+    { 9, 21 }, { 10, 2 }, { 31, 2 }
+};
+char gClassStartItems[60] = { /*@ ds:6101 */
+    4, 8, 0, -1, 4, 3, 0, -1, 4, 10, 0, 8,
+    3, 6, 1, -1, 2, 7, 0, -1, 4, 5, 0, -1,
+    4, 7, 0, 8, 4, 5, 0, 8, 4, 6, 8, 8,
+    4, 6, 5, 8, 3, 6, 5, -1, 2, 7, 5, 0,
+    4, 6, 7, 0, 4, 3, 7, 0, 2, 6, 7, 1
+};
+char gStrPartyComplete[79] = "Your party is\rcomplete. Select\rthe PLAY button\ror press 'P' to\rstart the game."; /*@ ds:613D */
+char gStrBlankName[11] = "          "; /*@ ds:618C */
+char gStrAcHpLvlLabels[10] = "AC\rHP\rLVL"; /*@ ds:6197 */
+char gFmtAbilityScores[18] = "%s\r%d\r%d\r%d\r%d\r%d"; /*@ ds:61A1 */
+char gFmtAcHp[6] = "%d\r%d"; /*@ ds:61B3 */
+char gFmtOneLevel[3] = "%d"; /*@ ds:61B9 */
+char gFmtTwoLevels[6] = "%d/%d"; /*@ ds:61BC */
+char gFmtThreeLevels[9] = "%d/%d/%d"; /*@ ds:61C2 */
+char gStrSelectBoxPrompt[60] = "Select the box of\rthe character you\rwish to create or\rview."; /*@ ds:61CB */
+char gStrEnteringGame[32] = "  Entering game.\r  Please wait."; /*@ ds:6207 */
+char gFmtStrengthOnEntry[3] = "%s"; /*@ ds:6227 */
+char gFmtValueOnEntry[3] = "%d"; /*@ ds:622A */
+char gFmtStrengthChanged[3] = "%s"; /*@ ds:622D */
+char gFmtValueChanged[3] = "%d"; /*@ ds:6230 */
+char gFmtHpChanged[3] = "%d"; /*@ ds:6233 */
+char gFmtArmorClassChanged[3] = "%d"; /*@ ds:6236 */
+char gFmtStrengthOnExit[3] = "%s"; /*@ ds:6239 */
+char gFmtValueOnExit[3] = "%d"; /*@ ds:623C */
+char gStrSelectRace[13] = "SELECT RACE:"; /*@ ds:623F */
+char gStrSelectClass[14] = "SELECT CLASS:"; /*@ ds:624C */
+char gStrSelectAlignment[18] = "SELECT ALIGNMENT:"; /*@ ds:625A */
+char gStrNamePrompt[6] = "Name:"; /*@ ds:626C */
+char gFileNameChargenA[9] = "CHARGENA"; /*@ ds:6272 */
+char gFileNameChargen[8] = "CHARGEN"; /*@ ds:627B */
+char gFileNameChargenB[9] = "CHARGENB"; /*@ ds:6283 */
 /* ovl0:0D5B: walks the panel slot indices modulo 0x2c (44) to find one that is free. Starting from
    `start` (a negative start is folded to 0x2b), it loops: a slot is rejected when one of the four
    named characters gChars[0..3] has `taken[di]` equal to it, when `flag` is nonzero and the slot is

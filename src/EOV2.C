@@ -170,6 +170,52 @@ extern int FileOpen(char far *name, int mode); /*@ 1C0E:00DB */
 extern void FileRead(int handle, void far *buf, unsigned long len); /*@ 1C0E:0400 */
 extern void FileClose(int handle); /*@ 1C0E:03BB */
 
+/*@data */
+/* the data of eov2, ds:64F8 to ds:6840 (840 bytes, 3 relocations): drafted by make data-skeleton from the original's bytes; each item at its annotation, in address order. */
+struct Pos2 gCellPosL1[15] = { /*@ ds:64F8 */
+    { 0, 0 }, { 0, 64 }, { 0, 128 }, { 8, 0 },
+    { 8, 64 }, { 8, 128 }, { 16, 0 }, { 16, 64 },
+    { 16, 128 }, { 24, 0 }, { 24, 64 }, { 24, 128 },
+    { 32, 0 }, { 32, 64 }, { 32, 128 }
+};
+struct Pos2 gCellPosS1[30] = { /*@ ds:6534 */
+    { 0, 0 }, { 0, 64 }, { 0, 128 }, { 4, 0 },
+    { 4, 64 }, { 4, 128 }, { 8, 0 }, { 8, 64 },
+    { 8, 128 }, { 12, 0 }, { 12, 64 }, { 12, 128 },
+    { 16, 0 }, { 16, 64 }, { 16, 128 }, { 20, 0 },
+    { 20, 64 }, { 20, 128 }, { 24, 0 }, { 24, 64 },
+    { 24, 128 }, { 28, 0 }, { 28, 64 }, { 28, 128 },
+    { 32, 0 }, { 32, 64 }, { 32, 128 }, { 36, 0 },
+    { 36, 64 }, { 36, 128 }
+};
+char gCellDX[4] = { 0, 24, 40, 56 }; /*@ ds:65AC */
+struct Size2 gCellSize1[4] = { { 8, 24 }, { 6, 16 }, { 4, 16 }, { 2, 8 } }; /*@ ds:65B0 */
+struct Size2 gCellSize2[4] = { { 4, 24 }, { 3, 16 }, { 2, 16 }, { 1, 8 } }; /*@ ds:65B8 */
+unsigned char gCompassRowHeights[3] = { 0x11, 0x0A, 0x0A }; /*@ ds:65C0 */
+unsigned char gCompassRowTops[3] = { 0x78, 0x89, 0x93 }; /*@ ds:65C3 */
+struct Cell4 gDecorateCellRects[6] = { /*@ ds:65C6 */
+    { 0x0C, 0x58, 2, 0x0E }, { 0x0C, 0x67, 1, 7 }, { 0x0C, 0x6F, 1, 7 }, { 0x0C, 0x77, 1, 5 },
+    { 0x0C, 0x7D, 1, 5 }, { 0x0C, 0x83, 1, 3 }
+};
+/* ds:674A-6752: the code's (a literal or template, 'ITEMICN'): written by its function */
+/* ds:6752-675B: the code's (a literal or template, 'ITEM.DAT'): written by its function */
+/* ds:675B-6768: the code's (a literal or template, 'ITEMTYPE.DAT'): written by its function */
+/* ds:6768-676F: the code's (a literal or template, 'ITEML1'): written by its function */
+/* ds:676F-6776: the code's (a literal or template, 'ITEMS1'): written by its function */
+/* ds:6776-677D: the code's (a literal or template, 'THROWN'): written by its function */
+/* ds:677D-6785: the code's (a literal or template, 'ITEMICN'): written by its function */
+/* ds:6785-6790: the code's (a literal or template, 'ITEMRMP.%s'): written by its function */
+/* ds:6790-6794: the code's (a literal or template, 'VGA'): written by its function */
+/* ds:6794-6798: the code's (a literal or template, 'EGA'): written by its function */
+/* ds:6798-67A1: the code's (a literal or template, 'DECORATE'): written by its function */
+/* ds:67A1-67A7: the code's (a literal or template, 'INTRO'): written by its function */
+/* ds:67A7-67BE: the string pool, "LOAD GAME IN PROGRESS\r" (a table's literal) */
+/* ds:67BE-67D1: the string pool, "START A NEW PARTY\r" (a table's literal) */
+/* ds:67D1-67DE: the string pool, "EXIT TO DOS\r" (a table's literal) */
+/* ds:67DE-67FE: the code's (a literal or template, 'Unable to load your saved game!'): written by its function */
+/* ds:67FE-683F: the code's (a literal or template, '\r\r\r\rOn the page with this symbol...\r\rFin'): written by its function */
+/* ds:683F: the pad byte to the next module (word alignment) */
+
 /* ovl2:0000: loads the ITEMICN image, cuts one 2 by 0x10 cell out of it through gGetSpriteCell
    (gCgaMapDefault as the colour map) and makes the result (gItemIcons[0] and gDefaultPointerIcon) the mouse pointer shape at
    (0,0), then sets the draw page back to 0. Called first by LoadItemData. */
@@ -345,6 +391,26 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
     gDrawPage = 0;
 }
 
+/* gOptionNames and the data after it follow LoadIntroScreen: the table's three literals lie in the pool
+   after "INTRO" (ds:67A1) and before LoadGamePanel's "Unable to load your saved game!" (ds:67DE). */
+char far *gOptionNames[3] = { "LOAD GAME IN PROGRESS\r", "START A NEW PARTY\r", "EXIT TO DOS\r" }; /*@ ds:65DE */
+char gBoxCycleColours16[6] = { 12, 13, 14, 15, 14, 13 }; /*@ ds:65EA */
+struct WordCell gWordCells[30] = { /*@ ds:65F0 */
+    { 0, 9, 10, 2 }, { 0, 9, 4, 3 }, { 0, 9, 6, 6 }, { 0, 9, 3, 3 }, { 0, 9, 4, 2 }, { 0, 9, 1, 2 },
+    { 0, 9, 5, 1 }, { 0, 9, 9, 2 }, { 0, 9, 6, 2 }, { 0, 35, 1, 5 }, { 0, 35, 2, 2 }, { 0, 35, 3, 6 },
+    { 0, 35, 5, 1 }, { 0, 35, 6, 3 }, { 0, 35, 7, 1 }, { 0, 26, 1, 1 }, { 0, 26, 3, 2 }, { 0, 26, 6, 1 },
+    { 0, 36, 1, 3 }, { 0, 36, 3, 4 }, { 0, 36, 3, 1 }, { 0, 2, 4, 3 }, { 0, 2, 3, 3 }, { 0, 2, 5, 3 },
+    { 0, 1, 1, 1 }, { 0, 1, 5, 3 }, { 0, 1, 4, 3 }, { 0, 12, 2, 1 }, { 0, 12, 3, 3 }, { 0, 12, 4, 2 }
+};
+unsigned char g6668 = 0; /*@ ds:6668 */
+/* the 30 answers of the "find the word" puzzle, NUL-separated: FindWordPanel (ovl2:09ED) compares
+   the player's word with SkipStrings(g6669, pick), the pick-th string. Two spare NUL bytes end it. */
+char g6669[225] = /*@ ds:6669 */
+    "attacks\0short\0line\0weapons\0certain\0rank\0rear\0can\0away\0dungeon\0cursor\0"
+    "feature\0information\0displayed\0below\0around\0carefree\0gnomes\0clerics\0"
+    "mystic\0pummel\0fitness\0using\0toughness\0wealth\0wizard\0officials\0hound\0"
+    "disturbing\0flaming\0\0";
+
 /* ovl2:0846: the title menu's "load a saved game" panel. Draws the panel (DrawOptionList) and waits
    (UpdateOptionList) until the pointer picks an entry. Entry 0 loads a saved game and marks the
    load in gGameLoadState: 0xff while it runs (src/EOV3.C:937 skips its map reload on that value) and 0xfe
@@ -496,7 +562,7 @@ extern void FileClose(int handle); /*@ 1C0E:03BB */
         while (input[strlen(input) - 1] == ' ')
             input[strlen(input) - 1] = 0;
         strlwr(input);
-        if (strcmp(SkipStrings("attacks", pick), input) == 0)
+        if (strcmp(SkipStrings(g6669, pick), input) == 0)
             break;
         tries++;
         if (tries == 3) {
