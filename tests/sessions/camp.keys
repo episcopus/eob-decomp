@@ -1,0 +1,15 @@
+# camp: "Load game in progress" with fixtures/EOBDATA.SAV, then a click on the Camp button: the camp
+# menu, which checks the far heap (the library's heapcheck, EOV1.C) before each of its menus.
+option mouse
+option save fixtures/EOBDATA.SAV
+option insns 90000000
+wait 600
+key ENTER
+wait 400
+shot dungeon
+mouse 300 185
+wait 5
+click 300 185
+wait 100
+shot camp
+quit

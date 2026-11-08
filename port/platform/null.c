@@ -7,7 +7,9 @@
 
    Input for a test of live play (M7): TC_NULL_INPUT lists scancodes (set 1, hexadecimal) each at a
    time in milliseconds of that clock, "40000:50,40100:D0,41000:1C,41100:9C" (keypad 2 pressed and
-   released, then Enter); each comes from platform_poll_event once the clock has reached its time. */
+   released, then Enter); each comes from platform_poll_event once the clock has reached its time. An
+   entry "MS:Mx.y.b" is the mouse at the screen's pixel (x, y) with the buttons b (1 left, 2 right):
+   "60000:M300.185.1,60100:M300.185.0" clicks the camp button. */
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -51,10 +53,17 @@ struct platform_event platform_poll_event(void)
     if (*end != ':' || at > now_ms) {
         return e;
     }
-    code = strtoul(end + 1, &end, 16);
+    if (end[1] == 'M') {
+        e.kind = PLATFORM_EVENT_MOUSE;
+        e.mouse_x = (uint16_t)(strtoul(end + 2, &end, 10) * 2);   /* the driver's 640-wide range, as sdl_host.c */
+        e.mouse_y = (uint16_t)strtoul(end + 1, &end, 10);
+        e.buttons = (uint8_t)strtoul(end + 1, &end, 10);
+    } else {
+        code = strtoul(end + 1, &end, 16);
+        e.kind = PLATFORM_EVENT_SCANCODE;
+        e.scancode = (uint8_t)code;
+    }
     next = *end == ',' ? end + 1 : end;
-    e.kind = PLATFORM_EVENT_SCANCODE;
-    e.scancode = (uint8_t)code;
     return e;
 }
 

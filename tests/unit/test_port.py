@@ -91,6 +91,32 @@ def test_live_play_reaches_character_generation(tmp_path):
     assert set(differ) <= outline, differ[:10]
 
 
+@pytest.mark.slow
+def test_live_play_opens_the_camp_menu(tmp_path):
+    """Live play with the saved game: Enter on "Load game in progress", then a scripted click on the
+    Camp button (TC_NULL_INPUT's mouse entries). The camp menu checks the far heap with the library's
+    heapcheck (port/runtime/tcheap.c) before each menu; the screen is the golden camp's own, pixel for
+    pixel."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    from port.replay import game_dir
+    from PIL import Image
+    gd = game_dir(tmp_path / "game", ROOT / "tests/sessions/fixtures/EOBDATA.SAV")
+    shot = tmp_path / "shot.bin"
+    env = dict(os.environ, TC_NULL_INPUT="40000:1C,40100:9C,60000:M300.185.0,60500:M300.185.1,60600:M300.185.0",
+               TC_PLAY_SNAPSHOT="70000:%s" % shot)
+    try:
+        subprocess.run([str(ROOT / "build/port/eob-port-headless"), "--play", str(gd)], env=env,
+                       capture_output=True, timeout=60)
+    except subprocess.TimeoutExpired:
+        pass                                    # the camp menu waits for a click
+    raw = shot.read_bytes()
+    rgb = bytes((c << 2) | (c >> 4) for c in raw[64000:64768])
+    gold = Image.open(ROOT / "tests/sessions/golden/camp/camp.png").convert("RGB").load()
+    differ = [(i % 320, i // 320) for i, v in enumerate(raw[:64000])
+              if tuple(rgb[3 * v:3 * v + 3]) != gold[i % 320, i // 320]]
+    assert differ == [], differ[:10]
+
+
 def test_only_the_platform_directory_uses_sdl():
     """platform.h is the only boundary (playbook 80, "Platform separation"): the game, the runtime and
     the machine never include or call SDL, so they build for any host."""

@@ -3,7 +3,8 @@ machine"): the program runs its start-up on the bench to main, so the heap is th
 with; then farmalloc, farfree and realloc in a long random sequence (sizes from 0 to past the heap's
 top, blocks freed in random order so that the free ring, the rover, the merges on both sides and the
 release of the last block all come up, realloc shrinking, keeping and growing), with farcoreleft and a
-whole farheapwalk now and then, each call by hybrid.Direct, the original then the C on the same state,
+whole farheapwalk and heapcheck now and then, and heapcheck again on the heap with one word of a
+block's header or of the heap's own words changed (then put back), each call by hybrid.Direct, the original then the C on the same state,
 comparing memory (the blocks' headers, the heap's words in the library's code segment, the break level
 and DOS's memory block), the registers returned and the devices.
 
@@ -71,9 +72,39 @@ def walk():
         r = call("tcl_farheapwalk", ((DG << 16) | HI, 4))
         if (r.get("value", 0) & 0xFFFF) != 2:
             break
+    call("tcl_heapcheck")
+
+
+HV = hybrid.LOAD_SEG                                # the heap's words at 0000:70B0: first, last, rover
+
+
+def word(seg, off):
+    return int.from_bytes(d.read(seg, off, 2), "little")
+
+
+def corrupt():
+    """heapcheck on the heap with one word changed: a block's size, its link back (+2 in use, +8
+    free), a free block's ring links, or the heap's first, last or rover; each put back after."""
+    first, last = word(HV, 0x70B0), word(HV, 0x70B2)
+    blocks, b = [], first
+    while first and len(blocks) < 400:
+        blocks.append(b)
+        if b == last:
+            break
+        b = (b + word(b, 0)) & 0xFFFF
+    places = [(HV, 0x70B0 + i) for i in (0, 2, 4)]
+    for b in rng.sample(blocks, min(len(blocks), 12)):
+        places += [(b, 0), (b, 2)] + ([(b, 4), (b, 6), (b, 8)] if word(b, 2) == 0 else [])
+    for seg, off in places:
+        old = d.read(seg, off, 2)
+        for v in sorted({(word(seg, off) + 1) & 0xFFFF, (word(seg, off) - 1) & 0xFFFF, 0, rng.randrange(0x10000)}):
+            d.write(seg, off, v.to_bytes(2, "little"))
+            call("tcl_heapcheck")
+            d.write(seg, off, old)
 
 
 live = []
+call("tcl_heapcheck")
 walk()
 call("tcl_farcoreleft")
 for k in range(1500):
@@ -101,6 +132,8 @@ for k in range(1500):
         call("tcl_farcoreleft")
     if k % 150 == 0:
         walk()
+    if k % 300 == 299:
+        corrupt()
 call("tcl_farfree", (0, 4))
 for p in live:
     call("tcl_farfree", (p, 4))

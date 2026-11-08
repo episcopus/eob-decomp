@@ -285,6 +285,14 @@ static u16 cmp_flags(u8 a, u8 b)
     dos(&r);
 }
 
+/* hardretn(retn): from inside the critical error handler, back to the program, the DOS call that failed
+   returning `retn`. Only the game's handler calls it (1A63:0004, src/E1A63.C), and the port's DOS
+   raises no critical error, so it is never reached; if it were, the port says so and stops. */
+/*@ 0000:608A library */ void tcl_hardretn(s16 retn)
+{
+    tc_fail(74, "hardretn(%d) outside a critical error handler (the port's DOS raises none)", retn);
+}
+
 /* ---- IO.H: the files ---------------------------------------------------------------------------- */
 
 /* _openfd: a flag word for each of the library's 20 handles (the open's access bits, less O_CREAT,
@@ -499,6 +507,74 @@ static void text_mode(const char *fn)
         return (s32)ioerror((s16)err);
     }
     return (s32)len;
+}
+
+/* chsize(handle, size): the file made `size` bytes long, the position kept: longer, it is written
+   with zeros from the end, 128 bytes at a time; shorter, a write of no bytes at `size` cuts it there.
+   The handle is marked written. 0, or -1 with errno. */
+/*@ 0000:5E41 library */ s16 tcl_chsize(s16 fd, s32 size)
+{
+    tc_regs r = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+    u16 err, pos_hi, pos_lo;
+    u32 len;
+    r.ax = 0x4201u;
+    r.bx = (u16)fd;
+    err = dos_call(&r);
+    if (err != 0) {
+        return ioerror((s16)err);
+    }
+    pos_hi = r.dx;
+    pos_lo = r.ax;
+    memset(&r, 0, sizeof r);
+    r.ax = 0x4202u;
+    r.bx = (u16)fd;
+    err = dos_call(&r);
+    if (err != 0) {
+        return ioerror((s16)err);
+    }
+    len = ((u32)r.dx << 16) | r.ax;
+    if ((u32)size > len) {
+        tc_frame f = tc_frame_enter(128);
+        tc_zero(f.base, 128);
+        while (len < (u32)size) {
+            u32 n = (u32)size - len;
+            memset(&r, 0, sizeof r);
+            r.ax = 0x4000u;
+            r.bx = (u16)fd;
+            r.cx = (u16)(n > 128u ? 128u : n);
+            err = dos_ptr(&r, f.base);
+            if (err != 0) {
+                tc_frame_leave(&f);
+                return ioerror((s16)err);
+            }
+            len += r.cx;
+        }
+        tc_frame_leave(&f);
+    } else {
+        memset(&r, 0, sizeof r);
+        r.ax = 0x4200u;
+        r.bx = (u16)fd;
+        r.cx = (u16)((u32)size >> 16);
+        r.dx = (u16)size;
+        err = dos_call(&r);
+        if (err == 0) {
+            memset(&r, 0, sizeof r);
+            r.ax = 0x4000u;
+            r.bx = (u16)fd;
+            err = dos_ptr(&r, 0);
+        }
+        if (err != 0) {
+            return ioerror((s16)err);
+        }
+    }
+    tc_st_u16(openfd(fd), (u16)(tc_ld_u16(openfd(fd)) | F_CHANGED));
+    memset(&r, 0, sizeof r);
+    r.ax = 0x4200u;
+    r.bx = (u16)fd;
+    r.cx = pos_hi;
+    r.dx = pos_lo;
+    err = dos_call(&r);
+    return err ? ioerror((s16)err) : 0;
 }
 
 /*@ 0000:6B57 library */ s16 tcl_remove(farptr path)
