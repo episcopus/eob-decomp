@@ -44,6 +44,7 @@ s16 tcl_setdisk(s16 drive);
 s32 tcl_time(farptr timer);
 s16 tcl_int86(s16 intno, farptr in, farptr out);
 void tcl_harderr(farptr handler);
+void tcl_hardretn(s16 retn);
 s16 tcl_open(farptr path, s16 access, const u8 *va, u16 va_size);
 s16 tcl_close(s16 fd);
 s16 tcl_read(s16 fd, farptr buf, u16 len);
@@ -51,6 +52,7 @@ s16 tcl_write(s16 fd, farptr buf, u16 len);
 s32 tcl_lseek(s16 fd, s32 offset, s16 whence);
 s32 tcl_filelength(s16 fd);
 s16 tcl_remove(farptr path);
+s16 tcl_chsize(s16 fd, s32 size);
 /* PROCESS.H (tcdos.c): the program's end, DOS 4Ch */
 void tcl_exit(s16 status);
 
@@ -60,6 +62,7 @@ void tcl_farfree(farptr block);
 farptr tcl_realloc(farptr block, u16 size);
 u32 tcl_farcoreleft(void);
 s16 tcl_farheapwalk(farptr hi);
+s16 tcl_heapcheck(void);
 
 /* STDIO.H */
 s16 tcl_sprintf(farptr buf, farptr fmt, const u8 *va, u16 va_size);

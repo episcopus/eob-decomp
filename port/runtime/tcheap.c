@@ -1,5 +1,5 @@
 /* tcheap.c: the Borland far heap (playbook 80, M3, "The library on the machine"): farmalloc, farfree,
-   realloc, farcoreleft, farheapwalk.
+   realloc, farcoreleft, farheapwalk, heapcheck.
 
    Written from the library's documented behaviour and the original's observed effects, not translated
    from its code (the library is library, AGENTS.md); each definition carries the library routine's
@@ -353,4 +353,55 @@ static void free_block(u16 b)
     tc_st_u32(tc_fp_add(hi, 4), (u32)hdr(b, SIZE) << 4);
     tc_st_u16(tc_fp_add(hi, 8), is_free(b) ? 0u : 1u);
     return 2;
+}
+
+/* heapcheck (_heapcheck and _farheapcheck are the one routine in the large model): 1 (_HEAPEMPTY)
+   with no heap, 2 (_HEAPOK) when the blocks chain from the first to the last, each one's link back
+   naming the block before it and the last ending at the break level, and the free ring, from the
+   rover along +6 with each +4 naming the block before it, holds every free block and nothing else
+   (the first block's link back is not looked at);
+   -1 (_HEAPCORRUPT) otherwise (ALLOC.H's values, build/toolchain/tc100/INCLUDE/ALLOC.H) [H: which
+   faults the original's own checks find is compared on the bench, tests/port_asm/heap.py] */
+/*@ 0000:74B0 library */ s16 tcl_heapcheck(void)
+{
+    u16 first = hv(H_FIRST), last = hv(H_LAST), b = first, prev = 0, free_blocks = 0, r, n;
+    if (first == 0) {
+        return 1;
+    }
+    for (;;) {
+        if ((b != first && hdr(b, is_free(b) ? FREE_PREV : PREV) != prev) || hdr(b, SIZE) == 0) {
+            return -1;
+        }
+        if (is_free(b)) {
+            free_blocks++;
+        }
+        if (b == last) {
+            break;
+        }
+        prev = b;
+        b = (u16)(b + hdr(b, SIZE));
+        if (b <= prev || b > last) {
+            return -1;
+        }
+    }
+    if ((u16)(last + hdr(last, SIZE)) != brk()) {
+        return -1;
+    }
+    r = hv(H_ROVER);
+    if (free_blocks == 0) {
+        return r == 0 ? 2 : -1;
+    }
+    if (r == 0) {
+        return -1;
+    }
+    b = r;
+    n = 0;
+    do {
+        u16 next = hdr(b, LINK6);
+        if (!is_free(b) || hdr(next, LINK4) != b || ++n > free_blocks) {
+            return -1;
+        }
+        b = next;
+    } while (b != r);
+    return n == free_blocks ? 2 : -1;
 }

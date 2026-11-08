@@ -736,6 +736,18 @@ library's `exit`, now in the runtime (`port/runtime/tcdos.c`).
   turned idle (the fingerprint above) and made no access, so nothing was delivered. Headless with
   scripted keys it now goes through race, class and alignment to the rolled abilities, the original's
   own (`new-character`).
+- In the window, the Camp button stopped the game (the human, 2026-11-07): the camp menu calls the
+  library's `heapcheck` before each of its menus, and it was one of three library routines the runtime
+  did not have yet (the build's last line said "still unported: 3 library"). All three are in the
+  runtime now, and the build says "still unported: 0 library, 0 assembly, 0 C": `heapcheck`
+  (`tcheap.c`) and `chsize` (`tcdos.c`) agree with the original's at every call on the bench (`heap.py`:
+  780 calls on healthy heaps and on heaps with one header word changed; `library.py`: 15 calls,
+  shorter, longer, read-only and closed handles); `hardretn` stops with a message, since only the
+  critical error handler calls it and the port's DOS raises no critical error. The null platform's
+  scripted input takes mouse events too (`MS:Mx.y.b`, the screen's pixel and the buttons): the saved
+  game, then a click on Camp, is the golden `camp`'s screenshot pixel for pixel
+  (`test_live_play_opens_the_camp_menu`). `camp` does not replay on the port yet: after the saved game
+  is loaded its state differs (the random generator's seed among it), as `load-walk`'s does.
 - Once, the first time the window opened, the game ended through `exit` within 45 s (the library's
   `exit` was not in the runtime then); it did not happen again and why it chose to end is not known.
 

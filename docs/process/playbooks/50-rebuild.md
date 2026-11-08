@@ -186,9 +186,9 @@ A value is put back only where memory still holds the rebuild's (`file_values`),
 load wrote over is left alone (INTRO.EXE's, once EOB.EXE is loaded). Nothing else is rewritten: the
 hook itself (overlay 5's three fixups, `gScrollHook`'s segment) would show as a difference.
 
-**Not covered.** The goldens load overlays 0, 2, 3 and 4 only (EOB.EXE, every session). Overlays 1, 5
-and 6 never run, so a replay tests neither overlay 5's hook nor the far calls through stub entries in
-overlays 1, 5 and 6. The hook is `gScrollHook = 0xac; g8119 = 0x2d0;`: 2D0h is segment-table entry 5Ah,
+**Not covered.** The goldens load overlays 0, 2, 3 and 4 (EOB.EXE, every session), and since 2026-11-07
+overlay 1 (`camp`: the camp menu, RunCampMenu at ovl1:1ACD). Overlays 5 and 6 never run, so a replay
+tests neither overlay 5's hook nor the far calls through stub entries in overlays 5 and 6. The hook is `gScrollHook = 0xac; g8119 = 0x2d0;`: 2D0h is segment-table entry 5Ah,
 overlay 5's stub (211E), and entry 0ACh of that stub is code 025Fh (MessagePanel) in the original but
 code 09C5h in the rebuild's stub order; without the three fixups the segment is not relocated either.
 So the rebuild's hook would very likely call something else [H]. A session that reaches overlay 5's

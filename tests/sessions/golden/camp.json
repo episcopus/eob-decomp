@@ -1,0 +1,28 @@
+{
+ "program": "EOB.EXE",
+ "stop": "script quit",
+ "instructions": 60391745,
+ "video_mode": "13h",
+ "digest": "171985b60cb674341675a02d0aa1395736ef7752fd49d1721f5b8ffa64e1a052",
+ "final_image": "9b4677c2ac1be34b4514b31086f4caa59d2f6ee4dcfb11fc5bbd18624a9ea72f",
+ "script_done": true,
+ "sound_digest": "6f0fc357fbbbf77aa396f287cc2af183a96ef4589249ed7495f05112d0bf84b8",
+ "adlib_writes": 0,
+ "checkpoints": [
+  {
+   "kind": "shot",
+   "name": "dungeon",
+   "instructions": 54514770,
+   "digest": "325b54eb1ebd72ca6e699f2ef01ab32e2e9ee636e0aac839aadfda7b0f477a44",
+   "image": "0e8971d9a5cbbbc8847c704e309daf0cb845d24b83ad2d7b30ece48f8f435203"
+  },
+  {
+   "kind": "shot",
+   "name": "camp",
+   "instructions": 60391745,
+   "digest": "171985b60cb674341675a02d0aa1395736ef7752fd49d1721f5b8ffa64e1a052",
+   "image": "9b4677c2ac1be34b4514b31086f4caa59d2f6ee4dcfb11fc5bbd18624a9ea72f"
+  }
+ ],
+ "args": "3 4 1 homie 3"
+}

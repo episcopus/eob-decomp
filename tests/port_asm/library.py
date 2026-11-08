@@ -13,7 +13,7 @@ devices and files.
   - harderr;
   - the files: open in each access mode, with and without O_CREAT, O_TRUNC, O_EXCL, O_APPEND, _fmode's
     default, on files that are there and not; read, write, lseek (each whence, a bad one), filelength,
-    close (twice, handles past the 20) and remove; the end-of-file flag and the append path.
+    close (twice, handles past the 20), remove and chsize (shorter, longer, read-only, closed); the end-of-file flag and the append path.
 
 Exit status 1 if a call differs or does not run.
 
@@ -168,6 +168,18 @@ for k in range(10):
     call("tcl_lseek", h, (rng.randrange(0, 200), 4), 0)
 call("tcl_filelength", h)
 call("tcl_close", h)
+h = opened("NEW.DAT", 0x8804)                     # chsize: shorter, the same, longer (by less and more
+for size in (100, 100, 0, 37, 37 + 128, 300, 5000, 4999, 0x10123, 12):   # than its buffer), the position
+    call("tcl_lseek", h, (rng.randrange(0, 400), 4), 0)                  # anywhere
+    call("tcl_chsize", h, (size, 4))
+    call("tcl_filelength", h)
+call("tcl_close", h)
+h = opened("NEW.DAT", 0x8001)                     # read-only, and closed handles
+call("tcl_chsize", h, (5, 4))
+call("tcl_chsize", h, (500, 4))
+call("tcl_close", h)
+for h in (h, 19, 0x7FFF):
+    call("tcl_chsize", h, (8, 4))
 h = opened("NEW.DAT", 0x8804)
 call("tcl_write", h, far(BUF), 7)
 call("tcl_lseek", h, (0, 4), 0)
