@@ -45,7 +45,7 @@ from port.replay import game_dir  # noqa: E402
 
 SCRIPTS = ROOT / "tests" / "playtest"
 OUT = ROOT / "build" / "port" / "playtest"
-LIMIT_S = 240                                    # the wall clock a run may take: more is a hang
+LIMIT_S = 120                                    # the wall clock a run may take: more is a hang
 
 SCAN = {"ESC": 0x01, "ENTER": 0x1C, "SPACE": 0x39, "TAB": 0x0F, "BACKSPACE": 0x0E,
         "UP": 0x48, "DOWN": 0x50, "LEFT": 0x4B, "RIGHT": 0x4D, "HOME": 0x47, "END": 0x4F, "PGUP": 0x49, "PGDN": 0x51,
@@ -201,10 +201,19 @@ def play(name: str, runs: list[Run], exe: Path, gamedirs: dict, env_extra: dict)
     return Result(name, problems, pngs, "\n".join(logs), reached_exit)
 
 
+# where a player clicks: the movement arrows, the view, the hands and portraits, Camp, the menu rows, the
+# inventory's pages and the Yes and No of a question
+SPOTS = [(11, 134), (35, 134), (57, 134), (11, 152), (35, 152), (57, 152)] * 3 + \
+        [(x, y) for x in (225, 290) for y in (22, 36, 70, 84)] + \
+        [(x, y) for x in (195, 262) for y in (30, 80)] + \
+        [(300, 185)] * 2 + [(60, y) for y in (27, 44, 61, 78, 95, 112)] + [(148, 129)] * 3 + [(30, 63), (140, 63)] + \
+        [(88, 60), (40, 40), (140, 40), (40, 100), (140, 100), (88, 100)] * 2
+
+
 def monkey_script(seed: int, start_save: bool, length_ms: int) -> tuple[str, list[str]]:
-    """Random play: mostly clicks on the screen, some movement keys, and Enter and Escape to leave menus."""
+    """Random play: walking, the buttons a player clicks, anywhere on the screen now and then, and the keys."""
     rng = random.Random(seed)
-    keys = ["UP", "DOWN", "LEFT", "RIGHT", "UP", "UP", "ENTER", "ENTER", "ESC", "SPACE", "PGUP", "PGDN", "HOME", "END"] + list("ABCDEFIRSZ123456")
+    keys = ["UP"] * 8 + ["LEFT", "RIGHT"] * 3 + ["DOWN", "ENTER", "ESC", "SPACE", "PGUP", "PGDN", "HOME", "END"] + list("ABCDEFIRSZ123456")
     lines = ["save fixtures/EOBDATA.SAV" if start_save else "save none", "wait 40000"]
     if start_save:
         lines += ["key ENTER", "wait 6000"]
@@ -213,10 +222,12 @@ def monkey_script(seed: int, start_save: bool, length_ms: int) -> tuple[str, lis
     t = 0
     while t < length_ms:
         roll = rng.random()
-        if roll < 0.55:
+        if roll < 0.35:
+            lines.append("click %d %d" % rng.choice(SPOTS))
+        elif roll < 0.55:
+            lines.append("rclick %d %d" % rng.choice(SPOTS))
+        elif roll < 0.62:
             lines.append("click %d %d" % (rng.randrange(320), rng.randrange(200)))
-        elif roll < 0.65:
-            lines.append("rclick %d %d" % (rng.randrange(320), rng.randrange(200)))
         else:
             lines.append("key %s" % rng.choice(keys))
         w = rng.choice([50, 150, 400, 800])
@@ -236,6 +247,12 @@ def gamedirs_for(names: set) -> dict:
     return out
 
 
+def unported() -> list[str]:
+    """What the build says it could not port: each one is a stop in the middle of the game."""
+    f = ROOT / "build" / "port" / "gen" / "unported.c"
+    return re.findall(r'tc_unported\("(\w+)"', f.read_text()) if f.exists() else []
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("names", nargs="*", help="scripts of tests/playtest (default: all)")
@@ -247,6 +264,9 @@ def main(argv=None) -> int:
     ap.add_argument("--coverage", action="store_true", help="the instrumented build: which functions no run reached")
     a = ap.parse_args(argv)
     OUT.mkdir(parents=True, exist_ok=True)
+    if unported():
+        print("playtest: FAIL: the build left these unported, and the game stops if it reaches one: %s" % ", ".join(unported()))
+        return 1
     env_extra = {}
     exe = a.exe
     prof = OUT / "profiles"
@@ -262,9 +282,8 @@ def main(argv=None) -> int:
             jobs.append(("monkey-%d-%s" % (a.monkey_seed, "save" if sv else "new"), parse(monkey_script(a.monkey_seed, sv, a.monkey_ms)[0])))
     else:
         names = a.names or sorted(p.stem for p in SCRIPTS.glob("*.play"))
-        if a.names or not a.monkey or True:
-            for n in names:
-                jobs.append((n, parse((SCRIPTS / (n + ".play")).read_text())))
+        for n in names:
+            jobs.append((n, parse((SCRIPTS / (n + ".play")).read_text())))
         for s in range(a.monkey):
             sv = s % 2 == 0
             jobs.append(("monkey-%d-%s" % (s, "save" if sv else "new"), parse(monkey_script(s, sv, a.monkey_ms)[0])))

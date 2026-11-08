@@ -1,0 +1,19 @@
+# A new party through the keyboard.
+wait 40000
+key DOWN
+wait 300
+key ENTER
+wait 4000
+shot boxes changed
+key ENTER
+wait 800
+shot race changed
+key ENTER
+wait 800
+shot class changed
+key ENTER
+wait 800
+shot alignment changed
+key ENTER
+wait 1500
+shot abilities changed

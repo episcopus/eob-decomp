@@ -117,6 +117,15 @@ def test_live_play_opens_the_camp_menu(tmp_path):
     assert differ == [], differ[:10]
 
 
+@pytest.mark.slow
+def test_the_playtest_passes():
+    """`make port-playtest`: every script of tests/playtest and 100 random runs on the headless program, the
+    intro, the camp menu, save and reload among them. No run stops with an error or hangs."""
+    r = subprocess.run([sys.executable, str(ROOT / "tools/port/playtest.py"), "--monkey", "100"], cwd=ROOT,
+                       capture_output=True, text=True, timeout=300)
+    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
+
+
 def test_only_the_platform_directory_uses_sdl():
     """platform.h is the only boundary (playbook 80, "Platform separation"): the game, the runtime and
     the machine never include or call SDL, so they build for any host."""

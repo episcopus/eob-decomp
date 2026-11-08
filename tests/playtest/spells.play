@@ -1,0 +1,34 @@
+# A mage memorizes, the party rests, the mage casts.
+save fixtures/EOBDATA.SAV
+wait 40000
+key ENTER
+wait 6000
+click 300 185
+wait 2000
+click 60 44
+wait 2000
+click 200 75
+wait 2000
+shot book changed
+click 40 45
+wait 1500
+shot picked
+click 40 55
+wait 1500
+click 148 129
+wait 2000
+shot memorized
+click 60 27
+wait 8000
+shot rested
+click 148 129
+wait 2000
+rclick 232 87
+wait 1500
+shot spell-list changed
+click 110 135
+wait 1500
+shot cast changed
+rclick 232 87
+wait 1500
+shot again

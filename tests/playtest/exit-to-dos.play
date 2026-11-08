@@ -1,0 +1,9 @@
+# Exit to DOS from the title menu ends the program cleanly.
+expect exit
+wait 40000
+key DOWN
+wait 300
+key DOWN
+wait 300
+key ENTER
+wait 3000

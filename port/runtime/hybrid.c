@@ -209,6 +209,9 @@ int platform_file_read(const char *name, uint8_t *buf, uint32_t size)
 }
 
 void platform_set_game_dir(const char *dir) { (void)dir; }
+int platform_file_write(const char *name, const uint8_t *buf, uint32_t size) { (void)name; (void)buf; (void)size; return 0; }
+uint32_t platform_poll_mask(void) { return 0xFFFFu; }
+void platform_busy(void) {}
 
 /* Boots the machine on tc_mem (cleared first) and loads the program, as the oracle's Machine does
    before it runs: 0, or the stop's code with its message in tc_hybrid_message. */

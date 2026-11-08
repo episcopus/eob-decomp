@@ -105,7 +105,7 @@ port-playtest: port  ## play the port as a player does, in seconds: the scripts 
 ifdef COV
 	$(MAKE) --no-print-directory -f port/port.mk PY=$(PY) OUT=build/port-cov CC="cc -fprofile-instr-generate -fcoverage-mapping" build/port-cov/eob-port-headless
 endif
-	$(PY) tools/port/playtest.py $(if $(COV),--coverage) --monkey $(if $(MONKEY),$(MONKEY),$(if $(NAME),0,200)) $(NAME)
+	$(PY) tools/port/playtest.py $(if $(COV),--coverage) --monkey $(if $(MONKEY),$(MONKEY),$(if $(NAME),0,200)) --monkey-ms 600000 $(NAME)
 
 port-asmdata:      ## the assembly units' data in their code segments (port/asmdata.json, from TASM's listings; needs Turbo Assembler)
 	$(PY) tools/port/asmlist.py
