@@ -1,0 +1,13 @@
+# Two hours at the game: the timer keeps ticking past the 32-bit microsecond clock's wrap at 71 minutes.
+save fixtures/EOBDATA.SAV
+wait 40000
+key ENTER
+wait 6000
+shot start
+wait 7200000
+click 11 134
+wait 1000
+shot turned changed
+click 300 185
+wait 3000
+shot camp changed

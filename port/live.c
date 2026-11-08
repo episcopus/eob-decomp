@@ -36,7 +36,8 @@ static u32 start_ms, last_present_ms, next_irq0_us;
 static u8 irq0_waiting;          /* a timer interrupt pushed and not delivered yet */
 static u32 pushed, irq0_at;      /* the events pushed; the ordinal of the waiting IRQ 0 */
 
-static u32 snapshot_ms = 0xFFFFFFFFu;     /* TC_PLAY_SNAPSHOT=ms:path;...: the screen and DAC at those times */
+#define NO_SNAPSHOT 0xFFFFFFFFu
+static u32 snapshot_ms = NO_SNAPSHOT;     /* TC_PLAY_SNAPSHOT=ms:path;...: the screen and DAC at those times */
 static const char *snapshot_list;
 static char snapshot_path[1024];
 static u32 end_ms = 0xFFFFFFFFu;          /* TC_PLAY_END=ms: the run ends then */
@@ -46,7 +47,7 @@ static void snapshot_next(void)
 {
     const char *colon, *semi;
     size_t n;
-    snapshot_ms = 0xFFFFFFFFu;
+    snapshot_ms = NO_SNAPSHOT;
     if (snapshot_list == NULL || *snapshot_list == 0 || (colon = strchr(snapshot_list, ':')) == NULL) {
         return;
     }
@@ -138,7 +139,7 @@ static void more(int waiting)
         if (irq0_waiting && machine_events_delivered() >= irq0_at) {
             irq0_waiting = 0;
         }
-        if (now_us >= next_irq0_us) {
+        if ((s32)(now_us - next_irq0_us) >= 0) {         /* the microseconds wrap at 71 minutes */
             if (!irq0_waiting) {
                 machine_event e;
                 memset(&e, 0, sizeof e);
@@ -148,11 +149,11 @@ static void more(int waiting)
                 irq0_at = machine_events_delivered() + machine_events_left();
             }
             next_irq0_us += machine_irq0_period();
-            if (now_us > next_irq0_us + 100000u) {
+            if ((s32)(now_us - next_irq0_us) > 100000) {
                 next_irq0_us = now_us;          /* behind by more than 0.1 s: the ticks are lost */
             }
         }
-        while (now_ms >= snapshot_ms) {
+        while (snapshot_ms != NO_SNAPSHOT && now_ms >= snapshot_ms) {
             snapshot();
         }
         if (now_ms >= end_ms) {
