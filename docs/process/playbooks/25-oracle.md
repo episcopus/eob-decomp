@@ -34,7 +34,7 @@ A session is `tests/sessions/<name>.keys` (the format is in `tools/oracle/input.
 - `make golden CHECK=1 REBUILT=1` replays every golden on the rebuilt `EOB.EXE` and `INTRO.EXE` (`make rebuild` both first); a session that differs is played again on both and the first state that differs is printed, with the memory that differs.
 - A golden changes only when the oracle changes what the program can observe (a new device, a fix): record again and say why in the commit.
 
-Sessions so far: `boot-title`, `boot-adlib`, `new-party`, `mouse-party`, `load-walk`, `intro-play`, `intro-skip` (see `tests/sessions/README.md`).
+Sessions so far: `boot-title`, `boot-adlib`, `new-party`, `mouse-party`, `new-character`, `load-walk`, `intro-play`, `intro-skip` (see `tests/sessions/README.md`).
 
 A golden must not depend on the checkout: the files the game writes (`EOBDATA.SAV`, `LEVELS.TMP`) are hidden from every run, and a session that needs a saved game names a fixture (`option save fixtures/EOBDATA.SAV`). `make integrate` checks the goldens in a fresh worktree, which is how a dependency on an unpinned `eob/LEVELS.TMP` was found.
 

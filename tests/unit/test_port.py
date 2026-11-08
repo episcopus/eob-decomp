@@ -55,6 +55,17 @@ def test_the_port_replays_boot_title():
 
 
 @pytest.mark.slow
+def test_the_port_replays_new_character():
+    """The class menu's loop (PickClass, ovl0:207A) calls IsMouseInRect on every turn, which sets the
+    pointer's busy flag and clears it again: the loop must still wait for its interrupts (tc_spin's
+    fingerprint of the arena, tcport.h). Counted as changes, the replay spun there for ever."""
+    r = subprocess.run([sys.executable, str(ROOT / "tools/port/replay.py"), "new-character"], cwd=ROOT,
+                       capture_output=True, text=True, timeout=300)
+    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
+    assert r.stdout.count("the same") == 5, r.stdout
+
+
+@pytest.mark.slow
 def test_live_play_reaches_character_generation(tmp_path):
     """M7 (playbook 80): live play (port/live.c) on the headless program, whose clock only its sleeps
     move: the title menu, then keypad 2 and Enter from the null platform's scripted input

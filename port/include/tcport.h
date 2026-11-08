@@ -59,11 +59,21 @@ static inline farptr tc_fp_add(farptr p, u16 delta)
    expression. */
 #define TC_NEXT(lin) (((lin) + 1u) & 0xFFFFFu)
 
-/* What the replay's waits look at (playbook 80, M5, "The replay's clock"): how many stores changed a
-   byte of the arena, and how many loads read a byte an interrupt handler wrote (tc_hot: a bit for
-   each byte a store made while tc_in_handler was set). A loop whose last turn changed nothing and
-   read such a byte is waiting for an interrupt (tc_spin). */
-extern u32 tc_changes;
+/* What the replay's waits look at (playbook 80, M5, "The replay's clock"): a fingerprint of the
+   arena's contents, and how many loads read a byte an interrupt handler wrote (tc_hot: a bit for
+   each byte a store made while tc_in_handler was set). A loop whose last turn left the arena as it
+   found it and read such a byte is waiting for an interrupt (tc_spin). The fingerprint is the sum of
+   tc_mix(address, value) over the bytes stores have changed, so a turn that sets a byte and puts it
+   back (IsMouseInRect's busy flag, E1A72.ASM: `inc`, then `dec`) leaves it as it was, as a count of
+   changing stores would not. */
+extern u64 tc_state;
+static inline u64 tc_mix(u32 a, u8 v)
+{
+    u64 z = (((u64)a << 8) | v) + 0x9E3779B97F4A7C15ull;
+    z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ull;
+    z = (z ^ (z >> 27)) * 0x94D049BB133111EBull;
+    return z ^ (z >> 31);
+}
 extern u32 tc_hot_reads;
 extern u8 tc_in_handler;
 extern u8 tc_hot[TC_MEM_SIZE / 8u];
@@ -86,8 +96,8 @@ static inline u8 tc_ld_byte(u32 a)
 static inline void tc_st_byte(u32 a, u8 v)
 {
     if (tc_mem[a] != v) {
+        tc_state += tc_mix(a, v) - tc_mix(a, tc_mem[a]);
         tc_mem[a] = v;
-        tc_changes++;
     }
     if (tc_in_handler) {
         tc_hot[a >> 3] |= (u8)(1u << (a & 7u));
@@ -142,12 +152,13 @@ void tc_put(farptr dst, const u8 *src, u16 n);
    frames' contents and places are not the original's (its stack also holds return addresses and
    saved registers), so comparisons with the oracle mask the stack (playbook 80). */
 /* A loop of src/: tc2c gives each one of these and calls tc_spin before each test of its condition
-   (and at each label, which a backward goto makes a loop). When the turn just ended changed no byte,
+   (and at each label, which a backward goto makes a loop). When the turn just ended left the arena as it found it,
    made no access and read a byte an interrupt handler wrote, the loop is spinning on what only an
    interrupt can change, as the original's did while it waited: tc_spin_idle has the machine deliver
    the next interrupt due (irq.c). The first test of a loop is not a turn. */
 typedef struct {
-    u32 changes, hot, accesses;
+    u64 state;
+    u32 hot, accesses;
     u8 turned;
 } tc_loop;
 extern u32 tc_accesses;      /* the game's accesses (machine_access) */
@@ -162,11 +173,11 @@ static inline void tc_spin(tc_loop *l)
     if (tc_live && !(++tc_turns & 0xFFFFu)) {
         tc_live_poll();
     }
-    if (l->turned && l->changes == tc_changes && l->accesses == tc_accesses && l->hot != tc_hot_reads) {
+    if (l->turned && l->state == tc_state && l->accesses == tc_accesses && l->hot != tc_hot_reads) {
         tc_spin_idle();
     }
     l->turned = 1;
-    l->changes = tc_changes;
+    l->state = tc_state;
     l->hot = tc_hot_reads;
     l->accesses = tc_accesses;
 }

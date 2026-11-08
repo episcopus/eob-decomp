@@ -1,0 +1,22 @@
+# new-character: from the title menu, "Start a new party", then the first character box from the
+# keyboard: race (Human Male), class (Fighter), alignment (Lawful Good), to the portraits and the
+# rolled abilities. The class menu's loop tests the mouse (IsMouseInRect) on every turn.
+option insns 120000000
+wait 600
+key DOWN
+wait 10
+key ENTER
+wait 300
+key ENTER
+wait 60
+shot race
+key ENTER
+wait 60
+shot class
+key ENTER
+wait 60
+shot alignment
+key ENTER
+wait 100
+shot abilities
+quit

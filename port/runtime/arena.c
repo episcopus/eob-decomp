@@ -12,7 +12,7 @@ u16 tc_load_seg;
 u16 tc_ds;
 u16 tc_ss;
 u16 tc_sp;
-u32 tc_changes;
+u64 tc_state;
 u32 tc_hot_reads;
 u32 tc_accesses;
 u8 tc_in_handler;

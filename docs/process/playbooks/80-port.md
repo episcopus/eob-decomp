@@ -23,7 +23,7 @@ sound and state.
 | M4 the MCGA driver | done 2026-11-05 (section "M4"): `MCGA.OVL` in C (`port/drivers/`, 40 exports), entered with its argument bytes, the same as the original on every direct call and every golden call tested. Next: step D, then M5 |
 | D the program's data as C | done 2026-11-06 (section "Step D"): D0 the data map (`re/datamap.toml`, 34 modules); D1 the tools; D2 every module's data as definitions in `src/`, the data of all 34 modules proven by `make match`, `make rebuild` of both programs as before; D3 tc2c writes the port's image from them (`make port-image`: 64,446 bytes the same as EOB.EXE's). Left: the naming round for the 126 address names D2 kept (100 are E0CF7's screen-list nodes), with its independent review |
 | M5 the replay | done 2026-11-07 (section "Step M5"): `make port-replay` plays `boot-title` headless from the port's own image, all four checkpoints the oracle's (the state view and the golden's screens); the interrupts and checkpoints keyed by the game's accesses (the human, 2026-11-07); the program's start in `port/start.c`; the assembly units' code-segment data in the image (`port/asmdata.json`) |
-| M6 the other goldens | started 2026-11-07 (section "Step M6"): `boot-title`, `boot-adlib`, `new-party` and `mouse-party` replay as the oracle at every checkpoint under the relaxed check (the human, 2026-11-07); interrupts also placed by the library's file calls; Westwood's far data in `src/far/FARDATA.ASM`; `DispatchKeyWait`'s result fixed in `src/E16A5.C`. Left: `load-walk` (needs interrupts placed inside computation), `INTRO.EXE`, `make port-golden` in `make check` |
+| M6 the other goldens | started 2026-11-07 (section "Step M6"): `boot-title`, `boot-adlib`, `new-party`, `mouse-party` and `new-character` replay as the oracle at every checkpoint under the relaxed check (the human, 2026-11-07); interrupts also placed by the library's file calls; Westwood's far data in `src/far/FARDATA.ASM`; `DispatchKeyWait`'s result fixed in `src/E16A5.C`. Left: `load-walk` (needs interrupts placed inside computation), `INTRO.EXE`, `make port-golden` in `make check` |
 | M7 live play | started 2026-11-07 (section "Step M7"): `make port-play` plays the game in a window from the port's own image (keyboard, mouse, the PIT's ticks from the wall clock); headless with scripted keys it reaches character generation and the dungeon. Left: sound (ymfm, which the human installs), and a human playing it |
 
 ## Why `src/` does not compile natively as it is
@@ -547,11 +547,16 @@ their C-clock positions, which the oracle's tools still use, but the port does n
 - The port delivers an interrupt lazily (`machine_replay`, `port/runtime/irq.c`): every one recorded
   after the last access before the next access is made; otherwise the next one when the game waits for
   it. A hand-written routine that spins on what a handler writes waits as before (`machine_wait`). A
-  loop of `src/` waits when its last turn changed no byte of the arena, made no access and read a byte a
-  handler writes: tc2c gives every loop a `tc_loop` and calls `tc_spin` before each test of its
-  condition, and at each label (a backward `goto`); the arena counts the stores that change a byte and
-  the loads of a byte a handler wrote (`tcport.h`: the handlers' stores mark the bytes, and the bytes
-  a wait can read before any handler has run are marked at the start, `port/start.c`).
+  loop of `src/` waits when its last turn left the arena as it found it, made no access and read a byte
+  a handler writes: tc2c gives every loop a `tc_loop` and calls `tc_spin` before each test of its
+  condition, and at each label (a backward `goto`); the arena keeps a fingerprint of its contents (the
+  sum of a 64-bit mix of address and value over the bytes stores changed) and counts the loads of a
+  byte a handler wrote (`tcport.h`: the handlers' stores mark the bytes, and the bytes a wait can read
+  before any handler has run are marked at the start, `port/start.c`). A fingerprint, not a count of
+  changing stores: the class menu's loop (`PickClass`, ovl0:207A) calls `IsMouseInRect` on every turn,
+  which raises the pointer's busy flag and lowers it again (E1A72.ASM, `inc` then `dec`), two changes
+  that leave the arena as it was; counted, the loop never waited, and in live play it spun with the
+  keys, the mouse and the clock undelivered (found in M7, guarded by the golden `new-character`).
 - Eager delivery at every loop test does not work: each timer interrupt's handler ends with an EOI, an
   access, which makes the next interrupt due at once, so a drawing loop would take a whole wait's
   interrupts before the wait begins.
@@ -611,9 +616,9 @@ units. `make port-image` checks them and that the port writes no other byte belo
 
 ## Step M6: the other goldens (started 2026-11-07)
 
-`make port-replay` plays `boot-title`, `boot-adlib`, `new-party` and `mouse-party` headless from the
-port's own image, and every checkpoint of the four is the oracle's under the relaxed check below
-(`boot-title` and `boot-adlib` exactly, screens included; `new-party` and `mouse-party` but for the
+`make port-replay` plays `boot-title`, `boot-adlib`, `new-party`, `mouse-party` and `new-character`
+headless from the port's own image, and every checkpoint of the five is the oracle's under the relaxed
+check below (`boot-title` and `boot-adlib` exactly, screens included; the others but for the
 tick-driven animations). `load-walk` does not replay yet ("What load-walk needs"); `INTRO.EXE` is not
 started.
 
@@ -714,7 +719,8 @@ microseconds; one timer interrupt waits at a time, as on the PC, and a backlog o
 IRQ 1 for each scancode the host gives; the INT 33h driver's event for a mouse move or button, when the
 game has a handler for it. Every 16 ms it presents A000:0000 through the DAC. At a wait with nothing
 due it sleeps until the next tick; a long computation still looks at the clock every 64K loop turns
-(`tc_live_poll`). The window's close ends the program; the game's own exit is DOS 4Ch, through the
+(`tc_live_poll`), and delivers there what has come, as a PC's interrupt comes between any two
+instructions, so no loop can keep the keyboard, the mouse and the clock from the game. The window's close ends the program; the game's own exit is DOS 4Ch, through the
 library's `exit`, now in the runtime (`port/runtime/tcdos.c`).
 
 ### Checked so far
@@ -726,6 +732,10 @@ library's `exit`, now in the runtime (`port/runtime/tcdos.c`).
   selection frame's outline (`test_live_play_reaches_character_generation`, slow set); Enter on "Load
   game in progress" with the saved game reaches the dungeon with the party, and turning and stepping
   work (the game answers "You can't go that way" at a wall).
+- In the window, character creation hung at the class menu (the human, 2026-11-07): its loop never
+  turned idle (the fingerprint above) and made no access, so nothing was delivered. Headless with
+  scripted keys it now goes through race, class and alignment to the rolled abilities, the original's
+  own (`new-character`).
 - Once, the first time the window opened, the game ended through `exit` within 45 s (the library's
   `exit` was not in the runtime then); it did not happen again and why it chose to end is not known.
 

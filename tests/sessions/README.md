@@ -8,6 +8,7 @@ Scripts of input for the oracle (playbook 25, format in `tools/oracle/input.py`)
 | `boot-adlib.keys` | the same with AdLib: the OPL2 set up silent (21 register writes) |
 | `new-party.keys` | "Start a new party" from the keyboard: Character Generation |
 | `mouse-party.keys` | the same with the mouse, then the first character box: the race menu |
+| `new-character.keys` | the keyboard on through the first character's race, class and alignment to its rolled abilities |
 | `load-walk.keys` | "Load game in progress" with `fixtures/EOBDATA.SAV`, moves in the dungeon, AdLib on (about 10,000 register writes) |
 | `intro-play.keys` | `INTRO.EXE` as `START1.EXE` runs it: the whole intro (147 s), then the hand-over to `EOB.EXE` and its title menu |
 | `intro-skip.keys` | `INTRO.EXE`, ESC: the hand-over at once, then "Load game in progress": the chain after `START1.EXE` in one run |
