@@ -6,6 +6,7 @@
    make and break, because the game reads port 60h itself (E1AAD.ASM). Skeleton status: video,
    keyboard, mouse and time; sound and files are the machine layer's next step. */
 #include <stdio.h>
+#include <string.h>
 
 #include <SDL3/SDL.h>
 
@@ -90,12 +91,23 @@ static uint16_t set1(SDL_Scancode sc)
     }
 }
 
+/* With the game on its own thread (platform_run): the event queue and the frame are shared with it. */
+static SDL_Mutex *lock;
+static int threaded;
+static volatile int game_done;
+static int game_result;
+static uint8_t frame_pixels[FB_W * FB_H];
+static uint8_t frame_dac[256][3];
+static int frame_dirty;
+
 static void push(struct platform_event e)
 {
+    if (lock) SDL_LockMutex(lock);
     if (((evq_tail + 1u) % EVQ) != evq_head) {
         evq[evq_tail] = e;
         evq_tail = (evq_tail + 1u) % EVQ;
     }
+    if (lock) SDL_UnlockMutex(lock);
 }
 
 static void push_scancode(uint8_t code)
@@ -151,6 +163,8 @@ int platform_init(const char *title, int scale)
     }
     /* 320x200 on a 4:3 screen: the pixels are 1.2 times taller than wide */
     SDL_SetRenderLogicalPresentation(ren, FB_W, FB_H, SDL_LOGICAL_PRESENTATION_STRETCH);
+    /* the game and the window share this thread: a present that waits for the display stops the game */
+    SDL_SetRenderVSync(ren, SDL_RENDERER_VSYNC_DISABLED);
     tex = SDL_CreateTexture(ren, SDL_PIXELFORMAT_XRGB8888, SDL_TEXTUREACCESS_STREAMING, FB_W, FB_H);
     SDL_HideCursor();                   /* the game draws its own pointer (src/E1BBE.ASM) */
     SDL_RaiseWindow(win);               /* opened from a terminal, it would stay behind it on macOS */
@@ -160,6 +174,9 @@ int platform_init(const char *title, int scale)
 
 void platform_quit(void)
 {
+    if (threaded) {
+        return;                         /* the game's thread does not touch the window: the process's end closes it */
+    }
     if (win != NULL) {
         SDL_DestroyTexture(tex);
         SDL_DestroyRenderer(ren);
@@ -169,12 +186,9 @@ void platform_quit(void)
     }
 }
 
-void platform_present(const uint8_t pixels[320 * 200], const uint8_t dac[256][3])
+static void draw(const uint8_t *pixels, const uint8_t dac[256][3])
 {
     unsigned i;
-    if (win == NULL) {
-        return;
-    }
     for (i = 0; i < FB_W * FB_H; i++) {
         const uint8_t *c = dac[pixels[i]];
         /* six-bit DAC components to eight bits, as VGA monitors show them */
@@ -188,17 +202,97 @@ void platform_present(const uint8_t pixels[320 * 200], const uint8_t dac[256][3]
     SDL_RenderPresent(ren);
 }
 
+void platform_present(const uint8_t pixels[320 * 200], const uint8_t dac[256][3])
+{
+    if (win == NULL) {
+        return;
+    }
+    if (!threaded) {
+        draw(pixels, dac);
+        return;
+    }
+    SDL_LockMutex(lock);
+    if (memcmp(frame_pixels, pixels, sizeof frame_pixels) != 0 || memcmp(frame_dac, dac, sizeof frame_dac) != 0) {
+        memcpy(frame_pixels, pixels, sizeof frame_pixels);
+        memcpy(frame_dac, dac, sizeof frame_dac);
+        frame_dirty = 1;
+    }
+    SDL_UnlockMutex(lock);
+}
+
 struct platform_event platform_poll_event(void)
 {
     struct platform_event e = {PLATFORM_EVENT_NONE, 0, 0, 0, 0};
-    if (win != NULL) {
+    if (win != NULL && !threaded) {
         pump();
     }
+    if (lock) SDL_LockMutex(lock);
     if (evq_head != evq_tail) {
         e = evq[evq_head];
         evq_head = (evq_head + 1u) % EVQ;
     }
+    if (lock) SDL_UnlockMutex(lock);
     return e;
+}
+
+struct game_call {
+    int (*fn)(void *);
+    void *arg;
+};
+
+static int SDLCALL game_thread(void *p)
+{
+    struct game_call *c = p;
+    game_result = c->fn(c->arg);
+    game_done = 1;
+    return 0;
+}
+
+int platform_run(int (*fn)(void *), void *arg)
+{
+    static struct game_call call;
+    SDL_PropertiesID props;
+    SDL_Thread *t;
+    static uint8_t pixels[FB_W * FB_H];
+    static uint8_t dac[256][3];
+    if (win == NULL) {
+        return fn(arg);                 /* no window (a run with no display): nothing to keep apart */
+    }
+    lock = SDL_CreateMutex();
+    threaded = 1;
+    call.fn = fn;
+    call.arg = arg;
+    props = SDL_CreateProperties();
+    SDL_SetPointerProperty(props, SDL_PROP_THREAD_CREATE_ENTRY_FUNCTION_POINTER, (void *)game_thread);
+    SDL_SetStringProperty(props, SDL_PROP_THREAD_CREATE_NAME_STRING, "game");
+    SDL_SetPointerProperty(props, SDL_PROP_THREAD_CREATE_USERDATA_POINTER, &call);
+    SDL_SetNumberProperty(props, SDL_PROP_THREAD_CREATE_STACKSIZE_NUMBER, 16 * 1024 * 1024);
+    t = SDL_CreateThreadWithProperties(props);
+    SDL_DestroyProperties(props);
+    if (t == NULL) {
+        fprintf(stderr, "platform: thread: %s\n", SDL_GetError());
+        threaded = 0;
+        return fn(arg);
+    }
+    while (!game_done) {
+        int dirty;
+        pump();
+        SDL_LockMutex(lock);
+        dirty = frame_dirty;
+        if (dirty) {
+            memcpy(pixels, frame_pixels, sizeof pixels);
+            memcpy(dac, frame_dac, sizeof dac);
+            frame_dirty = 0;
+        }
+        SDL_UnlockMutex(lock);
+        if (dirty) {
+            draw(pixels, (const uint8_t (*)[3])dac);    /* it may block here, on this thread only */
+        } else {
+            SDL_Delay(1);
+        }
+    }
+    SDL_WaitThread(t, NULL);
+    return game_result;
 }
 
 uint32_t platform_ms(void)
@@ -208,7 +302,7 @@ uint32_t platform_ms(void)
 
 uint32_t platform_poll_mask(void)
 {
-    return 0xFFFFu;
+    return 0x3Fu;
 }
 
 void platform_busy(void)

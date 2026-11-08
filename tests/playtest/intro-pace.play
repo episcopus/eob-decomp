@@ -1,0 +1,16 @@
+# The intro at real speed, with the mouse moved and clicked once: the scenes go on by themselves.
+realtime
+start intro
+wait 1500
+click 100 100
+wait 4000
+shot a
+click 150 100
+wait 20000
+shot title
+wait 6000
+shot tower-1 changed
+wait 5000
+shot tower-2 changed
+wait 5000
+shot tower-3 changed

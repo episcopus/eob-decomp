@@ -633,6 +633,23 @@ Each script writes a contact sheet, `build/port/playtest/<script>.png`, to be lo
 stopped, only eyes say the screens are right. A new feature, or a bug a player found, gets a script first. Slow
 tests run the suite (`test_the_playtest_passes`), so `make check` holds it.
 
+### Pace (the human, 2026-11-08: "there seems to be something significantly wrong with the event loops")
+
+The fast clock proves nothing about pace, so a script marked `realtime` runs on the wall clock, and every
+run reports the timer ticks that came due and the ones the game got (`TC_PLAY_STATS`); a run that lost more than 2% fails.
+What the measures found, and what is now true of live play:
+
+- A timer interrupt pending was tracked through the event queue's position, which resets when the queue drains. A
+  mouse event at the wrong moment left the timer stopped for good until more input came (seen as "click to go through each
+  frame"): 4 of 330 timings stopped it (due 364, delivered 92). It now counts the interrupts delivered
+  (`machine_irq0_delivered`); `test_the_timer_survives_input_at_any_moment` tries every offset.
+- The present blocks for the display on macOS, even with vsync off: 61 of 63 seconds went there, on the game's
+  thread. The window now lives on the main thread and the game on its own (`platform_run`, sdl_host.c): the game's
+  cost of a present is a copy of a changed frame (1 ms in 63 s).
+- The clock was looked at every 64K loop turns: an expensive loop saw a tick a second. It is now every 64 turns
+  (`platform_poll_mask`), and `more` works once per millisecond, so that costs next to nothing.
+- The game's timer really is 18.2 Hz here (no PIT reprogramming without sound): what is timed in ticks takes as long as it did.
+
 ### Saves, the application, and the intro
 
 - `make port` also builds `build/port/Eye of the Beholder.app` (tools/port/app.py), with SDL3 and the game's

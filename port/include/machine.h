@@ -145,6 +145,7 @@ extern machine_hw hw;
 /* ---- the interrupts the hardware raises, on the proof's clock (irq.c) ---------------------------- */
 
 enum { MACHINE_IRQ0, MACHINE_IRQ1, MACHINE_MOUSE };
+extern u32 machine_irq0_delivered;   /* the timer interrupts delivered so far */
 
 /* one interrupt, due at C-clock position `at` after `access` accesses of the game */
 typedef struct {

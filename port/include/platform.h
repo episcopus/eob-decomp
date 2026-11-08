@@ -96,6 +96,13 @@ int platform_file_write(const char *name, const uint8_t *buf, uint32_t size);   
    directory is found. */
 int platform_find_install(char *game_dir, size_t game_n, char *save_dir, size_t save_n);
 
+/* ---- The game's thread ---------------------------------------------------------------------- */
+
+/* Runs `fn(arg)` and returns its result. A host whose window must live on the main thread and whose
+   drawing can block (macOS waits for the display in the present) runs the game on a thread of its own
+   and keeps the window here, so a present never holds the game up. */
+int platform_run(int (*fn)(void *), void *arg);
+
 /* ---- Lifetime -------------------------------------------------------------------------------- */
 
 /* Open the window (live runs; a replay or a test runs headless and never calls it). 0, or -1 with a

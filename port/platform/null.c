@@ -5,17 +5,17 @@
    are built and run without SDL. It is poolrad's c/platform/null.c for this port. Time is a counter
    that platform_sleep_ms and platform_busy advance, so a run never depends on the wall clock.
 
-   Input for a test of live play (M7): TC_NULL_INPUT lists scancodes (set 1, hexadecimal) each at a
-   time in milliseconds of that clock, "40000:50,40100:D0,41000:1C,41100:9C" (keypad 2 pressed and
-   released, then Enter); each comes from platform_poll_event once the clock has reached its time. An
-   entry "MS:Mx.y.b" is the mouse at the screen's pixel (x, y) with the buttons b (1 left, 2 right):
-   "60000:M300.185.1,60100:M300.185.0" clicks the camp button. */
+   With TC_NULL_REALTIME set the clock is the wall clock and the program sleeps for real, as in a window: what
+   `make port-playtest` uses to check the game's pace. */
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "platform.h"
 
 static uint32_t now_ms;
+
+static uint32_t platform_window_mask(void) { return 0x3Fu; }   /* sdl_host.c's */
 
 int platform_init(const char *title, int scale)
 {
@@ -29,6 +29,11 @@ void platform_quit(void)
 {
 }
 
+int platform_run(int (*fn)(void *), void *arg)
+{
+    return fn(arg);
+}
+
 void platform_present(const uint8_t pixels[320 * 200], const uint8_t dac[256][3])
 {
     (void)pixels;
@@ -37,55 +42,50 @@ void platform_present(const uint8_t pixels[320 * 200], const uint8_t dac[256][3]
 
 struct platform_event platform_poll_event(void)
 {
-    static const char *next;
-    static int started;
     struct platform_event e = {PLATFORM_EVENT_NONE, 0, 0, 0, 0};
-    char *end;
-    unsigned long at, code;
-    if (!started) {
-        started = 1;
-        next = getenv("TC_NULL_INPUT");
-    }
-    if (next == NULL || *next == 0) {
-        return e;
-    }
-    at = strtoul(next, &end, 10);
-    if (*end != ':' || at > now_ms) {
-        return e;
-    }
-    if (end[1] == 'M') {
-        e.kind = PLATFORM_EVENT_MOUSE;
-        e.mouse_x = (uint16_t)(strtoul(end + 2, &end, 10) * 2);   /* the driver's 640-wide range, as sdl_host.c */
-        e.mouse_y = (uint16_t)strtoul(end + 1, &end, 10);
-        e.buttons = (uint8_t)strtoul(end + 1, &end, 10);
-    } else {
-        code = strtoul(end + 1, &end, 16);
-        e.kind = PLATFORM_EVENT_SCANCODE;
-        e.scancode = (uint8_t)code;
-    }
-    next = *end == ',' ? end + 1 : end;
     return e;
+}
+
+static int realtime(void)
+{
+    static int r = -1;
+    if (r < 0) {
+        r = getenv("TC_NULL_REALTIME") != NULL;
+    }
+    return r;
+}
+
+static uint32_t wall_ms(void)
+{
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    return (uint32_t)((uint64_t)t.tv_sec * 1000u + (uint64_t)t.tv_nsec / 1000000u);
 }
 
 uint32_t platform_ms(void)
 {
-    return now_ms;
+    return realtime() ? wall_ms() : now_ms;
 }
 
 /* a program that computes without sleeping still sees time pass, as in a window */
 uint32_t platform_poll_mask(void)
 {
-    return 0x3FFu;
+    return realtime() ? platform_window_mask() : 0x3FFu;
 }
 
 void platform_busy(void)
 {
-    now_ms += 4u;
+    now_ms += realtime() ? 0u : 4u;
 }
 
 void platform_sleep_ms(uint32_t ms)
 {
-    now_ms += ms;
+    if (realtime()) {
+        struct timespec t = {0, (long)ms * 1000000L};
+        nanosleep(&t, NULL);
+    } else {
+        now_ms += ms;
+    }
 }
 
 void platform_adlib_write(uint8_t reg, uint8_t value)
