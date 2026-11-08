@@ -1,0 +1,42 @@
+{
+ "program": "EOB.EXE",
+ "stop": "script quit",
+ "instructions": 64905810,
+ "video_mode": "13h",
+ "digest": "79f83f78ca6199d241d8d6ce67625e2e5d0511ca54deee1d8ca197a594567c96",
+ "final_image": "3d2780b0088a2e7a6f28850cdd73f279cf094464609fd02dd4f9bd7f7c9ed6d3",
+ "script_done": true,
+ "sound_digest": "71406d16035cfb8cb630cf59f240a0306cd9918ce60b27d03b5f4ca6f22adad7",
+ "adlib_writes": 0,
+ "checkpoints": [
+  {
+   "kind": "shot",
+   "name": "race",
+   "instructions": 53067440,
+   "digest": "071470973770119203bf512a86c51b03579c1353fb4a82de34e8c7900d10c526",
+   "image": "995f834a8e835fa32edd930cb09424a8a3a92a407706938e8df6506ed873f06e"
+  },
+  {
+   "kind": "shot",
+   "name": "class",
+   "instructions": 56286950,
+   "digest": "cdce6886e83ff1fec3cb6b87ac47561f7dfe3b39dddaba07124ac00ed8b37314",
+   "image": "7a67b360ba4b980a8a15c5d01189ac1af13e70d7172fae3607d791ac8b7e8a0a"
+  },
+  {
+   "kind": "shot",
+   "name": "alignment",
+   "instructions": 59494980,
+   "digest": "b9677329d3d802183908622f0ed91a7c830ed9d08c8f7b0a0d3db6cfb423db01",
+   "image": "3c2d289a901224302960447583b0bda71f8a994879ae7c1a172c6eeff27a9599"
+  },
+  {
+   "kind": "shot",
+   "name": "abilities",
+   "instructions": 64905810,
+   "digest": "79f83f78ca6199d241d8d6ce67625e2e5d0511ca54deee1d8ca197a594567c96",
+   "image": "3d2780b0088a2e7a6f28850cdd73f279cf094464609fd02dd4f9bd7f7c9ed6d3"
+  }
+ ],
+ "args": "3 4 0 homie 3"
+}

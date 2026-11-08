@@ -276,16 +276,22 @@ void machine_wait(void)
     tc_fail(75, "a routine waits for an interrupt and none is left to come");
 }
 
-/* A loop of src/ turned idle on memory a handler writes (tc_spin, tcport.h): in a replay, the next
-   event due is delivered; with none due the original's loop ended by an interrupt the port has not
-   reached by its accesses, so the replay has gone another way, or ends here (machine_point). */
+/* Live play, every 64K loop turns (tc_spin): the host is looked at, and what has come is delivered
+   here too, as a PC's interrupt comes between any two instructions, so a loop that neither accesses
+   the machine nor turns idle still sees the keyboard, the mouse and the clock. */
 void tc_live_poll(void)
 {
     if (machine_more != NULL && !delivering) {
         machine_more(0);
+        while (event_next < event_count && due(&events[event_next])) {
+            deliver_next();
+        }
     }
 }
 
+/* A loop of src/ turned idle on memory a handler writes (tc_spin, tcport.h): in a replay, the next
+   event due is delivered; with none due the original's loop ended by an interrupt the port has not
+   reached by its accesses, so the replay has gone another way, or ends here (machine_point). */
 void tc_spin_idle(void)
 {
     if (!machine_replay || delivering) {
