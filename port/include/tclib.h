@@ -47,6 +47,10 @@ void tcl_harderr(farptr handler);
 void tcl_hardretn(s16 retn);
 s16 tcl_open(farptr path, s16 access, const u8 *va, u16 va_size);
 s16 tcl_close(s16 fd);
+/* execl: INTRO.EXE's hand-off to EOB.EXE. The port runs one program after the other in one process:
+   tc_exec_hook (port/live.c) gets the new program's command tail and does not return. */
+s16 tcl_execl(farptr path, farptr arg0, const u8 *va, u16 va_size);
+extern void (*tc_exec_hook)(const char *tail);
 s16 tcl_read(s16 fd, farptr buf, u16 len);
 s16 tcl_write(s16 fd, farptr buf, u16 len);
 s32 tcl_lseek(s16 fd, s32 offset, s16 whence);

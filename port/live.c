@@ -20,6 +20,7 @@
    milliseconds have passed, and TC_PLAY_END=MS ends the run then (exit 0): on the headless program,
    whose clock counts its own sleeps and looks, a live run is the same every time (the smoke test and
    `make port-playtest`). The window's close ends the program, as the game's own exit does (DOS 4Ch). */
+#include <setjmp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,6 +30,7 @@
 #include "ported.h"
 #include "start.h"
 #include "platform.h"
+#include "tclib.h"
 
 static u32 start_ms, last_present_ms, next_irq0_us;
 static u8 irq0_waiting;          /* a timer interrupt pushed and not delivered yet */
@@ -181,30 +183,65 @@ static void ended(int code, const char *msg)
     exit(code);
 }
 
-int live_run(const char *game_dir, const char *save_dir, const char *cmdline, int mouse_on, int adlib)
+/* the intro's hand-off: execl(EOB.EXE, ...), which comes here through tcl_execl */
+static jmp_buf chained;
+static char chain_tail[128];
+
+static void chain(const char *tail)
+{
+    snprintf(chain_tail, sizeof chain_tail, "%s", tail);
+    longjmp(chained, 1);
+}
+
+/* a program of its own: the machine as DOS leaves it for a new one */
+static void boot(const char *exe, const char *cmdline, int mouse_on, int adlib)
+{
+    memset(tc_mem, 0, TC_MEM_SIZE);
+    memset(tc_hot, 0, sizeof tc_hot);
+    tc_state = 0;
+    machine_events_reset();
+    machine_boot(exe, (const u8 *)cmdline, (u16)strlen(cmdline), mouse_on, adlib);
+    machine_replay = 1;                         /* delivered as in a replay: lazily, by the machine */
+    machine_cclock = 0xFFFFFFFFu;
+    machine_more = more;
+    tc_live = 1;
+    tc_poll_mask = platform_poll_mask();
+    irq0_waiting = 0;
+    pushed = 0;
+    next_irq0_us = (platform_ms() - start_ms) * 1000u + machine_irq0_period();
+}
+
+int live_run(const char *game_dir, const char *save_dir, const char *cmdline, const char *intro_cmdline, int mouse_on,
+             int adlib)
 {
     farptr argv;
     s16 argc, rc;
-    if (platform_init("Eye of the Beholder", 3) != 0 && getenv("TC_PLAY_SNAPSHOT") == NULL) {
+    if (platform_init("Eye of the Beholder", 3) != 0 && getenv("TC_PLAY_SNAPSHOT") == NULL && getenv("TC_PLAY_END") == NULL) {
         return 2;                               /* no window, and not the headless smoke test */
     }
     platform_set_game_dir(game_dir);
     platform_set_save_dir(save_dir);
     fprintf(stderr, "eob-port: playing the game in %s (Exit to DOS, or close the window, to quit)\n", game_dir);
     tc_fail_hook = ended;
-    machine_events_reset();
-    machine_boot("EOB.EXE", (const u8 *)cmdline, (u16)strlen(cmdline), mouse_on, adlib);
-    machine_replay = 1;                         /* delivered as in a replay: lazily, by the machine */
-    machine_cclock = 0xFFFFFFFFu;
-    machine_more = more;
-    tc_live = 1;
     snapshot_list = getenv("TC_PLAY_SNAPSHOT");
     snapshot_next();
     if (getenv("TC_PLAY_END") != NULL) {
         end_ms = (u32)strtoul(getenv("TC_PLAY_END"), NULL, 10);
     }
     start_ms = platform_ms();
-    next_irq0_us = machine_irq0_period();
+    if (intro_cmdline != NULL) {
+        if (setjmp(chained) == 0) {
+            tc_exec_hook = chain;
+            boot("INTRO.EXE", intro_cmdline, mouse_on, adlib);
+            argc = tc_start(&argv);
+            intro_load_data();
+            Intro_Main(argc, argv);
+        }
+        if (chain_tail[0]) {
+            cmdline = chain_tail;
+        }
+    }
+    boot("EOB.EXE", cmdline, mouse_on, adlib);
     argc = tc_start(&argv);
     rc = Main(argc, argv);
     platform_quit();

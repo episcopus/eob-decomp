@@ -59,6 +59,11 @@ uint32_t platform_ms(void);
    the PIT). */
 void platform_sleep_ms(uint32_t ms);
 
+/* A loop that neither waits nor touches the machine: live play looks at the host every
+   (platform_poll_mask() + 1) turns and says so with platform_busy (a host with its own clock ignores it). */
+uint32_t platform_poll_mask(void);
+void platform_busy(void);
+
 /* ---- Sound (planned) --------------------------------------------------------------------------- */
 
 /* One AdLib (OPL2) register write, register then value, as the game's driver writes ports 388h and

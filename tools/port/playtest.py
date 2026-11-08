@@ -143,8 +143,8 @@ def run_program(exe: Path, gd: Path, saves: Path, r: Run, where: Path, stem: str
     if plan:
         env["TC_PLAY_SNAPSHOT"] = ";".join(plan)
     args = [str(exe), "--play", str(gd), "--saves", str(saves)]
-    if r.start == "title":
-        args.append("--no-intro")
+    if r.start == "intro":
+        args.append("--intro")
     try:
         c = subprocess.run(args, env=env, capture_output=True, text=True, timeout=LIMIT_S)
         return c.stderr, c.returncode, made

@@ -17,6 +17,7 @@
 
 #include "tcport.h"
 #include "machine.h"
+#include "platform.h"
 
 u32 machine_cclock;
 int machine_replay;
@@ -279,9 +280,12 @@ void machine_wait(void)
 /* Live play, every 64K loop turns (tc_spin): the host is looked at, and what has come is delivered
    here too, as a PC's interrupt comes between any two instructions, so a loop that neither accesses
    the machine nor turns idle still sees the keyboard, the mouse and the clock. */
+u32 tc_poll_mask = 0xFFFFu;
+
 void tc_live_poll(void)
 {
     if (machine_more != NULL && !delivering) {
+        platform_busy();
         machine_more(0);
         while (event_next < event_count && due(&events[event_next])) {
             deliver_next();

@@ -1,0 +1,16 @@
+# The intro from INTRO.EXE, left to run; then the game starts by itself.
+start intro
+wait 5000
+shot a
+wait 10000
+shot b changed
+wait 20000
+shot c changed
+wait 30000
+shot d changed
+wait 30000
+shot e changed
+wait 30000
+shot f changed
+wait 45000
+shot g

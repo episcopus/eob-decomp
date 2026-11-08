@@ -1,0 +1,7 @@
+# Esc during the intro: the game's title menu comes up.
+start intro
+wait 5000
+shot playing
+key ESC
+wait 40000
+shot title changed
