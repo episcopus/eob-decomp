@@ -92,6 +92,7 @@ port-check: $(OUT)/eob-port-headless
 
 ifeq ($(HAVE_SDL3),yes)
 port-sdl: $(OUT)/eob-port
+	@$(PY) tools/port/app.py
 else
 port-sdl:
 	@echo "port: SDL3 not found (pkg-config sdl3): built the headless program only. Ask the human to install SDL3 (macOS: brew install sdl3); do not download it from a tool."

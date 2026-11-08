@@ -8,7 +8,8 @@
      eob-port[-headless] --self-test EOB.EXE   run the checks below; exit 0 when they pass
      eob-port --window                       open the SDL3 window and show a test frame (Escape closes it)
      eob-port[-headless] --replay REC DIR OUT play a golden's recording (port/replay.c, tools/port/replay.py)
-     eob-port --play GAME_DIR [--no-mouse] [--adlib]   play the game in a window (port/live.c)
+     eob-port --play GAME_DIR [--saves DIR] [--no-mouse] [--adlib]   play the game in a window (port/live.c)
+     eob-port                                 the same, from the application bundle (a double click)
 
    The checks are for the skeleton units, src/E0CF7.C and src/E1658.C: each BuildList links its
    table's records into a list at gList (ds:FB48) through ListAdd; the list must be the table's
@@ -221,24 +222,43 @@ static int data_image(const char *out)
     return 0;
 }
 
+/* the launcher's choices: VGA (3), the mouse unless told otherwise, no sound unless asked */
+static int play(const char *game, const char *saves, int mouse, int adlib)
+{
+    char cmd[32];
+    snprintf(cmd, sizeof cmd, " 3 %c %c homie 3", adlib ? '1' : '4', mouse ? '1' : '0');
+    return live_run(game, saves, cmd, mouse, adlib);
+}
+
 int main(int argc, char **argv)
 {
     if (argc == 5 && strcmp(argv[1], "--replay") == 0) {
         return replay_run(argv[2], argv[3], argv[4]);
     }
+    /* a double click: no arguments (macOS adds -psn_... to an old-style launch) */
+    if (argc == 1 || (argc == 2 && strncmp(argv[1], "-psn_", 5) == 0)) {
+        static char game[1024], saves[1024];
+        if (platform_find_install(game, sizeof game, saves, sizeof saves) != 0) {
+            fprintf(stderr, "eob-port: no game files beside this program; run `make port` to build the application\n");
+            return 2;
+        }
+        return play(game, saves, 1, 0);
+    }
     if (argc >= 3 && strcmp(argv[1], "--play") == 0) {
-        /* the launcher's choices: VGA (3), the mouse unless --no-mouse, no sound unless --adlib */
         int i, mouse = 1, adlib = 0;
-        char cmd[32];
+        const char *saves = NULL;
         for (i = 3; i < argc; i++) {
             if (strcmp(argv[i], "--no-mouse") == 0) {
                 mouse = 0;
             } else if (strcmp(argv[i], "--adlib") == 0) {
                 adlib = 1;
+            } else if (strcmp(argv[i], "--no-intro") == 0) {
+                /* the only start there is so far */
+            } else if (strcmp(argv[i], "--saves") == 0 && i + 1 < argc) {
+                saves = argv[++i];
             }
         }
-        snprintf(cmd, sizeof cmd, " 3 %c %c homie 3", adlib ? '1' : '4', mouse ? '1' : '0');
-        return live_run(argv[2], cmd, mouse, adlib);
+        return play(argv[2], saves, mouse, adlib);
     }
     if (argc == 3 && strcmp(argv[1], "--data-image") == 0) {
         return data_image(argv[2]);
@@ -250,6 +270,6 @@ int main(int argc, char **argv)
         return window_demo();
     }
     fprintf(stderr, "usage: eob-port --self-test EOB.EXE | --data-image OUT | --replay RECORDING GAME_DIR DUMP_DIR"
-                    " | --play GAME_DIR [--no-mouse] [--adlib] | --window\n");
+                    " | --play GAME_DIR [--saves DIR] [--no-mouse] [--adlib] | --window\n");
     return 2;
 }

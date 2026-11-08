@@ -6,7 +6,7 @@ PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
 .PHONY: help setup doctor inputs overlays pak data emu2 test p0-check tc-install tc-check rtl-compare map match oracle-run golden test-slow \
 	match-gate check queue next claim locks unlock packet skeleton handoff handoffs handoff-done integrate review-pass worker progress \
-	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port port-image port-replay port-play port-asmdata port-literals port-hybrid handbook handbook-setup handbook-figs datamap data-skeleton
+	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port port-image port-replay port-play port-playtest port-asmdata port-literals port-hybrid handbook handbook-setup handbook-figs datamap data-skeleton
 
 help:
 	@echo "Phase 0:  setup doctor inputs overlays pak emu2 test p0-check"
@@ -19,6 +19,7 @@ help:
 	@echo "          smoke-agent start-run watch-agents run-status run-add stop-run (work/roster.toml)"
 	@echo "Phase 7:  port (playbook 80: translate port/units.txt, build build/port/eob-port-headless and, with SDL3, build/port/eob-port; self-test)"
 	@echo "          port-hybrid (M2: each translated function against the original on golden states; SESSION= FUNC= SAMPLES=)"
+	@echo "          port-playtest (play it as a player does, in seconds: MONKEY=n NAME=script COV=1)"
 	@echo "          port-image (D3: the generated image against EOB.EXE) port-replay (M5: goldens headless on the port; NAME= VIEWS=1)"
 	@echo "          port-literals (when src/ changes a literal: port/literals.json from the matcher; needs Turbo C++)"
 	@echo "          port-asmdata (when an assembly unit changes its data: port/asmdata.json from TASM listings; needs Turbo Assembler)"
@@ -99,6 +100,12 @@ port-replay: port  ## M5 (playbook 80): play golden sessions headless on the por
 
 port-play: port    ## M7 (playbook 80): play the game in a window on the port (SDL3) [SAVE=tests/sessions/fixtures/EOBDATA.SAV]
 	$(PY) tools/port/play.py $(if $(SAVE),--save $(SAVE))
+
+port-playtest: port  ## play the port as a player does, in seconds: the scripts of tests/playtest and MONKEY= random runs (default 200) [NAME=script] [COV=1: which functions no run reached]
+ifdef COV
+	$(MAKE) --no-print-directory -f port/port.mk PY=$(PY) OUT=build/port-cov CC="cc -fprofile-instr-generate -fcoverage-mapping" build/port-cov/eob-port-headless
+endif
+	$(PY) tools/port/playtest.py $(if $(COV),--coverage) --monkey $(if $(MONKEY),$(MONKEY),$(if $(NAME),0,200)) $(NAME)
 
 port-asmdata:      ## the assembly units' data in their code segments (port/asmdata.json, from TASM's listings; needs Turbo Assembler)
 	$(PY) tools/port/asmlist.py

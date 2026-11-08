@@ -15,10 +15,11 @@
      (the driver's state too, which function 3 reads);
    - and every 16 ms the screen: A000:0000 through the DAC (platform_present).
 
-   At a wait with nothing due it sleeps until the next tick. TC_PLAY_SNAPSHOT=MS:PATH writes the screen
-   (64,000 bytes) and the DAC (768) to PATH once MS milliseconds have passed: on the headless program,
-   whose clock only its sleeps move, a live run is the same every time (the smoke test). The window's close ends the program, as
-   the game's own exit does (DOS 4Ch). */
+   At a wait with nothing due it sleeps until the next tick. TC_PLAY_SNAPSHOT=MS:PATH[;MS:PATH...], in
+   order of time, writes the screen (64,000 bytes) and the DAC (768) to each PATH once its MS
+   milliseconds have passed, and TC_PLAY_END=MS ends the run then (exit 0): on the headless program,
+   whose clock counts its own sleeps and looks, a live run is the same every time (the smoke test and
+   `make port-playtest`). The window's close ends the program, as the game's own exit does (DOS 4Ch). */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,8 +34,30 @@ static u32 start_ms, last_present_ms, next_irq0_us;
 static u8 irq0_waiting;          /* a timer interrupt pushed and not delivered yet */
 static u32 pushed, irq0_at;      /* the events pushed; the ordinal of the waiting IRQ 0 */
 
-static u32 snapshot_ms = 0xFFFFFFFFu;     /* TC_PLAY_SNAPSHOT=ms:path: the screen and DAC at that time */
-static const char *snapshot_path;
+static u32 snapshot_ms = 0xFFFFFFFFu;     /* TC_PLAY_SNAPSHOT=ms:path;...: the screen and DAC at those times */
+static const char *snapshot_list;
+static char snapshot_path[1024];
+static u32 end_ms = 0xFFFFFFFFu;          /* TC_PLAY_END=ms: the run ends then */
+
+/* the next entry of the list, if any */
+static void snapshot_next(void)
+{
+    const char *colon, *semi;
+    size_t n;
+    snapshot_ms = 0xFFFFFFFFu;
+    if (snapshot_list == NULL || *snapshot_list == 0 || (colon = strchr(snapshot_list, ':')) == NULL) {
+        return;
+    }
+    snapshot_ms = (u32)strtoul(snapshot_list, NULL, 10);
+    semi = strchr(colon, ';');
+    n = semi ? (size_t)(semi - colon - 1) : strlen(colon + 1);
+    if (n >= sizeof snapshot_path) {
+        n = sizeof snapshot_path - 1;
+    }
+    memcpy(snapshot_path, colon + 1, n);
+    snapshot_path[n] = 0;
+    snapshot_list = semi ? semi + 1 : "";
+}
 
 static void snapshot(void)
 {
@@ -44,7 +67,7 @@ static void snapshot(void)
         fwrite(video.dac, 1, 768u, f);
         fclose(f);
     }
-    snapshot_ms = 0xFFFFFFFFu;
+    snapshot_next();
 }
 
 static void present(void)
@@ -127,8 +150,13 @@ static void more(int waiting)
                 next_irq0_us = now_us;          /* behind by more than 0.1 s: the ticks are lost */
             }
         }
-        if (now_ms >= snapshot_ms) {
+        while (now_ms >= snapshot_ms) {
             snapshot();
+        }
+        if (now_ms >= end_ms) {
+            platform_quit();
+            fprintf(stderr, "eob-port: the run reached its end time\n");
+            exit(0);
         }
         if (now_ms - last_present_ms >= 16u) {
             present();
@@ -153,7 +181,7 @@ static void ended(int code, const char *msg)
     exit(code);
 }
 
-int live_run(const char *game_dir, const char *cmdline, int mouse_on, int adlib)
+int live_run(const char *game_dir, const char *save_dir, const char *cmdline, int mouse_on, int adlib)
 {
     farptr argv;
     s16 argc, rc;
@@ -161,6 +189,7 @@ int live_run(const char *game_dir, const char *cmdline, int mouse_on, int adlib)
         return 2;                               /* no window, and not the headless smoke test */
     }
     platform_set_game_dir(game_dir);
+    platform_set_save_dir(save_dir);
     fprintf(stderr, "eob-port: playing the game in %s (Exit to DOS, or close the window, to quit)\n", game_dir);
     tc_fail_hook = ended;
     machine_events_reset();
@@ -169,9 +198,10 @@ int live_run(const char *game_dir, const char *cmdline, int mouse_on, int adlib)
     machine_cclock = 0xFFFFFFFFu;
     machine_more = more;
     tc_live = 1;
-    if (getenv("TC_PLAY_SNAPSHOT") != NULL) {
-        snapshot_ms = (u32)strtoul(getenv("TC_PLAY_SNAPSHOT"), NULL, 10);
-        snapshot_path = strchr(getenv("TC_PLAY_SNAPSHOT"), ':') ? strchr(getenv("TC_PLAY_SNAPSHOT"), ':') + 1 : "snapshot.bin";
+    snapshot_list = getenv("TC_PLAY_SNAPSHOT");
+    snapshot_next();
+    if (getenv("TC_PLAY_END") != NULL) {
+        end_ms = (u32)strtoul(getenv("TC_PLAY_END"), NULL, 10);
     }
     start_ms = platform_ms();
     next_irq0_us = machine_irq0_period();

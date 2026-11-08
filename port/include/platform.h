@@ -17,6 +17,7 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 /* ---- Video ----------------------------------------------------------------------------------- */
@@ -78,6 +79,17 @@ int platform_file_read(const char *name, uint8_t *buf, uint32_t size);  /* the w
 
 /* where platform_file_* look (port/platform/files.c; a host with no directory of its own) */
 void platform_set_game_dir(const char *dir);
+
+/* The player's own directory: a file there is read before the game directory's, and what the game
+   writes lands there when it closes the file (the saved game, LEVELS.TMP), so a save outlives the
+   run. Null (the default, and every replay and test) keeps every write in memory. */
+void platform_set_save_dir(const char *dir);
+int platform_file_write(const char *name, const uint8_t *buf, uint32_t size);   /* 0 or -1 */
+
+/* Started with no arguments (a double click): the game directory beside the program or inside its
+   application bundle, and the player's save directory, created if need be. 0, or -1 when no game
+   directory is found. */
+int platform_find_install(char *game_dir, size_t game_n, char *save_dir, size_t save_n);
 
 /* ---- Lifetime -------------------------------------------------------------------------------- */
 

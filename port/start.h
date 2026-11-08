@@ -12,8 +12,8 @@ s16 tc_start(farptr *argv);
    directory `game_dir`, dumping the arena at each checkpoint into `dump_dir`; the process's exit code. */
 int replay_run(const char *script, const char *game_dir, const char *dump_dir);
 
-/* Plays the game live in a window from the game directory `game_dir` (port/live.c); the command tail
+/* Plays the game live in a window from the game directory `game_dir` (port/live.c), the player's saves in `save_dir` (null: none); the command tail
    as INTRO.EXE passes it (" 3 4 1 homie 3": VGA, no sound, the mouse). */
-int live_run(const char *game_dir, const char *cmdline, int mouse, int adlib);
+int live_run(const char *game_dir, const char *save_dir, const char *cmdline, int mouse, int adlib);
 
 #endif

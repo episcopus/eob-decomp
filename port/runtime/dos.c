@@ -851,6 +851,9 @@ void dos_int21(tc_regs *r)
             return;
         }
         if (r->bx >= 5) {
+            if (f->writable && host_name(f->path) != NULL) {
+                platform_file_write(host_name(f->path), f->data->data, f->data->len);
+            }
             handles[r->bx] = NULL;
             release(f);
         }

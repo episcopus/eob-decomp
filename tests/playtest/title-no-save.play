@@ -1,0 +1,6 @@
+# Load game in progress with no saved game: the game asks for the disk (authentic), then gives up on Esc.
+wait 40000
+shot title
+key ENTER
+wait 3000
+shot asks-for-disk changed
