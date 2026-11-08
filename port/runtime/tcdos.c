@@ -623,3 +623,33 @@ void tc_library_data(void)
     r.ax = (u16)(0x4C00u | (u8)status);
     dos(&r);
 }
+
+void (*tc_exec_hook)(const char *tail);
+
+s16 tcl_execl(farptr path, farptr arg0, const u8 *va, u16 va_size)
+{
+    char tail[128];
+    size_t n = 0;
+    u16 i;
+    (void)arg0;
+    for (i = 0; i + 4u <= va_size; i += 4u) {
+        farptr a = (farptr)va[i] | ((farptr)va[i + 1u] << 8) | ((farptr)va[i + 2u] << 16) | ((farptr)va[i + 3u] << 24);
+        u8 c;
+        if (a == 0) {
+            break;
+        }
+        if (n + 1u < sizeof tail) {
+            tail[n++] = ' ';
+        }
+        while ((c = tc_ld_u8(a)) != 0 && n + 1u < sizeof tail) {
+            tail[n++] = (char)c;
+            a = tc_fp_add(a, 1);
+        }
+    }
+    tail[n] = 0;
+    if (tc_exec_hook == NULL) {
+        tc_fail(74, "execl: the program runs another (%04X:%04X), and nothing here can", TC_SEG(path), TC_OFF(path));
+    }
+    tc_exec_hook(tail);
+    return -1;
+}

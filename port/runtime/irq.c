@@ -17,6 +17,7 @@
 
 #include "tcport.h"
 #include "machine.h"
+#include "platform.h"
 
 u32 machine_cclock;
 int machine_replay;
@@ -282,6 +283,7 @@ void machine_wait(void)
 void tc_live_poll(void)
 {
     if (machine_more != NULL && !delivering) {
+        platform_busy();
         machine_more(0);
         while (event_next < event_count && due(&events[event_next])) {
             deliver_next();

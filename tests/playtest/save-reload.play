@@ -1,0 +1,24 @@
+# Camp, Game Options, Save Game, Yes; then a new start of the program loads the save.
+save fixtures/EOBDATA.SAV
+wait 40000
+key ENTER
+wait 6000
+click 11 134
+wait 800
+shot turned changed
+click 300 185
+wait 2000
+click 60 112
+wait 2000
+shot options changed
+click 60 44
+wait 2000
+shot save-question changed
+click 30 63
+wait 4000
+shot saved changed
+restart
+wait 40000
+key ENTER
+wait 6000
+shot loaded changed

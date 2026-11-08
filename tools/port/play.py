@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """play.py: the game in a window on the port (playbook 80, M7; `make port-play`).
 
-Makes a game directory with the pinned files of eob/ (never eob/ itself, AGENTS.md), and with
---save FILE a saved game in it (EOBDATA.SAV and its LEVELS.TMP, as the replay serves one), then runs
-`build/port/eob-port --play`. The port's DOS keeps the game's writes in memory: nothing is written
-back to the directory.
+With no option it runs the application `make port` built, as a double click does: the game's files in the
+bundle, the saves in the player's own directory. With --save FILE it plays that saved game instead, from
+a scratch game directory whose saves are thrown away with it (never eob/ itself, AGENTS.md).
 
   play.py [--save FILE] [--no-mouse] [--adlib]
 """
@@ -12,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shutil
 import sys
 from pathlib import Path
 
@@ -26,10 +26,19 @@ def main(argv=None) -> int:
     ap.add_argument("--no-mouse", action="store_true")
     ap.add_argument("--adlib", action="store_true")
     a = ap.parse_args(argv)
-    gd = game_dir(ROOT / "build" / "port" / "play" / "game", a.save)
     exe = ROOT / "build" / "port" / "eob-port"
-    args = [str(exe), "--play", str(gd)] + (["--no-mouse"] if a.no_mouse else []) + (["--adlib"] if a.adlib else [])
-    print("port-play: %s %s" % (exe.relative_to(ROOT), " ".join(args[2:])), flush=True)
+    if a.save is None and not a.no_mouse and not a.adlib:
+        args = [str(exe)]
+    else:
+        play = ROOT / "build" / "port" / "play"
+        gd = game_dir(play / "game", a.save)
+        saves = play / "saves"
+        if saves.exists():
+            shutil.rmtree(saves)
+        saves.mkdir()
+        args = [str(exe), "--play", str(gd), "--saves", str(saves)] + (["--no-mouse"] if a.no_mouse else []) + (
+            ["--adlib"] if a.adlib else [])
+    print("port-play: %s %s" % (exe.relative_to(ROOT), " ".join(args[1:])), flush=True)
     os.execv(str(exe), args)
 
 

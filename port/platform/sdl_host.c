@@ -206,6 +206,15 @@ uint32_t platform_ms(void)
     return (uint32_t)SDL_GetTicks();
 }
 
+uint32_t platform_poll_mask(void)
+{
+    return 0xFFFFu;
+}
+
+void platform_busy(void)
+{
+}
+
 void platform_sleep_ms(uint32_t ms)
 {
     SDL_Delay(ms);

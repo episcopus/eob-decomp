@@ -341,6 +341,10 @@ static void mem_read(u16 seg, u16 off, u8 *b, u32 n)
 
 static void out_char(u8 c, const tc_regs *r)
 {
+    if (tc_live) {                              /* there is no text screen: the player's terminal */
+        fputc(c, stderr);
+        return;
+    }
     (void)c;
     machine_unimplemented("console output (the oracle writes it to the text screen; the machine has none yet)", r);
 }
@@ -851,6 +855,9 @@ void dos_int21(tc_regs *r)
             return;
         }
         if (r->bx >= 5) {
+            if (f->writable && host_name(f->path) != NULL) {
+                platform_file_write(host_name(f->path), f->data->data, f->data->len);
+            }
             handles[r->bx] = NULL;
             release(f);
         }

@@ -1525,7 +1525,7 @@ def hybrid_table(units, prog, handwritten) -> str:
     rows = []
     any_unit = units[0][0]
     todo = [(u, name, prog.defs[name], u.funcs[name], u.path.name, 0) for u, _ast in units
-            for name in sorted(u.defined)]
+            for name in sorted(u.defined) if u.path.parent.name != "intro"]     # the intro has no entries on the bench
     todo += [(any_unit, name, t, prog.handwritten[name][:2], "port/asm/" + prog.handwritten[name][2],
               int(prog.handwritten[name][3])) for name, t in handwritten]
     for u, name, t, (seg, off), where, isr in todo:

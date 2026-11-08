@@ -3,7 +3,7 @@
    No window, no input, no sound: a run that needs none of them (the self-test, and later the
    per-function tests) links this instead of sdl_host.c, so the game, the runtime and the machine
    are built and run without SDL. It is poolrad's c/platform/null.c for this port. Time is a counter
-   that platform_sleep_ms advances, so a run never depends on the wall clock.
+   that platform_sleep_ms and platform_busy advance, so a run never depends on the wall clock.
 
    Input for a test of live play (M7): TC_NULL_INPUT lists scancodes (set 1, hexadecimal) each at a
    time in milliseconds of that clock, "40000:50,40100:D0,41000:1C,41100:9C" (keypad 2 pressed and
@@ -70,6 +70,17 @@ struct platform_event platform_poll_event(void)
 uint32_t platform_ms(void)
 {
     return now_ms;
+}
+
+/* a program that computes without sleeping still sees time pass, as in a window */
+uint32_t platform_poll_mask(void)
+{
+    return 0x3FFu;
+}
+
+void platform_busy(void)
+{
+    now_ms += 4u;
 }
 
 void platform_sleep_ms(uint32_t ms)

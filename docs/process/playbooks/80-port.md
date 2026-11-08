@@ -23,7 +23,7 @@ sound and state.
 | M4 the MCGA driver | done 2026-11-05 (section "M4"): `MCGA.OVL` in C (`port/drivers/`, 40 exports), entered with its argument bytes, the same as the original on every direct call and every golden call tested. Next: step D, then M5 |
 | D the program's data as C | done 2026-11-06 (section "Step D"): D0 the data map (`re/datamap.toml`, 34 modules); D1 the tools; D2 every module's data as definitions in `src/`, the data of all 34 modules proven by `make match`, `make rebuild` of both programs as before; D3 tc2c writes the port's image from them (`make port-image`: 64,446 bytes the same as EOB.EXE's). Left: the naming round for the 126 address names D2 kept (100 are E0CF7's screen-list nodes), with its independent review |
 | M5 the replay | done 2026-11-07 (section "Step M5"): `make port-replay` plays `boot-title` headless from the port's own image, all four checkpoints the oracle's (the state view and the golden's screens); the interrupts and checkpoints keyed by the game's accesses (the human, 2026-11-07); the program's start in `port/start.c`; the assembly units' code-segment data in the image (`port/asmdata.json`) |
-| M6 the other goldens | started 2026-11-07 (section "Step M6"): `boot-title`, `boot-adlib`, `new-party`, `mouse-party` and `new-character` replay as the oracle at every checkpoint under the relaxed check (the human, 2026-11-07); interrupts also placed by the library's file calls; Westwood's far data in `src/far/FARDATA.ASM`; `DispatchKeyWait`'s result fixed in `src/E16A5.C`. Left: `load-walk` (needs interrupts placed inside computation), `INTRO.EXE`, `make port-golden` in `make check` |
+| M6 the other goldens | started 2026-11-07 (section "Step M6"): `boot-title`, `boot-adlib`, `new-party`, `mouse-party` and `new-character` replay as the oracle at every checkpoint under the relaxed check (the human, 2026-11-07); interrupts also placed by the library's file calls; Westwood's far data in `src/far/FARDATA.ASM`; `DispatchKeyWait`'s result fixed in `src/E16A5.C`. Left: `load-walk` (needs interrupts placed inside computation), `make port-golden` in `make check`; `INTRO.EXE` plays in live play (section "Playtesting") |
 | M7 live play | started 2026-11-07 (section "Step M7"): `make port-play` plays the game in a window from the port's own image (keyboard, mouse, the PIT's ticks from the wall clock); headless with scripted keys it reaches character generation and the dungeon. Left: sound (ymfm, which the human installs), and a human playing it |
 
 ## Why `src/` does not compile natively as it is
@@ -613,6 +613,39 @@ units. `make port-image` checks them and that the port writes no other byte belo
 - `make port-golden` in `make check`, then `INTRO.EXE`.
 - The per-function test (`make port-hybrid`) still delivers its bench's interrupts after each access
   (`machine_replay` clear), as M2 and M3 left it.
+
+## Playtesting (the human, 2026-11-08)
+
+The way to find what stops a player is to play, and the port can play at thousands of times real speed.
+`make port-playtest` runs the headless program in live play, on a clock only its own sleeps move: the whole
+suite takes seconds. It replaced instruction and cycle counting as the check that the port is playable: goldens
+compared at checkpoints stay (M5, M6) for what they prove, but they are no longer the gate for the
+next player-visible feature, and a golden that does not replay (`load-walk`, `camp`) does not hold anything up.
+
+| Layer | What it does | How it fails |
+|---|---|---|
+| The build's count | `tc2c`'s "still unported" list must be empty | the playtest refuses to start |
+| Scripts, `tests/playtest/*.play` | one for each thing a player does: intro, title, load, walk, camp, spells, fight, save and reload | an error stop, a hang, a screen marked `changed` that did not change, an unexpected Exit to DOS |
+| The monkey, `MONKEY=n` | random play from the save and from a new party: the buttons, the keys, anywhere on the screen | the same; a failure names its seed (`--monkey-seed`) |
+| Coverage, `COV=1` | an instrumented build; `build/port/playtest/never-run.txt` lists the functions no run reached | not a failure: the list of what to script next |
+
+Each script writes a contact sheet, `build/port/playtest/<script>.png`, to be looked at: passing says nothing
+stopped, only eyes say the screens are right. A new feature, or a bug a player found, gets a script first. Slow
+tests run the suite (`test_the_playtest_passes`), so `make check` holds it.
+
+### Saves, the application, and the intro
+
+- `make port` also builds `build/port/Eye of the Beholder.app` (tools/port/app.py), with SDL3 and the game's
+  files inside. The program finds them by its own place; a double click, or `build/port/eob-port` with no
+  arguments, plays the intro and then the game. `make port-play` is the same.
+- What the game writes lands in the player's directory when it closes the file (`platform_file_write`;
+  macOS: ~/Library/Application Support/Eye of the Beholder). It is read before the game's own, and the
+  app ships eob/'s EOBDATA.SAV as the first game to load. Replays and tests name a scratch one or none.
+- The intro: tools/port/introsrc.py hands tc2c a copy of src/I0892.C and src/IOV0.C in which what INTRO.EXE
+  shares with EOB.EXE (23 units, proven by `make twin`) is addressed as the game's copy, and the rest sits in a
+  segment of its own (TC_INTRO_SEG), filled from INTRO.EXE (port/intro.c). `execl` (tcl_execl) restarts the
+  machine and runs `Main` with the command tail the intro built. `INTRO.EXE` needs no goldens of its own: it is checked
+  by `intro.play` and `intro-skip.play`.
 
 ## Step M6: the other goldens (started 2026-11-07)
 

@@ -41,7 +41,9 @@ TC2C_IN := port/units.txt tools/port/tc2c.py port/include/tc/prelude.h $(wildcar
 	port/include/tclib.h port/literals.json port/asmdata.json build/re/eob.json eob/EOB.EXE $(wildcard src/*.H src/*.ASM src/far/*.ASM) \
 	$(ASM_C) $(LIB_C)
 
-GEN_C := $(addprefix $(GEN)/,$(UNITS:.C=.c)) $(GEN)/units.c $(GEN)/unported.c
+# INTRO.EXE's own C units, on the game's copies of the units the two programs share (tools/port/introsrc.py)
+INTRO_UNITS := I0892.C IOV0.C
+GEN_C := $(addprefix $(GEN)/,$(UNITS:.C=.c) $(INTRO_UNITS:.C=.c)) $(GEN)/units.c $(GEN)/unported.c
 # the machine (M3): the vector table, DOS and the BIOS
 MACHINE_C := port/runtime/machine.c port/runtime/dos.c port/runtime/bios.c port/runtime/video.c port/runtime/ports.c port/runtime/mouse.c \
 	port/runtime/irq.c
@@ -49,7 +51,7 @@ HYB := $(OUT)/hybrid
 HYB_C := $(GEN_C) $(GEN)/hybrid.c port/runtime/arena.c port/runtime/tclib.c $(LIB_C) port/runtime/hybrid.c $(MACHINE_C) $(ASM_C) \
 	$(DRV_C)
 HYB_O := $(patsubst %.c,$(HYB)/obj/%.o,$(HYB_C))
-CORE_C := port/runtime/arena.c port/runtime/tclib.c $(LIB_C) port/main.c port/start.c port/replay.c port/live.c $(MACHINE_C) $(ASM_C) $(DRV_C)
+CORE_C := port/runtime/arena.c port/runtime/tclib.c $(LIB_C) port/main.c port/start.c port/replay.c port/live.c port/intro.c $(MACHINE_C) $(ASM_C) $(DRV_C)
 CORE_O := $(patsubst $(GEN)/%.c,$(OBJ)/gen/%.o,$(GEN_C)) $(patsubst %.c,$(OBJ)/%.o,$(CORE_C))
 
 .PHONY: port port-check port-boundary port-sdl port-hybrid
@@ -65,9 +67,10 @@ port-boundary:
 $(shell mkdir -p $(GEN); echo "$(ASM_C)" | cmp -s - $(GEN)/asm.list || echo "$(ASM_C)" > $(GEN)/asm.list)
 
 # one translation writes every generated file (a stamp: make 3.81 has no grouped targets)
-$(GEN)/.stamp: $(TC2C_IN) $(addprefix src/,$(UNITS)) $(GEN)/asm.list
+$(GEN)/.stamp: $(TC2C_IN) $(addprefix src/,$(UNITS) $(INTRO_UNITS)) $(GEN)/asm.list tools/port/introsrc.py eob/INTRO.EXE
+	$(PY) tools/port/introsrc.py $(GEN)/intro
 	$(PY) tools/port/tc2c.py --out $(GEN) --image eob/EOB.EXE --layout build/re/eob.json --asm $(ASM_C) --lib $(LIB_C) -- \
-		$(addprefix src/,$(UNITS))
+		$(addprefix src/,$(UNITS)) $(addprefix $(GEN)/intro/,$(INTRO_UNITS))
 	@touch $@
 
 $(GEN_C) $(GEN)/hybrid.c $(GEN)/ported.h: $(GEN)/.stamp
@@ -92,6 +95,7 @@ port-check: $(OUT)/eob-port-headless
 
 ifeq ($(HAVE_SDL3),yes)
 port-sdl: $(OUT)/eob-port
+	@$(PY) tools/port/app.py
 else
 port-sdl:
 	@echo "port: SDL3 not found (pkg-config sdl3): built the headless program only. Ask the human to install SDL3 (macOS: brew install sdl3); do not download it from a tool."

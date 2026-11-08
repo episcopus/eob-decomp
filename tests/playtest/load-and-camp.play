@@ -1,0 +1,10 @@
+# The saved game: load it, open the camp menu.
+save fixtures/EOBDATA.SAV
+wait 40000
+shot title
+key ENTER
+wait 6000
+shot dungeon changed
+click 300 185
+wait 3000
+shot camp changed

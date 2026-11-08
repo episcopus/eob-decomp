@@ -1,0 +1,65 @@
+# Every entry of the camp menu; Exit closes each and the camp menu opens again.
+save fixtures/EOBDATA.SAV
+wait 40000
+key ENTER
+wait 6000
+click 300 185
+wait 2000
+click 60 27
+wait 2500
+shot rest
+click 148 129
+wait 1500
+click 148 129
+wait 1500
+shot back-rest
+click 300 185
+wait 2000
+click 60 44
+wait 2500
+shot memorize
+click 148 129
+wait 1500
+click 148 129
+wait 1500
+shot back-memorize
+click 300 185
+wait 2000
+click 60 61
+wait 2500
+shot pray
+click 148 129
+wait 1500
+click 148 129
+wait 1500
+shot back-pray
+click 300 185
+wait 2000
+click 60 78
+wait 2500
+shot scribe
+click 148 129
+wait 1500
+click 148 129
+wait 1500
+shot back-scribe
+click 300 185
+wait 2000
+click 60 95
+wait 2500
+shot preferences
+click 148 129
+wait 1500
+click 148 129
+wait 1500
+shot back-preferences
+click 300 185
+wait 2000
+click 60 112
+wait 2500
+shot options
+click 148 129
+wait 1500
+click 148 129
+wait 1500
+shot back-options

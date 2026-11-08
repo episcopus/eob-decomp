@@ -35,6 +35,9 @@ typedef u32 farptr;
 /* The 8086 wraps a linear address at 1 MB. [H] for the oracle: Unicorn maps 0 to A0000 and the
    ROM area; nothing seen so far addresses above FFFF:000F. */
 #define TC_MEM_SIZE 0x100000u
+/* where INTRO.EXE's data goes while the intro runs (port/intro.c, tools/port/introsrc.py): above the
+   DOS memory and the video segments, nothing of the game's */
+#define TC_INTRO_SEG 0xC000u
 #define TC_LINEAR(p) (((((u32)TC_SEG(p)) << 4) + (u32)TC_OFF(p)) & 0xFFFFFu)
 
 extern u8 tc_mem[TC_MEM_SIZE];
@@ -168,9 +171,10 @@ void tc_spin_idle(void);
 extern u8 tc_live;
 extern u32 tc_turns;
 void tc_live_poll(void);
+extern u32 tc_poll_mask;       /* live play: how often a loop looks at the host */
 static inline void tc_spin(tc_loop *l)
 {
-    if (tc_live && !(++tc_turns & 0xFFFFu)) {
+    if (tc_live && !(++tc_turns & tc_poll_mask)) {
         tc_live_poll();
     }
     if (l->turned && l->state == tc_state && l->accesses == tc_accesses && l->hot != tc_hot_reads) {

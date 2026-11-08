@@ -1,0 +1,15 @@
+# The party panel: the portraits and the inventory.
+save fixtures/EOBDATA.SAV
+wait 40000
+key ENTER
+wait 6000
+shot start
+click 195 30
+wait 1500
+shot portrait-1 changed
+click 240 145
+wait 1500
+shot page
+key ESC
+wait 1500
+shot after-esc

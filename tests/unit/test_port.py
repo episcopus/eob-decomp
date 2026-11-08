@@ -30,7 +30,7 @@ def test_the_port_builds_and_passes_its_self_test():
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
     assert "8 lists: ok" in r.stdout
-    assert "43 units" in r.stdout, "every C unit of EOB.EXE is translated (M1), and the two data-only modules (D3)"
+    assert "45 units" in r.stdout, "every C unit of EOB.EXE is translated (M1), the two data-only modules (D3), and the intro's two (I0892, IOV0)"
     # platform separation: the self-test ran on the headless program, which links no SDL
     assert "eob-port-headless --self-test" in r.stdout
     assert (ROOT / "build" / "port" / "eob-port-headless").exists()
@@ -76,13 +76,11 @@ def test_live_play_reaches_character_generation(tmp_path):
     from PIL import Image
     gd = game_dir(tmp_path / "game")
     shot = tmp_path / "shot.bin"
-    env = dict(os.environ, TC_NULL_INPUT="40000:50,40100:D0,41000:1C,41100:9C", TC_PLAY_SNAPSHOT="60000:%s" % shot)
-    try:
-        subprocess.run([str(ROOT / "build/port/eob-port-headless"), "--play", str(gd), "--no-mouse"], env=env,
-                       capture_output=True, timeout=60)
-    except subprocess.TimeoutExpired:
-        pass                                    # it plays on after the snapshot: the menu waits for a key
+    env = dict(os.environ, TC_NULL_INPUT="40000:50,40100:D0,41000:1C,41100:9C", TC_PLAY_SNAPSHOT="60000:%s" % shot, TC_PLAY_END="60500")
+    subprocess.run([str(ROOT / "build/port/eob-port-headless"), "--play", str(gd), "--no-mouse"], env=env,
+                   capture_output=True, timeout=60, check=True)
     raw = shot.read_bytes()
+    assert len(raw) == 64768
     rgb = bytes((c << 2) | (c >> 4) for c in raw[64000:64768])
     gold = Image.open(ROOT / "tests/sessions/golden/new-party/character-generation.png").convert("RGB").load()
     differ = [(i % 320, i // 320) for i, v in enumerate(raw[:64000])
@@ -103,18 +101,25 @@ def test_live_play_opens_the_camp_menu(tmp_path):
     gd = game_dir(tmp_path / "game", ROOT / "tests/sessions/fixtures/EOBDATA.SAV")
     shot = tmp_path / "shot.bin"
     env = dict(os.environ, TC_NULL_INPUT="40000:1C,40100:9C,60000:M300.185.0,60500:M300.185.1,60600:M300.185.0",
-               TC_PLAY_SNAPSHOT="70000:%s" % shot)
-    try:
-        subprocess.run([str(ROOT / "build/port/eob-port-headless"), "--play", str(gd)], env=env,
-                       capture_output=True, timeout=60)
-    except subprocess.TimeoutExpired:
-        pass                                    # the camp menu waits for a click
+               TC_PLAY_SNAPSHOT="70000:%s" % shot, TC_PLAY_END="70500")
+    subprocess.run([str(ROOT / "build/port/eob-port-headless"), "--play", str(gd)], env=env,
+                   capture_output=True, timeout=60, check=True)
     raw = shot.read_bytes()
+    assert len(raw) == 64768
     rgb = bytes((c << 2) | (c >> 4) for c in raw[64000:64768])
     gold = Image.open(ROOT / "tests/sessions/golden/camp/camp.png").convert("RGB").load()
     differ = [(i % 320, i // 320) for i, v in enumerate(raw[:64000])
               if tuple(rgb[3 * v:3 * v + 3]) != gold[i % 320, i // 320]]
     assert differ == [], differ[:10]
+
+
+@pytest.mark.slow
+def test_the_playtest_passes():
+    """`make port-playtest`: every script of tests/playtest and 100 random runs on the headless program, the
+    intro, the camp menu, save and reload among them. No run stops with an error or hangs."""
+    r = subprocess.run([sys.executable, str(ROOT / "tools/port/playtest.py"), "--monkey", "100"], cwd=ROOT,
+                       capture_output=True, text=True, timeout=300)
+    assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
 
 
 def test_only_the_platform_directory_uses_sdl():

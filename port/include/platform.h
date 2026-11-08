@@ -17,6 +17,7 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 /* ---- Video ----------------------------------------------------------------------------------- */
@@ -58,6 +59,11 @@ uint32_t platform_ms(void);
    the PIT). */
 void platform_sleep_ms(uint32_t ms);
 
+/* A loop that neither waits nor touches the machine: live play looks at the host every
+   (platform_poll_mask() + 1) turns and says so with platform_busy (a host with its own clock ignores it). */
+uint32_t platform_poll_mask(void);
+void platform_busy(void);
+
 /* ---- Sound (planned) --------------------------------------------------------------------------- */
 
 /* One AdLib (OPL2) register write, register then value, as the game's driver writes ports 388h and
@@ -78,6 +84,17 @@ int platform_file_read(const char *name, uint8_t *buf, uint32_t size);  /* the w
 
 /* where platform_file_* look (port/platform/files.c; a host with no directory of its own) */
 void platform_set_game_dir(const char *dir);
+
+/* The player's own directory: a file there is read before the game directory's, and what the game
+   writes lands there when it closes the file (the saved game, LEVELS.TMP), so a save outlives the
+   run. Null (the default, and every replay and test) keeps every write in memory. */
+void platform_set_save_dir(const char *dir);
+int platform_file_write(const char *name, const uint8_t *buf, uint32_t size);   /* 0 or -1 */
+
+/* Started with no arguments (a double click): the game directory beside the program or inside its
+   application bundle, and the player's save directory, created if need be. 0, or -1 when no game
+   directory is found. */
+int platform_find_install(char *game_dir, size_t game_n, char *save_dir, size_t save_n);
 
 /* ---- Lifetime -------------------------------------------------------------------------------- */
 

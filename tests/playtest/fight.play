@@ -1,0 +1,28 @@
+# The hands: a right click attacks with each character's weapons.
+save fixtures/EOBDATA.SAV
+wait 40000
+key ENTER
+wait 6000
+click 11 134
+wait 800
+click 11 134
+wait 800
+shot turned
+rclick 225 22
+wait 1000
+shot hand-1 changed
+rclick 225 36
+wait 1000
+shot hand-2
+rclick 290 22
+wait 1000
+shot hand-3
+rclick 290 36
+wait 1000
+shot hand-4
+rclick 225 70
+wait 1000
+shot hand-5
+rclick 290 70
+wait 1000
+shot hand-6
