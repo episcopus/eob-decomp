@@ -1,0 +1,38 @@
+# Walking with no sound card: the game's other timer path (18.2 Hz, no driver).
+silent
+save fixtures/EOBDATA.SAV
+wait 40000
+key ENTER
+wait 6000
+shot start
+click 11 134
+wait 800
+shot turned-left changed
+click 57 134
+wait 800
+click 57 134
+wait 800
+shot turned-right changed
+click 35 134
+wait 1200
+shot forward
+click 35 152
+wait 1200
+shot back
+click 11 152
+wait 1200
+shot strafe-left
+click 57 152
+wait 1200
+shot strafe-right
+key UP
+wait 1200
+shot key-forward
+key LEFT
+wait 800
+shot key-left changed
+key RIGHT
+wait 800
+key DOWN
+wait 1200
+shot key-back

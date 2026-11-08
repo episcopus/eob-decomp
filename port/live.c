@@ -34,7 +34,7 @@
 
 static u32 start_ms, last_present_ms, next_irq0_us;
 static u32 irq0_pushed;          /* the timer interrupts pushed, on the count of machine_irq0_delivered */
-#define IRQ0_BACKLOG 3u          /* how many may wait for a place to be delivered: the host's hiccups cost no ticks */
+#define IRQ0_BACKLOG 8u          /* how many may wait for a place to be delivered: the host's hiccups cost no ticks */
 static u32 seen_ms = 0xFFFFFFFFu;  /* the millisecond `more` last worked in */
 static u32 present_ms, present_n;  /* what the presents cost (TC_PLAY_STATS) */
 
@@ -191,19 +191,20 @@ static void tick(u32 now_ms)
             mouse_event(&p);
         }
     }
-    if ((s32)(now_us - next_irq0_us) >= 0) {             /* the microseconds wrap at 71 minutes */
+    /* with the AdLib the timer runs at 874 Hz, so several ticks can fall due between two looks at the clock.
+       The microseconds wrap at 71 minutes */
+    while ((s32)(now_us - next_irq0_us) >= 0 && irq0_pushed - machine_irq0_delivered < IRQ0_BACKLOG) {
+        machine_event e;
+        memset(&e, 0, sizeof e);
+        e.kind = MACHINE_IRQ0;
+        push(&e);
+        irq0_pushed++;
         ticks_due++;
-        if (irq0_pushed - machine_irq0_delivered < IRQ0_BACKLOG) {
-            machine_event e;
-            memset(&e, 0, sizeof e);
-            e.kind = MACHINE_IRQ0;
-            push(&e);
-            irq0_pushed++;
-        }
         next_irq0_us += machine_irq0_period();
-        if ((s32)(now_us - next_irq0_us) > 100000) {
-            next_irq0_us = now_us;                       /* behind by more than 0.1 s: the ticks are lost */
-        }
+    }
+    if ((s32)(now_us - next_irq0_us) > 100000) {         /* behind by more than 0.1 s: the ticks are lost */
+        ticks_due += (u32)(now_us - next_irq0_us) / machine_irq0_period();
+        next_irq0_us = now_us;
     }
     while (snapshot_ms != NO_SNAPSHOT && now_ms >= snapshot_ms) {
         snapshot();

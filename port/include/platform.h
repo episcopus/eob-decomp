@@ -64,10 +64,10 @@ void platform_sleep_ms(uint32_t ms);
 uint32_t platform_poll_mask(void);
 void platform_busy(void);
 
-/* ---- Sound (planned) --------------------------------------------------------------------------- */
+/* ---- Sound ------------------------------------------------------------------------------------ */
 
 /* One AdLib (OPL2) register write, register then value, as the game's driver writes ports 388h and
-   389h; the host synthesises it (open question 9 of playbook 80: which OPL emulator). */
+   389h; the host synthesises it (playbook 80, decision 7: ymfm). */
 void platform_adlib_write(uint8_t reg, uint8_t value);
 
 /* The PC speaker: PIT channel 2 divisor and the two low bits of port 61h (E1948.ASM). */

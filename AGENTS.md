@@ -38,6 +38,7 @@ You are working on a **matching decompilation of Westwood's Eye of the Beholder 
 | `make overlays` | TLINK segment table and FBOV overlay manifest of each program (`build/re/<program>.json`, overlay code in `build/re/<program>-overlays/`) |
 | `make pak` | Verify every PAK archive, byte-exact round trip |
 | `make emu2` | Build the headless DOS emulator for the compiler |
+| `make ymfm` | Fetch the OPL2 emulator the port's sound is compiled from (playbook 80, "Sound") |
 | `make tc-install` / `make tc-check` | Install the Turbo C++ and TASM releases from `build/toolchain/dist/`; verify them |
 | `make rtl-compare` | Which Turbo C++ release's runtime is in `EOB.EXE` (several minutes) |
 | `make map` | Enumerate functions; write `re/units.toml` and `re/symbols.toml` (playbook 10) |

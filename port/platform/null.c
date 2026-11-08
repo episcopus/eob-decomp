@@ -88,10 +88,20 @@ void platform_sleep_ms(uint32_t ms)
     }
 }
 
+/* TC_NULL_ADLIB=PATH: what the game sends the card, one write a line: milliseconds, register, value */
 void platform_adlib_write(uint8_t reg, uint8_t value)
 {
-    (void)reg;
-    (void)value;
+    static FILE *log;
+    static int looked;
+    if (!looked) {
+        const char *path = getenv("TC_NULL_ADLIB");
+        looked = 1;
+        log = path != NULL ? fopen(path, "w") : NULL;
+    }
+    if (log != NULL) {
+        fprintf(log, "%u %02X %02X\n", (unsigned)platform_ms(), reg, value);
+        fflush(log);
+    }
 }
 
 void platform_speaker(uint16_t divisor, uint8_t port61_low2)

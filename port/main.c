@@ -8,7 +8,7 @@
      eob-port[-headless] --self-test EOB.EXE   run the checks below; exit 0 when they pass
      eob-port --window                       open the SDL3 window and show a test frame (Escape closes it)
      eob-port[-headless] --replay REC DIR OUT play a golden's recording (port/replay.c, tools/port/replay.py)
-     eob-port --play GAME_DIR [--saves DIR] [--intro] [--no-mouse] [--adlib]   play the game in a window (port/live.c)
+     eob-port --play GAME_DIR [--saves DIR] [--intro] [--no-mouse] [--no-sound]   play the game in a window (port/live.c)
      eob-port                                 the intro, then the game, from the application bundle (a double click)
 
    The checks are for the skeleton units, src/E0CF7.C and src/E1658.C: each BuildList links its
@@ -222,7 +222,7 @@ static int data_image(const char *out)
     return 0;
 }
 
-/* the launcher's choices: VGA (3), the mouse unless told otherwise, no sound unless asked */
+/* the launcher's choices: VGA (3), the mouse and the AdLib unless told otherwise */
 static int play(const char *game, const char *saves, int mouse, int adlib, int intro)
 {
     char cmd[32], icmd[32];
@@ -243,16 +243,16 @@ int main(int argc, char **argv)
             fprintf(stderr, "eob-port: no game files beside this program; run `make port` to build the application\n");
             return 2;
         }
-        return play(game, saves, 1, 0, 1);
+        return play(game, saves, 1, 1, 1);
     }
     if (argc >= 3 && strcmp(argv[1], "--play") == 0) {
-        int i, mouse = 1, adlib = 0, intro = 0;
+        int i, mouse = 1, adlib = 1, intro = 0;
         const char *saves = NULL;
         for (i = 3; i < argc; i++) {
             if (strcmp(argv[i], "--no-mouse") == 0) {
                 mouse = 0;
-            } else if (strcmp(argv[i], "--adlib") == 0) {
-                adlib = 1;
+            } else if (strcmp(argv[i], "--no-sound") == 0) {
+                adlib = 0;
             } else if (strcmp(argv[i], "--intro") == 0) {
                 intro = 1;
             } else if (strcmp(argv[i], "--saves") == 0 && i + 1 < argc) {
@@ -271,6 +271,6 @@ int main(int argc, char **argv)
         return window_demo();
     }
     fprintf(stderr, "usage: eob-port --self-test EOB.EXE | --data-image OUT | --replay RECORDING GAME_DIR DUMP_DIR"
-                    " | --play GAME_DIR [--saves DIR] [--intro] [--no-mouse] [--adlib] | --window\n");
+                    " | --play GAME_DIR [--saves DIR] [--intro] [--no-mouse] [--no-sound] | --window\n");
     return 2;
 }

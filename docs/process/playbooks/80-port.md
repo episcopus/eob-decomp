@@ -24,7 +24,7 @@ sound and state.
 | D the program's data as C | done 2026-11-06 (section "Step D"): D0 the data map (`re/datamap.toml`, 34 modules); D1 the tools; D2 every module's data as definitions in `src/`, the data of all 34 modules proven by `make match`, `make rebuild` of both programs as before; D3 tc2c writes the port's image from them (`make port-image`: 64,446 bytes the same as EOB.EXE's). Left: the naming round for the 126 address names D2 kept (100 are E0CF7's screen-list nodes), with its independent review |
 | M5 the replay | done 2026-11-07 (section "Step M5"): `make port-replay` plays `boot-title` headless from the port's own image, all four checkpoints the oracle's (the state view and the golden's screens); the interrupts and checkpoints keyed by the game's accesses (the human, 2026-11-07); the program's start in `port/start.c`; the assembly units' code-segment data in the image (`port/asmdata.json`) |
 | M6 the other goldens | started 2026-11-07 (section "Step M6"): `boot-title`, `boot-adlib`, `new-party`, `mouse-party` and `new-character` replay as the oracle at every checkpoint under the relaxed check (the human, 2026-11-07); interrupts also placed by the library's file calls; Westwood's far data in `src/far/FARDATA.ASM`; `DispatchKeyWait`'s result fixed in `src/E16A5.C`. Left: `load-walk` (needs interrupts placed inside computation), `make port-golden` in `make check`; `INTRO.EXE` plays in live play (section "Playtesting") |
-| M7 live play | started 2026-11-07 (section "Step M7"): `make port-play` plays the game in a window from the port's own image (keyboard, mouse, the PIT's ticks from the wall clock); headless with scripted keys it reaches character generation and the dungeon. Left: sound (ymfm, which the human installs), and a human playing it |
+| M7 live play | started 2026-11-07 (section "Step M7"): `make port-play` plays the game in a window from the port's own image (keyboard, mouse, the PIT's ticks from the wall clock); headless with scripted keys it reaches character generation and the dungeon. Sound is in (section "Sound"). Left: a human playing it |
 
 ## Why `src/` does not compile natively as it is
 
@@ -749,7 +749,7 @@ instruction count. Not started; the human's call.
 `make port-play` (`tools/port/play.py`) opens the game in a window (`build/port/eob-port --play DIR`,
 SDL3), from the port's own image, in a game directory made of the pinned files of `eob/` (with
 `SAVE=tests/sessions/fixtures/EOBDATA.SAV` a saved game in it). The launcher's choices are VGA, the
-mouse unless `--no-mouse`, no sound unless `--adlib` (the game's own arguments, " 3 4 1 homie 3").
+mouse unless `--no-mouse`, the AdLib unless `--no-sound` (the game's own arguments, " 3 1 1 homie 3").
 The port's DOS keeps the game's writes in memory: a game saved in the window is gone when it closes.
 
 The program is `build/port/eob-port` of the checkout `make port-play` runs in (the main checkout's
@@ -803,8 +803,7 @@ library's `exit`, now in the runtime (`port/runtime/tcdos.c`).
 
 ### Left
 
-- Sound: the AdLib's register writes do not reach the host yet (`platform_adlib_write`), and the host
-  has no OPL emulator: ymfm (decision 7), which the human installs.
+- Sound: AdLib only (section "Sound"). The PC speaker and Tandy drivers do not reach the host (`platform_speaker`).
 - A human plays it (M7's check): the mouse, the menus, combat and spells, saving.
 
 ## Order of work
@@ -836,7 +835,7 @@ The human answered all nine on 2026-11-04:
 | 4 | Graphics | MCGA (VGA) only |
 | 5 | The clock for the proof | the original's instruction clock; the golden format grows by one recording file per session (approved) |
 | 6 | The initial image | **generated from `src/`**, so the port ships no game bytes (not read from the player's `EOB.EXE`) |
-| 7 | The OPL emulator | ymfm (BSD 3-clause); the human installs it, at M7 |
+| 7 | The OPL emulator | ymfm (BSD 3-clause), at one commit, fetched by `make ymfm` (the human's go-ahead, 2026-11-08) |
 | 8 | Start-up | `EOB.EXE` directly with `3 4 0 homie 3` and the port's own settings; `INTRO.EXE` later |
 | 9 | Platforms | macOS, Linux and Windows from the start; **then deferred 2026-11-05: macOS only for now, Linux and Windows later** |
 
@@ -862,9 +861,29 @@ do not need it, since none of them runs the port from its own image.
 Downloads, so the human does them (AGENTS.md rule 5):
 
 - the newest LLVM (Homebrew), and its version is then pinned in `make doctor`;
-- at M7, ymfm;
 - when Linux and Windows return: a Linux container and a Windows machine or virtual machine, each with
   that LLVM, SDL3 and Python, and the command agents use to run `make port` there.
+
+## Sound
+
+The DOS game's sound is the AdLib, and only that (with the PC speaker and Tandy drivers of `E1948`). "Adlib or Sound
+Blaster" in `START1.EXE` is one choice: a Sound Blaster is used for its AdLib chip. No code touches a Sound Blaster's
+ports (`E_TEXT.ASM` writes 388h and 389h only), and no data file holds samples. The driver's own sample player
+(`StartSample`, whitepaper 5.14.5) has no caller.
+
+`make ymfm` fetches the emulator to `tools/vendor/ymfm` (gitignored, linked into every worktree); `port/port.mk` compiles
+what the YM3812 needs into the window's program, so a player installs nothing. Without it the program builds silent.
+`--play` and a double click run with the AdLib; `--no-sound` runs without it (the playtest's `silent`).
+
+- The game's thread stamps each register write with the host's time and leaves it in a one-writer, one-reader queue.
+  The audio device's thread runs the chip (`port/platform/opl.cpp`), applying each write at the sample of its time, 30 ms
+  or more behind the present so that every write of a block has arrived. So the chip goes on sounding whatever the game's
+  thread does, as the card did. No clock drift can click: if the two clocks part by 0.2 s, only the writes' placing moves.
+- With the driver the timer runs at 874 Hz (divisor 0555h), and `tick` in `live.c` pushes every tick due since it last looked.
+- Checking it: `TC_NULL_ADLIB=PATH` logs the writes on the headless program, and `expect sound N` in a playtest script
+  counts the notes started from that point. For the real output, run the window with `SDL_AUDIO_DRIVER=disk` and
+  `SDL_AUDIO_DISK_OUTPUT_FILE=PATH` (16-bit stereo at 49716 Hz).
+- In the window a scripted key meets the real pointer: Enter on the title menu with the pointer over Exit leaves the game.
 
 ## Open questions (none needs `src/` changed now)
 

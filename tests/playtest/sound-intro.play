@@ -1,0 +1,9 @@
+# The intro's music: notes start on the AdLib throughout, not only at the beginning.
+start intro
+expect sound 20
+wait 10000
+expect sound 20
+wait 10000
+expect sound 20
+wait 10000
+shot end

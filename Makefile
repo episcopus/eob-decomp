@@ -4,7 +4,7 @@
 PY ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python3)
 PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
-.PHONY: help setup doctor inputs overlays pak data emu2 test p0-check tc-install tc-check rtl-compare map match oracle-run golden test-slow \
+.PHONY: help setup doctor inputs overlays pak data emu2 ymfm test p0-check tc-install tc-check rtl-compare map match oracle-run golden test-slow \
 	match-gate check queue next claim locks unlock packet skeleton handoff handoffs handoff-done integrate review-pass worker progress \
 	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port port-image port-replay port-play port-playtest port-asmdata port-literals port-hybrid handbook handbook-setup handbook-figs datamap data-skeleton
 
@@ -48,6 +48,9 @@ data: pak         ## decode every data file: PAKs, fonts, the test save (whitepa
 	$(PY) tools/re/wwfmt.py verify eob/
 	$(PY) tools/re/eobfmt.py verify eob/
 	$(PY) tools/re/eobfmt.py save tests/sessions/fixtures/EOBDATA.SAV
+
+ymfm:             ## fetch the OPL2 emulator the port's sound is compiled from (playbook 80, decision 7)
+	sh tools/setup/get-ymfm.sh
 
 emu2:             ## build the headless DOS emulator that runs the Turbo C++ tools
 	sh tools/setup/build-emu2.sh
