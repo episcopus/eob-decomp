@@ -33,8 +33,10 @@
 #include "tclib.h"
 
 static u32 start_ms, last_present_ms, next_irq0_us;
-static u8 irq0_waiting;          /* a timer interrupt pushed and not delivered yet */
-static u32 pushed, irq0_at;      /* the events pushed; the ordinal of the waiting IRQ 0 */
+static u32 irq0_pushed;          /* the timer interrupts pushed, on the count of machine_irq0_delivered */
+#define IRQ0_BACKLOG 3u          /* how many may wait for a place to be delivered: the host's hiccups cost no ticks */
+static u32 seen_ms = 0xFFFFFFFFu;  /* the millisecond `more` last worked in */
+static u32 present_ms, present_n;  /* what the presents cost (TC_PLAY_STATS) */
 
 #define NO_SNAPSHOT 0xFFFFFFFFu
 static u32 snapshot_ms = NO_SNAPSHOT;     /* TC_PLAY_SNAPSHOT=ms:path;...: the screen and DAC at those times */
@@ -81,7 +83,6 @@ static void present(void)
 static void push(machine_event *e)
 {
     machine_event_push(e);
-    pushed++;
 }
 
 static void mouse_event(const struct platform_event *p)
@@ -114,56 +115,122 @@ static void mouse_event(const struct platform_event *p)
     push(&e);
 }
 
+/* TC_NULL_INPUT, on any host: set 1 scancodes (hexadecimal) each at a time in milliseconds of the run,
+   "40000:50,40100:D0"; an entry "MS:Mx.y.b" is the mouse at the screen's pixel (x, y) with the buttons b
+   (1 left, 2 right). Each comes once the clock has reached its time. */
+static struct platform_event script_next(u32 now_ms)
+{
+    static const char *next;
+    static int started;
+    struct platform_event e = {PLATFORM_EVENT_NONE, 0, 0, 0, 0};
+    char *end;
+    unsigned long at;
+    if (!started) {
+        started = 1;
+        next = getenv("TC_NULL_INPUT");
+    }
+    if (next == NULL || *next == 0) {
+        return e;
+    }
+    at = strtoul(next, &end, 10);
+    if (*end != ':' || at > now_ms) {
+        return e;
+    }
+    if (end[1] == 'M') {
+        e.kind = PLATFORM_EVENT_MOUSE;
+        e.mouse_x = (u16)(strtoul(end + 2, &end, 10) * 2);   /* the driver's 640-wide range, as sdl_host.c */
+        e.mouse_y = (u16)strtoul(end + 1, &end, 10);
+        e.buttons = (u8)strtoul(end + 1, &end, 10);
+    } else {
+        e.kind = PLATFORM_EVENT_SCANCODE;
+        e.scancode = (u8)strtoul(end + 1, &end, 16);
+    }
+    next = *end == ',' ? end + 1 : end;
+    return e;
+}
+
+/* what TC_PLAY_STATS reports when the run ends: the timer ticks that came due and how many the game got */
+static u32 ticks_due;
+
+static void report(void)
+{
+    if (getenv("TC_PLAY_STATS") != NULL) {
+        fprintf(stderr, "eob-port: stats: %lu ms, tick period %lu us, ticks due %lu, delivered %lu, %lu presents %lu ms\n",
+                (unsigned long)(platform_ms() - start_ms), (unsigned long)machine_irq0_period(),
+                (unsigned long)ticks_due, (unsigned long)machine_irq0_delivered, (unsigned long)present_n,
+                (unsigned long)present_ms);
+    }
+}
+
+/* The clock is looked at often (every access of the machine and every tc_poll_mask loop turns), so the work
+   is done once per millisecond of it. */
+static void tick(u32 now_ms)
+{
+    u32 now_us = now_ms * 1000u;
+    struct platform_event p;
+    for (;;) {
+        machine_event e;
+        p = platform_poll_event();
+        if (p.kind == PLATFORM_EVENT_NONE) {
+            p = script_next(now_ms);
+        }
+        if (p.kind == PLATFORM_EVENT_NONE) {
+            break;
+        }
+        memset(&e, 0, sizeof e);
+        if (p.kind == PLATFORM_EVENT_QUIT) {
+            platform_quit();
+            fprintf(stderr, "eob-port: the window was closed\n");
+            exit(0);
+        }
+        if (p.kind == PLATFORM_EVENT_SCANCODE) {
+            e.kind = MACHINE_IRQ1;
+            e.scancode = p.scancode;
+            push(&e);
+        } else if (p.kind == PLATFORM_EVENT_MOUSE) {
+            mouse_event(&p);
+        }
+    }
+    if ((s32)(now_us - next_irq0_us) >= 0) {             /* the microseconds wrap at 71 minutes */
+        ticks_due++;
+        if (irq0_pushed - machine_irq0_delivered < IRQ0_BACKLOG) {
+            machine_event e;
+            memset(&e, 0, sizeof e);
+            e.kind = MACHINE_IRQ0;
+            push(&e);
+            irq0_pushed++;
+        }
+        next_irq0_us += machine_irq0_period();
+        if ((s32)(now_us - next_irq0_us) > 100000) {
+            next_irq0_us = now_us;                       /* behind by more than 0.1 s: the ticks are lost */
+        }
+    }
+    while (snapshot_ms != NO_SNAPSHOT && now_ms >= snapshot_ms) {
+        snapshot();
+    }
+    if (now_ms >= end_ms) {
+        report();
+        platform_quit();
+        fprintf(stderr, "eob-port: the run reached its end time\n");
+        exit(0);
+    }
+    if (now_ms - last_present_ms >= 16u) {
+        u32 t = platform_ms();
+        present();
+        present_ms += platform_ms() - t;
+        present_n++;
+        last_present_ms = now_ms;
+    }
+}
+
 static void more(int waiting)
 {
     for (;;) {
-        u32 now_ms = platform_ms() - start_ms, now_us = now_ms * 1000u;
-        struct platform_event p;
-        machine_time.insns = now_us;
-        while ((p = platform_poll_event()).kind != PLATFORM_EVENT_NONE) {
-            machine_event e;
-            memset(&e, 0, sizeof e);
-            if (p.kind == PLATFORM_EVENT_QUIT) {
-                platform_quit();
-                fprintf(stderr, "eob-port: the window was closed\n");
-                exit(0);
-            }
-            if (p.kind == PLATFORM_EVENT_SCANCODE) {
-                e.kind = MACHINE_IRQ1;
-                e.scancode = p.scancode;
-                push(&e);
-            } else if (p.kind == PLATFORM_EVENT_MOUSE) {
-                mouse_event(&p);
-            }
-        }
-        if (irq0_waiting && machine_events_delivered() >= irq0_at) {
-            irq0_waiting = 0;
-        }
-        if ((s32)(now_us - next_irq0_us) >= 0) {         /* the microseconds wrap at 71 minutes */
-            if (!irq0_waiting) {
-                machine_event e;
-                memset(&e, 0, sizeof e);
-                e.kind = MACHINE_IRQ0;
-                push(&e);
-                irq0_waiting = 1;
-                irq0_at = machine_events_delivered() + machine_events_left();
-            }
-            next_irq0_us += machine_irq0_period();
-            if ((s32)(now_us - next_irq0_us) > 100000) {
-                next_irq0_us = now_us;          /* behind by more than 0.1 s: the ticks are lost */
-            }
-        }
-        while (snapshot_ms != NO_SNAPSHOT && now_ms >= snapshot_ms) {
-            snapshot();
-        }
-        if (now_ms >= end_ms) {
-            platform_quit();
-            fprintf(stderr, "eob-port: the run reached its end time\n");
-            exit(0);
-        }
-        if (now_ms - last_present_ms >= 16u) {
-            present();
-            last_present_ms = now_ms;
+        u32 now_ms = platform_ms() - start_ms;
+        machine_time.insns = now_ms * 1000u;
+        if (now_ms != seen_ms) {
+            seen_ms = now_ms;
+            tick(now_ms);
         }
         if (!waiting || machine_events_left() > 0) {
             return;
@@ -207,16 +274,46 @@ static void boot(const char *exe, const char *cmdline, int mouse_on, int adlib)
     machine_more = more;
     tc_live = 1;
     tc_poll_mask = platform_poll_mask();
-    irq0_waiting = 0;
-    pushed = 0;
+    irq0_pushed = machine_irq0_delivered;
     next_irq0_us = (platform_ms() - start_ms) * 1000u + machine_irq0_period();
+}
+
+struct play_args {
+    const char *cmdline, *intro_cmdline;
+    int mouse_on, adlib;
+};
+
+/* the intro and the game: on the game's own thread where the host has one (platform_run) */
+static int play_all(void *p)
+{
+    struct play_args *a = p;
+    const char *volatile cmdline = a->cmdline;
+    farptr argv;
+    s16 argc, rc;
+    start_ms = platform_ms();
+    if (a->intro_cmdline != NULL) {
+        if (setjmp(chained) == 0) {
+            tc_exec_hook = chain;
+            boot("INTRO.EXE", a->intro_cmdline, a->mouse_on, a->adlib);
+            argc = tc_start(&argv);
+            intro_load_data();
+            Intro_Main(argc, argv);
+        }
+        if (chain_tail[0]) {
+            cmdline = chain_tail;
+        }
+    }
+    boot("EOB.EXE", cmdline, a->mouse_on, a->adlib);
+    argc = tc_start(&argv);
+    rc = Main(argc, argv);
+    platform_quit();
+    return rc;
 }
 
 int live_run(const char *game_dir, const char *save_dir, const char *cmdline, const char *intro_cmdline, int mouse_on,
              int adlib)
 {
-    farptr argv;
-    s16 argc, rc;
+    static struct play_args a;
     if (platform_init("Eye of the Beholder", 3) != 0 && getenv("TC_PLAY_SNAPSHOT") == NULL && getenv("TC_PLAY_END") == NULL) {
         return 2;                               /* no window, and not the headless smoke test */
     }
@@ -229,22 +326,9 @@ int live_run(const char *game_dir, const char *save_dir, const char *cmdline, co
     if (getenv("TC_PLAY_END") != NULL) {
         end_ms = (u32)strtoul(getenv("TC_PLAY_END"), NULL, 10);
     }
-    start_ms = platform_ms();
-    if (intro_cmdline != NULL) {
-        if (setjmp(chained) == 0) {
-            tc_exec_hook = chain;
-            boot("INTRO.EXE", intro_cmdline, mouse_on, adlib);
-            argc = tc_start(&argv);
-            intro_load_data();
-            Intro_Main(argc, argv);
-        }
-        if (chain_tail[0]) {
-            cmdline = chain_tail;
-        }
-    }
-    boot("EOB.EXE", cmdline, mouse_on, adlib);
-    argc = tc_start(&argv);
-    rc = Main(argc, argv);
-    platform_quit();
-    return rc;
+    a.cmdline = cmdline;
+    a.intro_cmdline = intro_cmdline;
+    a.mouse_on = mouse_on;
+    a.adlib = adlib;
+    return platform_run(play_all, &a);
 }

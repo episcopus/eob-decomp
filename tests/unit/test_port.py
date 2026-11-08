@@ -122,6 +122,23 @@ def test_the_playtest_passes():
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
 
 
+@pytest.mark.slow
+def test_the_timer_survives_input_at_any_moment(tmp_path):
+    """Two mouse moves at every offset of a tick: a mouse event that reached the event queue next to a timer
+    interrupt once left the timer stopped for good (ticks due 364, delivered 92) until more input came."""
+    sys.path.insert(0, str(ROOT / "tools"))
+    from port.replay import game_dir
+    gd = game_dir(tmp_path / "game")
+    for d in range(0, 110):
+        for gap in (3, 10, 25):
+            events = "%d:M100.100.0,%d:M104.100.0" % (5000 + d, 5000 + d + gap)
+            env = dict(os.environ, TC_NULL_INPUT=events, TC_PLAY_STATS="1", TC_PLAY_END="20000")
+            r = subprocess.run([str(ROOT / "build/port/eob-port-headless"), "--play", str(gd), "--intro"], env=env,
+                               capture_output=True, text=True, timeout=60, check=True)
+            m = re.search(r"ticks due (\d+), delivered (\d+)", r.stderr)
+            assert m and int(m.group(1)) - int(m.group(2)) <= 3, (d, gap, r.stderr[-300:])
+
+
 def test_only_the_platform_directory_uses_sdl():
     """platform.h is the only boundary (playbook 80, "Platform separation"): the game, the runtime and
     the machine never include or call SDL, so they build for any host."""

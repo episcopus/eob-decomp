@@ -46,6 +46,7 @@ static u32 ltime_count, ltime_cap, ltime_next;
 u32 machine_library_accesses;
 u32 machine_files;
 static int delivering;
+u32 machine_irq0_delivered;
 
 #ifdef TC_HYBRID
 /* the hybrid build: the bench's devices take the interrupt (its in-service flags, the scancode in port
@@ -133,6 +134,7 @@ static void deliver(const machine_event *e)
 #endif
     switch (e->kind) {
     case MACHINE_IRQ0:
+        machine_irq0_delivered++;
         if (!done) {
             hw.irq0_in_service = 1;
         }

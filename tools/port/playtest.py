@@ -25,6 +25,7 @@ Script lines, times in milliseconds of the game's clock:
   shot NAME [changed]            a screenshot; `changed`: it must differ from the one before
   restart                        end this run and start the program again, with the saves it wrote
   expect exit                    the run ends by the game's own Exit to DOS
+  realtime                       this run on the wall clock, as in a window (slow): its timer ticks are checked
 """
 from __future__ import annotations
 
@@ -65,6 +66,7 @@ class Run:
     shots: list[tuple[int, str, bool]] = field(default_factory=list)
     t: int = 0
     expect_exit: bool = False
+    realtime: bool = False
 
 
 @dataclass
@@ -102,6 +104,8 @@ def parse(text: str) -> list[Run]:
             r.shots.append((r.t, w[1], "changed" in w[2:]))
         elif w[0] == "expect":
             r.expect_exit = True
+        elif w[0] == "realtime":
+            r.realtime = True
         elif w[0] == "restart":
             r = Run(start=r.start)
             runs.append(r)
@@ -133,7 +137,9 @@ def sheet(paths: list[Path], out: Path) -> None:
 
 
 def run_program(exe: Path, gd: Path, saves: Path, r: Run, where: Path, stem: str, env_extra: dict) -> tuple[str, int | None, list[tuple[Path, bool]]]:
-    env = dict(os.environ, TC_NULL_INPUT=",".join(r.events), TC_PLAY_END=str(r.t + 500), **env_extra)
+    env = dict(os.environ, TC_NULL_INPUT=",".join(r.events), TC_PLAY_END=str(r.t + 500), TC_PLAY_STATS="1", **env_extra)
+    if r.realtime:
+        env["TC_NULL_REALTIME"] = "1"
     made = []
     plan = []
     for t, name, ch in r.shots:
@@ -183,6 +189,9 @@ def play(name: str, runs: list[Run], exe: Path, gamedirs: dict, env_extra: dict)
             problems.append("run %d: stopped: %s" % (i, last_line))
         elif r.expect_exit and not ended:
             problems.append("run %d: expected the game's exit, got: %s" % (i, last_line))
+        m = re.search(r"ticks due (\d+), delivered (\d+)", err)
+        if m and int(m.group(1)) - int(m.group(2)) > max(3, int(m.group(1)) // 50):
+            problems.append("run %d: the game got %s of %s timer ticks" % (i, m.group(2), m.group(1)))
         for k, (b, ch) in enumerate(shots):
             if not b.exists():
                 if (rc == 0 or rc is None) and not ended:
