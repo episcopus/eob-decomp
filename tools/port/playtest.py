@@ -25,7 +25,9 @@ Script lines, times in milliseconds of the game's clock:
   shot NAME [changed]            a screenshot; `changed`: it must differ from the one before
   restart                        end this run and start the program again, with the saves it wrote
   expect exit                    the run ends by the game's own Exit to DOS
+  expect sound N                 from here to the run's end, at least N notes start on the AdLib
   realtime                       this run on the wall clock, as in a window (slow): its timer ticks are checked
+  silent                         this run with no sound card (every other run has the AdLib, as a player does)
 """
 from __future__ import annotations
 
@@ -67,6 +69,8 @@ class Run:
     t: int = 0
     expect_exit: bool = False
     realtime: bool = False
+    silent: bool = False
+    sound: list[tuple[int, int]] = field(default_factory=list)
 
 
 @dataclass
@@ -102,10 +106,14 @@ def parse(text: str) -> list[Run]:
             r.t += 400
         elif w[0] == "shot":
             r.shots.append((r.t, w[1], "changed" in w[2:]))
-        elif w[0] == "expect":
+        elif w[:2] == ["expect", "exit"]:
             r.expect_exit = True
+        elif w[:2] == ["expect", "sound"]:
+            r.sound.append((r.t, int(w[2])))
         elif w[0] == "realtime":
             r.realtime = True
+        elif w[0] == "silent":
+            r.silent = True
         elif w[0] == "restart":
             r = Run(start=r.start)
             runs.append(r)
@@ -148,9 +156,13 @@ def run_program(exe: Path, gd: Path, saves: Path, r: Run, where: Path, stem: str
         made.append((p, ch))
     if plan:
         env["TC_PLAY_SNAPSHOT"] = ";".join(plan)
+    if r.sound:
+        env["TC_NULL_ADLIB"] = str(where / (stem + "adlib.txt"))
     args = [str(exe), "--play", str(gd), "--saves", str(saves)]
     if r.start == "intro":
         args.append("--intro")
+    if r.silent:
+        args.append("--no-sound")
     try:
         c = subprocess.run(args, env=env, capture_output=True, text=True, timeout=LIMIT_S)
         return c.stderr, c.returncode, made
@@ -189,6 +201,14 @@ def play(name: str, runs: list[Run], exe: Path, gamedirs: dict, env_extra: dict)
             problems.append("run %d: stopped: %s" % (i, last_line))
         elif r.expect_exit and not ended:
             problems.append("run %d: expected the game's exit, got: %s" % (i, last_line))
+        if r.sound:
+            log = where / (stem + "adlib.txt")
+            notes = [int(t) for t, reg, val in (ln.split() for ln in (log.read_text().splitlines() if log.exists() else []))
+                     if 0xB0 <= int(reg, 16) <= 0xB8 and int(val, 16) & 0x20]
+            for t0, want in r.sound:
+                got = sum(1 for t in notes if t >= t0)
+                if got < want:
+                    problems.append("run %d: from %d ms %d notes started on the AdLib, expected at least %d" % (i, t0, got, want))
         m = re.search(r"ticks due (\d+), delivered (\d+)", err)
         if m and int(m.group(1)) - int(m.group(2)) > max(3, int(m.group(1)) // 50):
             problems.append("run %d: the game got %s of %s timer ticks" % (i, m.group(2), m.group(1)))

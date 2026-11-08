@@ -5,7 +5,7 @@
 # main.c are compiled once, with no platform headers on the include path, and linked twice:
 #
 #   build/port/eob-port-headless   with port/platform/null.c; needs no SDL; the self-test runs on it
-#   build/port/eob-port            with port/platform/sdl_host.c and SDL3 (built when SDL3 is found)
+#   build/port/eob-port            with port/platform/sdl_host.c and SDL3 (built when SDL3 is found), and ymfm for sound
 #
 # make port-hybrid builds the same translation, the runtime and port/runtime/hybrid.c, with TC_HYBRID,
 # as the shared library build/port/hybrid/libeobhybrid.so for the per-function test (M2,
@@ -25,6 +25,10 @@ UNITS := $(shell sed -e 's/\#.*//' port/units.txt)
 HAVE_SDL3 := $(shell pkg-config --exists sdl3 2>/dev/null && echo yes)
 SDL_CFLAGS := $(shell pkg-config --cflags sdl3 2>/dev/null)
 SDL_LIBS := $(shell pkg-config --libs sdl3 2>/dev/null)
+# the OPL2 emulator (`make ymfm`, decision 7): compiled into the window's program, which is silent without it
+YMFM := tools/vendor/ymfm/src
+HAVE_YMFM := $(if $(wildcard $(YMFM)/ymfm_opl.h),yes)
+CXX ?= c++
 # gnu99: the generated code uses statement expressions for compound assignments (decision 2)
 CFLAGS := -std=gnu99 -O2 -Wall -Wextra -Werror -Wno-unused-value -Wno-parentheses-equality -Iport/include -I$(GEN)
 # the generated C keeps every parameter of src/, read or not
@@ -79,7 +83,7 @@ $(OBJ)/gen/%.o: $(GEN)/%.c $(GEN)/ported.h $(HEADERS)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) $(GEN_CFLAGS) -c -o $@ $<
 
-$(OBJ)/port/platform/sdl_host.o: CFLAGS += $(SDL_CFLAGS)
+$(OBJ)/port/platform/sdl_host.o: CFLAGS += $(SDL_CFLAGS) $(if $(HAVE_YMFM),-DTC_SOUND -Iport/platform)
 $(OBJ)/port/%.o: port/%.c $(GEN)/ported.h $(HEADERS)
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c -o $@ $<
@@ -87,14 +91,26 @@ $(OBJ)/port/%.o: port/%.c $(GEN)/ported.h $(HEADERS)
 $(OUT)/eob-port-headless: $(CORE_O) $(OBJ)/port/platform/null.o $(OBJ)/port/platform/files.o
 	$(CC) -o $@ $^
 
-$(OUT)/eob-port: $(CORE_O) $(OBJ)/port/platform/sdl_host.o $(OBJ)/port/platform/files.o
-	$(CC) -o $@ $^ $(SDL_LIBS)
+SOUND_O := $(if $(HAVE_YMFM),$(OBJ)/port/platform/opl.o $(OBJ)/ymfm/ymfm_opl.o $(OBJ)/ymfm/ymfm_adpcm.o $(OBJ)/ymfm/ymfm_pcm.o)
+CXXFLAGS := -std=c++14 -O2 -I$(YMFM) -Iport/platform
+
+$(OBJ)/port/platform/opl.o: port/platform/opl.cpp port/platform/opl.h
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+$(OBJ)/ymfm/%.o: $(YMFM)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -w -c -o $@ $<
+
+$(OUT)/eob-port: $(CORE_O) $(OBJ)/port/platform/sdl_host.o $(OBJ)/port/platform/files.o $(SOUND_O)
+	$(CXX) -o $@ $^ $(SDL_LIBS)
 
 port-check: $(OUT)/eob-port-headless
 	$(OUT)/eob-port-headless --self-test eob/EOB.EXE
 
 ifeq ($(HAVE_SDL3),yes)
 port-sdl: $(OUT)/eob-port
+	@$(if $(HAVE_YMFM),,echo "port: ymfm not found: the game will be silent (make ymfm)")
 	@$(PY) tools/port/app.py
 else
 port-sdl:

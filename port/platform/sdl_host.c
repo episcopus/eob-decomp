@@ -3,14 +3,21 @@
    Adapted from poolrad's c/platform/sdl_host.c: one window, one
    streaming texture, scaled; SDL key events become what the hardware would deliver. Unlike poolrad's
    host, which queues BIOS key codes (scan code and ASCII, INT 16h), this one queues set 1 scancodes,
-   make and break, because the game reads port 60h itself (E1AAD.ASM). Skeleton status: video,
-   keyboard, mouse and time; sound and files are the machine layer's next step. */
+   make and break, because the game reads port 60h itself (E1AAD.ASM).
+
+   Sound: the game's thread stamps each AdLib register write with the time and leaves it in a queue; the
+   audio device's thread runs the chip (opl.cpp) and applies each write at the sample of its time, a
+   little behind the present so that every write of a block has arrived before the block is made. The
+   chip goes on sounding whatever the game's thread is doing, as the card did. */
 #include <stdio.h>
 #include <string.h>
 
 #include <SDL3/SDL.h>
 
 #include "platform.h"
+#ifdef TC_SOUND
+#include "opl.h"
+#endif
 
 #define FB_W 320
 #define FB_H 200
@@ -148,6 +155,91 @@ static void pump(void)
     }
 }
 
+/* ---- Sound ---- */
+#ifdef TC_SOUND
+#define NS_PER_S 1000000000LL
+#define WRITES 32768u                   /* far more than the driver's writes in any second */
+#define DELAY_NS 30000000LL             /* how far behind the present the chip runs */
+#define MARGIN_NS 10000000LL            /* room for a block's own length to arrive late */
+#define MAX_DELAY_NS 250000000LL
+#define RESYNC_NS 200000000LL           /* the device's clock and the host's have parted by this much */
+#define BLOCK 1024
+#define GAIN 2                          /* the chip's output peaks near a quarter of full scale (the intro's music, 7488) */
+
+static struct adlib_write {
+    Sint64 ns;
+    uint8_t reg, value;
+} writes[WRITES];
+static SDL_AtomicInt writes_head, writes_tail;  /* one writer (the game's thread), one reader (the device's) */
+static SDL_AudioStream *audio;
+
+static void SDLCALL audio_fill(void *unused, SDL_AudioStream *stream, int additional, int total)
+{
+    static Sint64 pos_ns, delay_ns = DELAY_NS;
+    static int started;
+    int16_t block[BLOCK];
+    int left = additional / 2, head, tail;
+    Sint64 now = (Sint64)SDL_GetTicksNS(), length = left * NS_PER_S / OPL_RATE, off;
+    (void)unused;
+    (void)total;
+    if (length + MARGIN_NS > delay_ns) {
+        delay_ns = length + MARGIN_NS < MAX_DELAY_NS ? length + MARGIN_NS : MAX_DELAY_NS;
+    }
+    off = now - delay_ns - pos_ns;
+    if (!started || off > RESYNC_NS || off < -RESYNC_NS) {
+        pos_ns = now - delay_ns;
+        started = 1;
+    }
+    head = SDL_GetAtomicInt(&writes_head);
+    tail = SDL_GetAtomicInt(&writes_tail);
+    while (left > 0) {
+        int n = left < BLOCK ? left : BLOCK, i;
+        for (i = 0; i < n; i++) {
+            Sint64 t = pos_ns + i * NS_PER_S / OPL_RATE;
+            while (head != tail && writes[head].ns <= t) {
+                opl_write(writes[head].reg, writes[head].value);
+                head = (int)(((unsigned)head + 1u) % WRITES);
+            }
+            opl_render(&block[i], 1);
+            {
+                int v = block[i] * GAIN;
+                block[i] = (int16_t)(v > 32767 ? 32767 : v < -32768 ? -32768 : v);
+            }
+        }
+        SDL_PutAudioStreamData(stream, block, n * 2);
+        pos_ns += n * NS_PER_S / OPL_RATE;
+        left -= n;
+    }
+    SDL_SetAtomicInt(&writes_head, head);
+}
+
+static void audio_open(void)
+{
+    SDL_AudioSpec spec;
+    if (audio != NULL) {
+        return;
+    }
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, "512");
+    if (!SDL_InitSubSystem(SDL_INIT_AUDIO)) {
+        fprintf(stderr, "platform: no sound: %s\n", SDL_GetError());
+        return;
+    }
+    spec.format = SDL_AUDIO_S16;
+    spec.channels = 1;
+    spec.freq = OPL_RATE;
+    audio = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, audio_fill, NULL);
+    if (audio == NULL) {
+        fprintf(stderr, "platform: no sound: %s\n", SDL_GetError());
+        return;
+    }
+    SDL_ResumeAudioStreamDevice(audio);
+}
+#else
+static void audio_open(void)
+{
+}
+#endif
+
 int platform_init(const char *title, int scale)
 {
     if (win != NULL) {
@@ -157,6 +249,7 @@ int platform_init(const char *title, int scale)
         fprintf(stderr, "platform: SDL_Init: %s\n", SDL_GetError());
         return -1;
     }
+    audio_open();
     if (!SDL_CreateWindowAndRenderer(title, FB_W * scale, FB_H * scale * 6 / 5, SDL_WINDOW_RESIZABLE, &win, &ren)) {
         fprintf(stderr, "platform: window: %s\n", SDL_GetError());
         return -1;
@@ -316,8 +409,19 @@ void platform_sleep_ms(uint32_t ms)
 
 void platform_adlib_write(uint8_t reg, uint8_t value)
 {
+#ifdef TC_SOUND
+    unsigned tail = (unsigned)SDL_GetAtomicInt(&writes_tail), next = (tail + 1u) % WRITES;
+    if (audio == NULL || next == (unsigned)SDL_GetAtomicInt(&writes_head)) {
+        return;
+    }
+    writes[tail].ns = (Sint64)SDL_GetTicksNS();
+    writes[tail].reg = reg;
+    writes[tail].value = value;
+    SDL_SetAtomicInt(&writes_tail, (int)next);
+#else
     (void)reg;
     (void)value;
+#endif
 }
 
 void platform_speaker(uint16_t divisor, uint8_t port61_low2)

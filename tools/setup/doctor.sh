@@ -33,6 +33,9 @@ opt "emu2"           "test -x tools/vendor/emu2/emu2" "echo emu2 \$(git -C tools
 opt "toolchain archives" "ls build/toolchain/dist/* >/dev/null 2>&1" "echo \$(ls build/toolchain/dist | wc -l | tr -d ' ') files in build/toolchain/dist" "put the Turbo C++ archives in build/toolchain/dist/ (docs/setup/SETUP-tc.md)"
 opt "toolchain installed" "$PY tools/re/tc_toolchain.py check" "$PY tools/re/tc_toolchain.py check | tail -1" "make tc-install (docs/setup/SETUP-tc.md)"
 
+echo "== the port"
+opt "ymfm"           "test -f tools/vendor/ymfm/src/ymfm_opl.h" "echo ymfm \$(git -C tools/vendor/ymfm rev-parse --short HEAD 2>/dev/null)" "make ymfm"
+
 echo "== inputs"
 TMP=$(mktemp)
 if $PY tools/setup/inputs.py --check >"$TMP" 2>&1; then line ok "pinned inputs" "$(tail -1 "$TMP")"; else line missing "pinned inputs" "$(tail -1 "$TMP")"; REQ_MISSING=1; fi
