@@ -30,7 +30,7 @@ def test_the_port_builds_and_passes_its_self_test():
                        capture_output=True, text=True)
     assert r.returncode == 0, r.stdout[-3000:] + r.stderr[-3000:]
     assert "8 lists: ok" in r.stdout
-    assert "43 units" in r.stdout, "every C unit of EOB.EXE is translated (M1), and the two data-only modules (D3)"
+    assert "45 units" in r.stdout, "every C unit of EOB.EXE is translated (M1), the two data-only modules (D3), and the intro's two (I0892, IOV0)"
     # platform separation: the self-test ran on the headless program, which links no SDL
     assert "eob-port-headless --self-test" in r.stdout
     assert (ROOT / "build" / "port" / "eob-port-headless").exists()

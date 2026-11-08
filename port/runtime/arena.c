@@ -23,6 +23,7 @@ u8 tc_hot_watch;
 __attribute__((weak)) void tc_spin_idle(void) {}
 u8 tc_live;
 u32 tc_turns;
+u32 tc_poll_mask = 0xFFFFu;
 __attribute__((weak)) void tc_live_poll(void) {}
 /* the replay's trace of reads of handler-written bytes (irq.c); nothing outside it */
 __attribute__((weak)) void tc_hot_read(u32 a) { (void)a; }

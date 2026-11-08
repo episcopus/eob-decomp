@@ -280,8 +280,6 @@ void machine_wait(void)
 /* Live play, every 64K loop turns (tc_spin): the host is looked at, and what has come is delivered
    here too, as a PC's interrupt comes between any two instructions, so a loop that neither accesses
    the machine nor turns idle still sees the keyboard, the mouse and the clock. */
-u32 tc_poll_mask = 0xFFFFu;
-
 void tc_live_poll(void)
 {
     if (machine_more != NULL && !delivering) {
