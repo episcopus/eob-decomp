@@ -1,0 +1,44 @@
+--- a/IOV0.C
++++ b/IOV0.C
+@@ -17,6 +17,8 @@
+ /*@flags -ml -O -Z -G */
+ 
+ #include <dos.h>
++extern unsigned gPageSegs[];
++extern int gGraphicsChoice;
+ 
+ /* The driver entry points. The front end fills these words at load time (i0892 sets ds:1F46
+    from its palette setup at 0892:011D..0142); their DGROUP neighbours ds:1E98..1ED0 hold far
+@@ -1196,6 +1198,10 @@
+         value = gOrderY[pos];
+         gOrderY[pos] = gOrderY[i];
+         gOrderY[i] = value;
++    }
++    if (gGraphicsChoice == 1) {
++        (*(void (far * near *)())0x1F16)((int far *)gOrderX, (int far *)gOrderY, x, y, width, height, gPageSegs[fromPage], gPageSegs[toPage]);
++        return;
+     }
+     savedPage = gDrawPage;
+     for (row = 0; row < height; row++) {
+--- a/EOV5.C
++++ b/EOV5.C
+@@ -8,6 +8,8 @@
+ 
+ /*@flags -ml -O -Z -v */
+ 
++extern unsigned gPageSegs[];
++extern int gGraphicsChoice;
+ #include <dos.h>        /* FP_OFF/FP_SEG, the blit calls split a far pointer */
+ 
+ #include "EOB.H"
+@@ -1383,6 +1385,10 @@
+         handle = ys[pick];
+         ys[pick] = ys[idx];
+         ys[idx] = handle;
++    }
++    if (gGraphicsChoice == 1) {
++        (*(void (far * near *)())0x808A)(xs, ys, x, y, cols, rows, gPageSegs[saveStatus], gPageSegs[restoreStatus]);
++        return;
+     }
+     saved = gDrawPage;
+     for (k = 0; k < rows; k++) {

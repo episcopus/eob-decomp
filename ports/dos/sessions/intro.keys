@@ -1,0 +1,24 @@
+# intro: INTRO.EXE as START1.EXE runs it, with Tandy video and sound: the Westwood card, the four SSI cards (each a
+# dissolve) and on into the title. The times are ticks of virtual time; `shot`s compare the screen and pages.
+option program INTRO.EXE
+wait 20
+shot t20
+wait 120
+shot t140
+wait 120
+shot t260
+wait 120
+shot t380
+wait 120
+shot t500
+wait 120
+shot t620
+wait 400
+shot t1020
+wait 400
+shot t1420
+wait 400
+shot t1820
+wait 400
+shot t2220
+quit

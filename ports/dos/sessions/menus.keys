@@ -1,0 +1,51 @@
+# menus: the camp menu from the keyboard: the highlight moves, the Memorize page, Preferences, Game Options, and out.
+# The saved game; the camp's keys are the arrows, Enter on the row and Esc to back out.
+option save fixtures/EOBDATA.SAV
+idle
+mark load
+key ENTER
+idle
+shot view
+mark campopen
+key c
+shot camp
+mark menumove
+key DOWN
+key DOWN
+key UP
+key DOWN
+shot moved
+mark submenu
+key ENTER
+shot memo
+mark subkey
+key DOWN
+key DOWN
+key UP
+shot memo2
+mark subexit
+key ESC
+shot back
+mark menumove
+key DOWN
+key DOWN
+key DOWN
+shot prefs0
+mark submenu
+key ENTER
+shot prefs
+mark subexit
+key ESC
+shot back2
+mark menumove
+key DOWN
+mark submenu
+key ENTER
+shot gameopts
+mark subexit
+key ESC
+mark campclose
+key ESC
+shot end
+idle
+quit

@@ -1,0 +1,37 @@
+# combat: the saved game, the party put next to the monster group of cell 436 (level 1); attacks with the hand under
+# the keyboard cursor, the monsters answering. `poke` writes a word of DGROUP (the party's cell and facing).
+option save fixtures/EOBDATA.SAV
+idle
+mark load
+key ENTER
+idle
+poke FBCA 468
+poke FBCC 0
+poke 7294 1
+idle
+shot start
+mark attack
+key u
+shot a1
+key u
+key u
+key u
+shot a2
+key s
+key u
+key u
+key u
+key u
+shot a3
+key z
+key u
+key u
+key u
+key u
+shot a4
+mark sidestep
+key LEFT
+key RIGHT
+shot end
+idle
+quit

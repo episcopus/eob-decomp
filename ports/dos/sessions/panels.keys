@@ -1,0 +1,26 @@
+# panels: the inventory, the character sheet, the camp menu: mostly the driver's text, shapes and rectangles.
+option save fixtures/EOBDATA.SAV
+idle
+mark load
+key ENTER
+idle
+mark inv
+key i
+shot inv
+key F2
+key F3
+key F1
+mark sheet
+key p
+shot sheet
+key F2
+key F3
+mark map
+key i
+mark camp
+key c
+shot camp
+key ESC
+shot end
+idle
+quit

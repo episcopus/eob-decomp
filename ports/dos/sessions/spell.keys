@@ -1,0 +1,50 @@
+# spell: the saved game, the party next to the monsters of cell 436 (combat.keys). The mage (AZALIS, member 3) has spells
+# poked into its first level's slots (4 is magic missile); her book is in the second hand. Opens the spell panel with the
+# hand cursor, moves its highlight, casts at the monsters; `wait`s let the missile fly and the burst play.
+option save fixtures/EOBDATA.SAV
+idle
+mark load
+key ENTER
+idle
+poke FBCA 468
+poke FBCC 0
+poke 7294 1
+poke F890 0x0404
+poke F892 0x0404
+poke F894 0x0404
+idle
+shot start
+mark cursor
+key z
+key z
+key z
+key s
+shot hand
+mark panel
+key u
+shot panel
+mark move
+key .
+key .
+key .
+shot moved
+mark cast
+key SPACE
+wait 60
+idle
+shot cast1
+mark panel
+key u
+mark cast
+key SPACE
+wait 60
+idle
+shot cast2
+mark panel
+key u
+mark cast
+key SPACE
+wait 60
+idle
+shot cast3
+quit

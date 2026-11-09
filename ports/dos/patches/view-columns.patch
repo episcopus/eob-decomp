@@ -1,0 +1,314 @@
+--- a/EOV4.C
++++ b/EOV4.C
+@@ -1,3 +1,5 @@
++#include <dos.h>
++#pragma inline
+ /* Unit at overlay 4 of EOB.EXE (8259 bytes, 18 functions): the first-person view renderer. It
+    draws the map objects, walls and creature sprites of the current page into the view region from
+    the object records at ds:8A82 and the 9-byte tile records at ds:B894, clipped through the
+@@ -289,52 +291,98 @@
+    records and adjustments mean. */
+ /*@ ovl4:0097 */ void ComputeViewSpan(int slot, int far *left, int far *right, int region)
+ {
+-    int i;
+     int pair;
+-    int heading;
+-    register int adjust;
+-    register int j;
++    int L, R;
++    unsigned clipOff, doorOff;
+ 
+-    j = 2 * slot;
+-    if (gViewSlots[j] != -1) {
+-        *left = gViewSlots[j];
+-        *right = gViewSlots[j + 1];
++    pair = 2 * slot;
++    if (gViewSlots[pair] != -1) {
++        L = gViewSlots[pair];
++        R = gViewSlots[pair + 1];
+     } else {
+-        *left = 0;
+-        *right = VIEW_RIGHT;
+-        pair = 2 * slot;
+-        slot *= VIEW_SLOTS;
+-        for (i = 0; i < VIEW_SLOTS; i++) {
+-            heading = gViewCells[i][gViewFrontSide];
+-            if (!(gWallTypeFlags[heading] & TILE_FLAG)) {
+-                adjust = gSpanWallClip[slot + i];
+-                if (gWallVmpSet[heading] == 0 || adjust == ADJUST_SKIP)
+-                    continue;
+-                if (adjust == ADJUST_EMPTY) {
+-                    *left = VIEW_RIGHT;
+-                    *right = 0;
+-                    break;
+-                }
+-                if (adjust > 0 && *right > adjust)
+-                    *right = adjust;
+-                if (adjust < 0 && -adjust > *left)
+-                    *left = -adjust;
+-            } else {
+-                j = (slot + i) * 2;
+-                if (gSpanDoorClip[j] > *left)
+-                    *left = gSpanDoorClip[j];
+-                j++;
+-                if (gSpanDoorClip[j] < *right)
+-                    *right = gSpanDoorClip[j];
+-            }
+-            if (*right < *left)
+-                break;
+-        }
+-        gViewSlots[pair] = *left;
+-        pair++;
+-        gViewSlots[pair] = *right;
++        L = 0;
++        R = VIEW_RIGHT;
++        clipOff = (unsigned)FP_OFF(gSpanWallClip) + slot * VIEW_SLOTS;
++        doorOff = (unsigned)FP_OFF(gSpanDoorClip) + slot * VIEW_SLOTS * 2;
++        /* (port) the same walk with registers: the view's 18 records, a clip table entry for each */
++        asm push si
++        asm push di
++        asm xor bx, bx
++        asm mov cx, 18
++        asm mov si, clipOff
++        asm mov di, doorOff
++vs_next:
++        asm push bx
++        asm mov bx, word ptr gViewCells[bx]
++        asm mov al, byte ptr gViewFrontSide
++        asm cbw
++        asm add bx, ax
++        asm mov al, byte ptr [bx]
++        asm cbw
++        asm mov bx, ax
++        asm test byte ptr gWallTypeFlags[bx], 8
++        asm jnz vs_door
++        asm mov al, byte ptr [si]
++        asm cbw
++        asm cmp byte ptr gWallVmpSet[bx], 0
++        asm je vs_cont
++        asm cmp ax, -40
++        asm je vs_cont
++        asm cmp ax, -41
++        asm jne vs_clip
++        asm mov word ptr L, 16h
++        asm mov word ptr R, 0
++        asm pop bx
++        asm jmp vs_done
++vs_clip:
++        asm or ax, ax
++        asm jle vs_neg
++        asm cmp ax, word ptr R
++        asm jge vs_chk
++        asm mov word ptr R, ax
++        asm jmp vs_chk
++vs_neg:
++        asm jz vs_chk
++        asm neg ax
++        asm cmp ax, word ptr L
++        asm jle vs_chk
++        asm mov word ptr L, ax
++        asm jmp vs_chk
++vs_door:
++        asm mov al, byte ptr [di]
++        asm cbw
++        asm cmp ax, word ptr L
++        asm jle vs_d1
++        asm mov word ptr L, ax
++vs_d1:
++        asm mov al, byte ptr [di+1]
++        asm cbw
++        asm cmp ax, word ptr R
++        asm jge vs_chk
++        asm mov word ptr R, ax
++vs_chk:
++        asm mov ax, word ptr R
++        asm cmp ax, word ptr L
++        asm jge vs_cont
++        asm pop bx
++        asm jmp vs_done
++vs_cont:
++        asm pop bx
++        asm add bx, 4
++        asm inc si
++        asm add di, 2
++        asm dec cx
++        asm jz vs_done
++        asm jmp vs_next
++vs_done:
++        asm pop di
++        asm pop si
++        gViewSlots[pair] = L;
++        gViewSlots[pair + 1] = R;
+     }
+-    SetRegionRect(region, *left, 0, *right, VIEW_BOTTOM);
++    *left = L;
++    *right = R;
++    SetRegionRect(region, L, 0, R, VIEW_BOTTOM);
+ }
+ #include "EOB.H"
+ 
+@@ -377,33 +425,61 @@
+    the original shows; without it our build merges the continue tails (whitepaper 2.1.1). */
+ /*@ ovl4:02A5 */ void CopyViewColumn(char x, char y, char page, int x2, char width, char height)
+ {
+-    unsigned int far *dst;
+     unsigned int far *src;
+-    int row;
+-    int col;
++    unsigned dstrow;
++    unsigned rowbytes;
++    int col0, col1, skip, cols;
+ 
+     if (gWallVmpSet[page] == 0)
+         return;
+     src = (unsigned int far *)(gWallBlockMaps + (gWallVmpSet[page] - 1) * 0x35E + x2 * 2);
+     src += 0x14A;
+-    for (row = 0; row < height; row++) {
+-        dst = (unsigned int far *)(gViewBlockMap + ((y + row) * 0x16 + x) * 2);
+-        for (col = 0; col < width; col++) {
+-            if (x + col >= 0 && x + col < 0x16) {
+-                if (*src != 0) {
+-                    *dst = *src;
+-                    src++;
+-                    dst++;
+-                } else {
+-                    dst++;
+-                    src++;
+-                }
+-            } else {
+-                dst++;
+-                src++;
+-            }
+-        }
+-    }
++    /* (port) the same words, without far pointers reloaded per word: only the columns on the view are looked at */
++    col0 = x < 0 ? -x : 0;
++    col1 = 0x16 - x;
++    if (col1 > width)
++        col1 = width;
++    if (col1 <= col0 || height <= 0)
++        return;
++    cols = col1 - col0;
++    skip = col0 * 2;
++    rowbytes = width * 2;
++    dstrow = (unsigned)FP_OFF(gViewBlockMap) + (y * 0x16 + x) * 2 + skip;
++    asm push ds
++    asm push si
++    asm push di
++    asm mov ax, ds
++    asm mov es, ax
++    asm lds si, src
++    asm add si, skip
++    asm mov bl, height
++    asm cld
++cv_row:
++    asm mov cx, cols
++    asm mov dx, si
++    asm mov di, dstrow
++cv_word:
++    asm lodsw
++    asm or ax, ax
++    asm jz cv_zero
++    asm stosw
++    asm dec cx
++    asm jnz cv_word
++    asm jmp short cv_endrow
++cv_zero:
++    asm inc di
++    asm inc di
++    asm dec cx
++    asm jnz cv_word
++cv_endrow:
++    asm mov si, dx
++    asm add si, rowbytes
++    asm add word ptr dstrow, 2Ch
++    asm dec bl
++    asm jnz cv_row
++    asm pop di
++    asm pop si
++    asm pop ds
+ }
+ 
+ /* ovl4:036A: flips bit 0x4000 of a rectangle of word pixels in the view buffer at ds:ADB0, reading
+@@ -415,28 +491,64 @@
+ /*@ ovl4:036A */ void ToggleViewColumn(char x, char y, char page, int x2, char width, char height)
+ {
+     unsigned int far *src;
+-    int row;
+-    int col;
+-    int pixel;
++    unsigned dstrow;
++    unsigned rowbytes;
++    int col0, col1, cols, last;
+ 
+     if (gWallVmpSet[page] == 0)
+         return;
+     src = (unsigned int far *)(gWallBlockMaps + (gWallVmpSet[page] - 1) * 0x35E + x2 * 2);
+     src += 0x14A;
+-    for (row = 0; row < height; row++) {
+-        for (col = 0; col < width; col++) {
+-            if (x + col < 0 || x + col >= 0x16)
+-                continue;
+-            pixel = (src + width * row)[width - 1 - col];
+-            if (pixel == 0)
+-                continue;
+-            if (pixel & 0x4000)
+-                pixel -= 0x4000;
+-            else
+-                pixel |= 0x4000;
+-            ((unsigned int *)gViewBlockMap)[(y + row) * 0x16 + x + col] = pixel;
+-        }
+-    }
++    /* (port) as CopyViewColumn: the source row read from its right end, bit 0x4000 flipped (the original subtracts it
++       when set and ORs it when clear: the same as XOR) */
++    col0 = x < 0 ? -x : 0;
++    col1 = 0x16 - x;
++    if (col1 > width)
++        col1 = width;
++    if (col1 <= col0 || height <= 0)
++        return;
++    cols = col1 - col0;
++    last = (width - 1 - col0) * 2;
++    rowbytes = width * 2;
++    dstrow = (unsigned)FP_OFF(gViewBlockMap) + (y * 0x16 + x + col0) * 2;
++    asm push ds
++    asm push si
++    asm push di
++    asm mov ax, ds
++    asm mov es, ax
++    asm lds si, src
++    asm add si, last
++    asm mov bl, height
++    asm cld
++tv_row:
++    asm mov cx, cols
++    asm mov dx, si
++    asm mov di, dstrow
++tv_word:
++    asm mov ax, [si]
++    asm dec si
++    asm dec si
++    asm or ax, ax
++    asm jz tv_zero
++    asm xor ax, 4000h
++    asm stosw
++    asm dec cx
++    asm jnz tv_word
++    asm jmp short tv_endrow
++tv_zero:
++    asm inc di
++    asm inc di
++    asm dec cx
++    asm jnz tv_word
++tv_endrow:
++    asm mov si, dx
++    asm add si, rowbytes
++    asm add word ptr dstrow, 2Ch
++    asm dec bl
++    asm jnz tv_row
++    asm pop di
++    asm pop si
++    asm pop ds
+ }
+ 
+ /* ovl4:042C: returns 1 when `slot` is nonzero and bit 3 of its ds:194B flag byte is clear, else 0.

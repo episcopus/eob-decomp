@@ -1,0 +1,272 @@
+--- a/drivers/TGA.ASM
++++ b/drivers/TGA.ASM
+@@ -66,7 +66,7 @@
+ 	dd	ReadCell8x8		; export 10, slot 17, ds:806E
+ 	dd	GetPixel		; export 11, slot 18, ds:8072 gGetPixel
+ 	dd	MirrorCell16		; export 12, slot 19, ds:8076
+-	dd	SetTileSet		; export 13, slot 20, ds:807A
++	dd	BurstFrame		; export 13, slot 20, ds:807A (the dead SetTileSet's slot: BurstFrame)
+ 	dd	SaveRectFromPage		; export 14, slot 21, ds:807E gSaveRectFromPage
+ 	dd	GetSpriteCell		; export 15, slot 22, ds:8082 gGetSpriteCellRle
+ 	dd	GetSpriteCell		; export 16, slot 23, ds:8086 gGetSpriteCell
+@@ -2589,6 +2589,215 @@
+ 	retf
+ PutPixel	ENDP
+ 
++; one frame of a particle burst, in registers (a spell's sparkles): the erase pass and the move-and-draw pass of
++; AnimateParticleBurst (EOB.EXE 0EF3:2A53), the same pixels in the same order. Slot 20, ds:807A, which nothing else calls.
++; BurstFrame(rows far, count, scale, bound, baseX, baseY, left, top, right, bottom, frameTable far, erase) returns the new state
++BurstFrame	PROC	NEAR
++	push	bp
++	mov	bp, sp
++	sub	sp, 8
++	push	ds
++	push	si
++	push	di
++	lds	si, dword ptr cs:[gPageSegsPtr]
++	mov	ax, word ptr [si]
++	mov	word ptr [bp - 2], ax	; page 0
++	mov	ax, word ptr [si + 4]
++	mov	word ptr [bp - 4], ax	; page 2
++	mov	es, word ptr [bp - 2]
++	mov	ds, word ptr [bp + 8]
++	mov	cx, word ptr [bp + 0Ch]
++	add	cx, 6			; cl: position shift
++	mov	ax, word ptr [bp + 0Ah]
++	mov	word ptr [bp - 6], ax
++	cmp	word ptr [bp + 20h], 0
++	je	BF_DrawStart
++	mov	di, word ptr [bp + 6]
++	dec	ax
++	shl	ax, 1
++	add	di, ax
++BF_Erase:
++	mov	ax, word ptr [di]
++	sar	ax, cl
++	add	ax, word ptr [bp + 10h]
++	mov	bx, word ptr [di + 12Ch]
++	sar	bx, cl
++	add	bx, word ptr [bp + 12h]
++	cmp	bx, word ptr [bp + 0Eh]
++	jle	BF_E1
++	mov	bx, word ptr [bp + 0Eh]
++BF_E1:
++	cmp	ax, word ptr [bp + 14h]
++	jl	BF_E9
++	cmp	ax, word ptr [bp + 18h]
++	jg	BF_E9
++	cmp	bx, word ptr [bp + 16h]
++	jl	BF_E9
++	cmp	bx, word ptr [bp + 1Ah]
++	jg	BF_E9
++	shl	bx, 1
++	mov	si, word ptr cs:[bx + gRowOffsets]
++	mov	bx, ax
++	shr	bx, 1
++	add	si, bx
++	mov	dl, byte ptr [di + 4B0h]
++	and	dl, 0Fh
++	mov	dh, 0F0h
++	test	al, 1
++	jnz	BF_E2
++	shl	dl, 1
++	shl	dl, 1
++	shl	dl, 1
++	shl	dl, 1
++	mov	dh, 0Fh
++BF_E2:
++	mov	al, byte ptr es:[si]
++	and	al, dh
++	or	al, dl
++	mov	byte ptr es:[si], al
++BF_E9:
++	sub	di, 2
++	dec	word ptr [bp - 6]
++	jnz	BF_Erase
++	mov	ax, word ptr [bp + 0Ah]
++	mov	word ptr [bp - 6], ax
++BF_DrawStart:
++	mov	word ptr [bp - 8], 0
++	mov	di, word ptr [bp + 6]
++BF_Draw:
++	mov	ax, word ptr [di + 258h]
++	or	ax, ax
++	jle	BF_Inc
++	dec	ax
++	jmp	short BF_D1
++BF_Inc:
++	inc	ax
++BF_D1:
++	mov	word ptr [di + 258h], ax
++	add	word ptr [di], ax
++	mov	ax, word ptr [di + 384h]
++	add	ax, 5
++	mov	word ptr [di + 384h], ax
++	add	word ptr [di + 12Ch], ax
++	mov	ax, word ptr [di + 5DCh]
++	add	word ptr [di + 708h], ax
++	mov	ax, word ptr [di]
++	sar	ax, cl
++	add	ax, word ptr [bp + 10h]
++	mov	bx, word ptr [di + 12Ch]
++	sar	bx, cl
++	add	bx, word ptr [bp + 12h]
++	cmp	bx, word ptr [bp + 0Eh]
++	jge	BF_BounceY
++	or	bx, bx
++	jge	BF_D2
++BF_BounceY:
++	mov	dx, word ptr [di + 384h]
++	sar	dx, 1
++	neg	dx
++	mov	word ptr [di + 384h], dx
++BF_D2:
++	cmp	ax, 114h
++	jge	BF_BounceX
++	cmp	ax, -100
++	jge	BF_D3
++BF_BounceX:
++	mov	dx, word ptr [di + 258h]
++	sar	dx, 1
++	neg	dx
++	mov	word ptr [di + 258h], dx
++BF_D3:
++	cmp	bx, word ptr [bp + 0Eh]
++	jle	BF_D4
++	mov	bx, word ptr [bp + 0Eh]
++BF_D4:
++	mov	ch, al
++	and	ch, 1			; ch bit 0: the right pixel of its byte
++	cmp	ax, word ptr [bp + 14h]
++	jl	BF_D5
++	cmp	ax, word ptr [bp + 18h]
++	jg	BF_D5
++	cmp	bx, word ptr [bp + 16h]
++	jl	BF_D5
++	cmp	bx, word ptr [bp + 1Ah]
++	jg	BF_D5
++	or	ch, 2			; ch bit 1: inside the view
++BF_D5:
++	xor	dx, dx
++	cmp	ax, 320
++	jae	BF_D7
++	cmp	bx, 200
++	jae	BF_D7
++	shl	bx, 1
++	mov	si, word ptr cs:[bx + gRowOffsets]
++	shr	ax, 1
++	add	si, ax
++	mov	es, word ptr [bp - 4]
++	mov	dl, byte ptr es:[si]
++	mov	es, word ptr [bp - 2]
++	mov	dh, byte ptr es:[si]
++	test	ch, 1
++	jnz	BF_D6
++	shr	dl, 1
++	shr	dl, 1
++	shr	dl, 1
++	shr	dl, 1
++	shr	dh, 1
++	shr	dh, 1
++	shr	dh, 1
++	shr	dh, 1
++	jmp	short BF_D7
++BF_D6:
++	and	dx, 0F0Fh
++BF_D7:
++	mov	byte ptr [di + 4B0h], dh
++	mov	byte ptr [di + 4B1h], 0
++	mov	al, byte ptr [di + 709h]
++	cbw
++	mov	bx, ax
++	add	bx, word ptr [bp + 1Ch]
++	mov	es, word ptr [bp + 1Eh]
++	mov	al, byte ptr es:[bx]
++	mov	es, word ptr [bp - 2]
++	or	al, al
++	jnz	BF_Live
++	mov	word ptr [di + 5DCh], 0
++	jmp	short BF_Next
++BF_Live:
++	mov	word ptr [bp - 8], 1
++	or	dl, dl
++	jnz	BF_Next
++	test	ch, 2
++	jz	BF_Next
++	and	al, 0Fh
++	mov	ah, 0F0h
++	test	ch, 1
++	jnz	BF_D8
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	mov	ah, 0Fh
++BF_D8:
++	mov	bl, byte ptr es:[si]
++	and	bl, ah
++	or	bl, al
++	mov	byte ptr es:[si], bl
++BF_Next:
++	add	di, 2
++	dec	word ptr [bp - 6]
++	jz	BF_Done
++	jmp	near ptr BF_Draw
++BF_Done:
++	mov	ax, word ptr [bp - 8]
++	pop	di
++	pop	si
++	pop	ds
++	mov	sp, bp
++	pop	bp
++	retf
++BurstFrame	ENDP
++
+ ; TGA.OVL 1732 (export 23, gRestoreDrawState): puts back the region SaveDrawState kept
+ RestoreDrawState	PROC	NEAR
+ 	push	bp
+--- a/E0EF3.C
++++ b/E0EF3.C
+@@ -476,20 +476,10 @@
+     gBurstOriginX = gViewPosX[(slot * 5 + 4) * 2] + 0x58;
+     gBurstOriginY = 0x30;
+     PlaySound(0x23);
+-    switch (objIndex) {
+-    case 0:
+-        AnimateParticleBurst(3, 0x93, 0x23, 0x14, 7, anim);
+-        break;
+-    case 1:
+-        AnimateParticleBurst(2, 0x93, 0x23, 0x14, 7, anim);
+-        break;
+-    case 2:
+-        AnimateParticleBurst(1, 0x93, 0x23, 0x14, 7, anim);
+-        break;
+-    case 3:
++    if ((unsigned)objIndex < 3)
++        AnimateParticleBurst(3 - objIndex, 0x93, 0x23, 0x14, 7, anim);
++    else if (objIndex == 3)
+         AnimateParticleBurst(0, 0x1CC, 0x32, 0x14, 4, anim);
+-        break;
+-    }
+     LockShowPointer();
+ }
+ 
+@@ -2231,6 +2221,10 @@
+     }
+     gBurstState = 2;
+     while (gBurstState != 0) {
++        if (gGraphicsChoice == 1) {
++            gBurstState = (*(int (far * near *)())0x807A)(base, count, scale, bound, gBurstBaseX, gBurstBaseY, left, top, right, bottom,
++                                                          frameTable, gBurstState - 2);
++        } else {
+         if (gBurstState != 2) {
+             for (gBurstParticle = count - 1; gBurstParticle >= 0; gBurstParticle--) {
+                 gBurstX = (row0[gBurstParticle] >> 6 >> scale) + gBurstBaseX;
+@@ -2272,6 +2266,7 @@
+                 row5[gBurstParticle] = 0;
+             }
+         }
++        }
+         WaitFrame();
+         WaitFrame();
+     }

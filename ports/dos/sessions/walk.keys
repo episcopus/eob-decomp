@@ -1,0 +1,75 @@
+# walk: the saved game (level 1), a path through the corridors the autopilot found on the original: steps, turns,
+# blocked moves and the wall button (m). What a step and a turn cost.
+option save fixtures/EOBDATA.SAV
+idle
+mark load
+key ENTER
+idle
+shot view
+mark step
+key UP
+mark turn
+key HOME
+mark step
+key UP
+mark turn
+key HOME
+mark step
+key UP
+mark turn
+key PGUP
+key PGUP
+key PGUP
+mark step
+key UP
+key UP
+key UP
+key UP
+key UP
+key UP
+mark touch
+key m
+mark turn
+key HOME
+mark step
+key UP
+mark touch
+key m
+mark turn
+key HOME
+mark step
+key UP
+key UP
+key UP
+key UP
+mark turn
+key PGUP
+mark step
+key UP
+mark turn
+key PGUP
+mark step
+key UP
+key UP
+key UP
+mark turn
+key PGUP
+mark step
+key UP
+key UP
+mark touch
+key m
+mark turn
+key PGUP
+mark step
+key UP
+key UP
+mark turn
+key PGUP
+key PGUP
+key PGUP
+mark step
+key UP
+idle
+shot end
+quit

@@ -1,0 +1,45 @@
+--- a/E16A5.C
++++ b/E16A5.C
+@@ -14,6 +14,7 @@
+ /*@flags -ml -O -Z -v */
+ 
+ #include "EOB.H"
++extern int NodeScan(struct Node far * far *head);
+ 
+ typedef void (far *NodeFn)(struct Node far *node);
+ 
+@@ -106,20 +107,7 @@
+    resident code or the overlays was found; 16A5:005A is the same dispatch for a waiting key. */
+ /*@ 16A5:0009 */ void DispatchKey(struct Node far *head)
+ {
+-    int key;
+-    unsigned char code;
+-
+-    key = 0;
+-    if (ReadKeySpecial()) {
+-        key = WaitGameKey2();
+-        key |= 0x8000;
+-        code = key & 0xff;
+-        if (code >= 'A' && code <= 'Z') {
+-            key &= ~0x100;
+-            key |= 0x20;
+-        }
+-    }
+-    DispatchNodeEvent(head, key);
++    /* (port) never called; its code's room goes to DispatchNodeEvent's NodeScan call */
+ }
+ 
+ /* 16A5:005A: wait for a key event and dispatch it to the node list `head`. 1AAD:0471 says a key
+@@ -269,6 +257,12 @@
+     justPressed = 0;
+     if (gPressedNode)
+         head = gPressedNode;
++    /* (port) nothing to dispatch and no mouse: the walk changes nothing while each node's previous state bits match its
++       current ones; NodeScan (E17A6.ASM) finds the first node where they do not, or the end of the walk */
++    if (key == 0 && gMouseDisabled && gPressedNode == 0) {
++        if (NodeScan(&head) == 0)
++            goto done;
++    }
+     for (;;) {
+         if (head->flags & NODE_INACTIVE) {
+             more = (head = head->next) != 0;

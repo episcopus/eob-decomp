@@ -1,0 +1,12 @@
+--- a/EOV1.C
++++ b/EOV1.C
+@@ -1286,7 +1286,8 @@
+     lit = 0;
+     looping = 1;
+     do {
+-        if (heapcheck() != 2) {
++        if (0) {        /* (port) heapcheck() walked the whole far heap at every menu key (a debugging check); the
++                           string stays so the literal pool, and with it DGROUP, keeps its layout */
+             gDrawText("Far heap corrupt!", 0, 0, 0xf, 0);
+             FlushKeyBuffer();
+             WaitGameKey();

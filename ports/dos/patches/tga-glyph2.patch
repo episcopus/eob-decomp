@@ -1,0 +1,122 @@
+--- a/drivers/TGA.ASM
++++ b/drivers/TGA.ASM
+@@ -1424,14 +1424,12 @@
+ DrawPageSeg	PROC	NEAR
+ 	push	ds
+ 	push	si
+-	mov	ds, word ptr cs:[gDrawPagePtr+2]
+-	mov	si, word ptr cs:[gDrawPagePtr]
+-	lodsw
+-	and	ax, 1Fh
+-	shl	ax, 1
++	lds	si, dword ptr cs:[gDrawPagePtr]
++	mov	si, word ptr [si]
++	and	si, 1Fh
++	shl	si, 1
++	add	si, word ptr cs:[gPageSegsPtr]
+ 	mov	ds, word ptr cs:[gPageSegsPtr+2]
+-	mov	si, word ptr cs:[gPageSegsPtr]
+-	add	si, ax
+ 	lodsw
+ 	pop	si
+ 	pop	ds
+@@ -3843,10 +3841,17 @@
+ 
+ gIterWords	dw	18 dup (0)	; per glyph iteration: the mask of its first and second word, the mask byte
+ gIterStep	dw	0		; the bytes bp moves over the iterations of a row
++gMaskKey	dw	0FFFFh		; the mask table entry gIterWords was built from
+ 
+ ; (near) From the mask bytes at cs:bp, one per iteration of a row, the masks in the words the iterations write; leaves
+ ; bp at gIterWords.
+ GlyphMasks	PROC	NEAR
++	cmp	bp, word ptr cs:[gMaskKey]
++	jne	L_GM0
++	mov	bp, OFFSET gIterWords
++	ret
++L_GM0:
++	mov	word ptr cs:[gMaskKey], bp
+ 	push	ax
+ 	push	bx
+ 	push	cx
+@@ -4005,22 +4010,10 @@
+ 	mov	bx, dx
+ 	shl	bx, 1
+ 	mov	ax, word ptr cs:[bx + gRowOffsets]
+-	and	byte ptr cs:[gBlitBank], 3
+ 	add	di, ax
+ 	xor	ah, ah
+ 	mov	al, byte ptr cs:[gGlyphBytes]
+ 	mov	word ptr cs:[gBlitBytes], ax
+-	shl	ax, 1
+-	inc	ax
+-	shl	ax, 1
+-	mov	bx, ax
+-	mov	ax, BANK
+-	sub	ax, bx
+-	mov	word ptr cs:[gBlitBankSkip], ax
+-	mov	ax, bx
+-	sub	ax, LINE_BYTES
+-	add	ax, 3 * BANK
+-	mov	word ptr cs:[gBlitBankWrap], ax
+ 	call	DrawPageSeg
+ 	mov	dx, es
+ 	mov	es, ax
+@@ -4042,6 +4035,37 @@
+ 	jne	L_FGO
+ 	jmp	L_FGT
+ L_FGO:
++	or	cl, cl
++	jne	L_FGRO
++	cmp	word ptr cs:[gIterWords + 0], 0FFFFh
++	jne	L_FGRO
++	mov	dx, word ptr cs:[gIterWords + 2]
++L_FGE:
++	lodsb
++	mov	cl, al
++	mov	bl, al
++	mov	bl, byte ptr cs:[bx + gNibbleHi]
++	mov	ax, word ptr cs:[bx + gGlyphWords]
++	stosw
++	mov	bl, cl
++	mov	bl, byte ptr cs:[bx + gNibbleLo]
++	mov	ax, word ptr cs:[bx + gGlyphWords]
++	cmp	dx, 0FFFFh
++	je	L_FGEF
++	xor	ax, word ptr es:[di]
++	and	ax, dx
++	xor	word ptr es:[di], ax
++	jmp	short L_FGEX
++L_FGEF:
++	mov	word ptr es:[di], ax
++L_FGEX:
++	add	di, BANK - 2
++	jns	L_FGEY
++	sub	di, BANK_WRAP
++L_FGEY:
++	dec	ch
++	jne	L_FGE
++	jmp	L_23D6
+ L_FGRO:
+ 	mov	ah, byte ptr [si]
+ 	inc	si
+@@ -4176,6 +4200,20 @@
+ L_FGET:
+ 	jmp	L_23D6
+ L_F99:
++	and	byte ptr cs:[gBlitBank], 3
++	xor	ah, ah
++	mov	al, byte ptr cs:[gGlyphBytes]
++	shl	ax, 1
++	inc	ax
++	shl	ax, 1
++	mov	bx, ax
++	mov	ax, BANK
++	sub	ax, bx
++	mov	word ptr cs:[gBlitBankSkip], ax
++	mov	ax, bx
++	sub	ax, LINE_BYTES
++	add	ax, 3 * BANK
++	mov	word ptr cs:[gBlitBankWrap], ax
+ 	mov	bh, byte ptr cs:[gBlitColour]
+ 	mov	cl, 4
+ 	shl	bh, cl

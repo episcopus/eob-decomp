@@ -1,0 +1,623 @@
+--- a/E17A6.ASM
++++ b/E17A6.ASM
+@@ -266,6 +266,13 @@
+ gSrcSeg2 dw 0
+ gFlipPlanes dw 0
+ gSecondPlane dw 0
++gATile  db 32 dup (0)
++gKeepTab LABEL BYTE
++KP = 0
++        REPT 256
++        db (((KP AND 0F0h) EQ 0) AND 0F0h) OR (((KP AND 0Fh) EQ 0) AND 0Fh)
++KP = KP + 1
++        ENDM
+ ; ---- 03E7..0D20
+ ; 17A6:03E7: draw a tile from the far pointer at [bp+6]/[bp+8] into the screen buffer,
+ ; dispatching on the graphics mode gGraphicsChoice: 2 (EGA) saves the far pointer and programs
+@@ -732,37 +739,66 @@
+         jmp L07AB
+ L0856:
+         mov cx, 16h
+-L0859:
++TT_tile:
+         mov ds, bp
+         mov ax, word ptr [bx]
+-        mov word ptr cs:[gPlaneSelect], 0
+-        cmp ax, 8000h
+-        jb L086F
+-        sub ax, 8000h
+-        jmp L0A4F
+-L086F:
++        test ax, 8000h
++        jz TT_a
++        jmp TT_comp
++TT_a:
+         test ax, 4000h
+-        je L087E
+-        mov word ptr cs:[gPlaneSelect], 1
+-        and ax, 3FFFh
+-L087E:
+-        cmp ax, 0
+-        jne L0896
++        jz TT_a2
++        jmp TT_flag
++TT_a2:
++        or ax, ax
++        jz TT_a3
++        jmp TT_normal
++TT_a3:
+         mov ax, word ptr [bx+0294h]
+         test ax, 4000h
+-        je L0896
+-        mov word ptr cs:[gPlaneSelect], 1
++        jnz TT_flag
++        jmp TT_normal
++TT_flag:
+         and ax, 3FFFh
+-L0896:
+         add bx, 2
+-        push si
+         shl ax, 1
+         add ax, dx
+         mov ds, ax
+-        cmp word ptr cs:[gPlaneSelect], 1
+-        jne L08AA
+-        jmp short L08DE
+-L08AA:
++        push cx
++        push bx
++        push di
++        mov bx, 0200h
++        mov cx, 8
++TT_fl1:
++        mov al, byte ptr [si+3]
++        xlat byte ptr cs:[bx]
++        stosb
++        mov al, byte ptr [si+2]
++        xlat byte ptr cs:[bx]
++        stosb
++        mov al, byte ptr [si+1]
++        xlat byte ptr cs:[bx]
++        stosb
++        lodsb
++        xlat byte ptr cs:[bx]
++        stosb
++        add si, 3
++        add di, 1FFCh
++        jns TT_fl2
++        sub di, 7F60h
++TT_fl2:
++        loop TT_fl1
++        pop di
++        add di, 4
++        sub si, 32
++        pop bx
++        pop cx
++        jmp TT_next
++TT_normal:
++        add bx, 2
++        shl ax, 1
++        add ax, dx
++        mov ds, ax
+         movsw
+         movsw
+         add di, 1FFCh
+@@ -787,181 +823,166 @@
+         movsw
+         movsw
+         sub di, 60A0h
+-        pop si
+-        jmp L0A33
+-L08DE:
++        sub si, 32
++TT_next:
++        dec cx
++        jz TT_row
++        jmp TT_tile
++TT_row:
++        add di, 0E8h
++        mov ax, 212Eh
++        mov ds, ax
++        dec word ptr cs:[gTileRows]
++        je TT_done
++        jmp L0856
++TT_done:
++        jmp L0D17
++; (port) a tile drawn over another: the base tile (layer 2, map word +294h) is built once in gATile, so the two sources do not
++; cost segment switches per byte; the overlay tile's nibbles then go over it through gKeepTab
++TT_comp:
++        push bp
++        push cx
++        push di
++        push es
++        mov cx, ax
++        mov dx, word ptr [bx+0294h]
++        add bx, 2
+         push bx
+-        xor bx, bx
+-        mov bl, byte ptr [si+3]
+-        mov al, byte ptr cs:[bx+0200h]
++        mov ax, cs
++        mov es, ax
++        mov di, OFFSET gATile
++        mov ax, dx
++        and ax, 3FFFh
++        shl ax, 1
++        add ax, word ptr cs:[gSrcSeg2]
++        mov ds, ax
++        mov ax, dx
++        mov dx, cx
++        test ax, 4000h
++        jnz TT_cflip
++        mov cx, 16
++        rep movsw
++        sub si, 32
++        jmp short TT_cc
++TT_cflip:
++        mov bx, 0200h
++        mov cx, 8
++TT_cf1:
++        mov al, byte ptr [si+3]
++        xlat byte ptr cs:[bx]
+         stosb
+-        mov bl, byte ptr [si+2]
+-        mov al, byte ptr cs:[bx+0200h]
++        mov al, byte ptr [si+2]
++        xlat byte ptr cs:[bx]
+         stosb
+-        mov bl, byte ptr [si+1]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        mov bl, byte ptr [si]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        add si, 4
+-        add di, 1FFCh
+-        mov bl, byte ptr [si+3]
+-        mov al, byte ptr cs:[bx+0200h]
++        mov al, byte ptr [si+1]
++        xlat byte ptr cs:[bx]
+         stosb
+-        mov bl, byte ptr [si+2]
+-        mov al, byte ptr cs:[bx+0200h]
++        mov al, byte ptr [si]
++        xlat byte ptr cs:[bx]
+         stosb
+-        mov bl, byte ptr [si+1]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        mov bl, byte ptr [si]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+         add si, 4
+-        add di, 1FFCh
++        loop TT_cf1
++        sub si, 32
++TT_cc:
++        pop ax
++        pop es
++        pop di
++        push ax
++        mov cx, dx
++        mov ax, dx
++        and ax, 3FFFh
++        shl ax, 1
++        add ax, word ptr cs:[gSrcSeg2]
++        mov ds, ax
++        mov bp, OFFSET gATile
++        xor bx, bx
++        test ch, 40h
++        jnz TT_cf2
++        jmp TT_cn
++TT_cf2:
++        push di
++        mov cx, 8
++TT_cr1:
+         mov bl, byte ptr [si+3]
+         mov al, byte ptr cs:[bx+0200h]
++        mov bl, al
++        mov ah, byte ptr cs:[bp+0]
++        and ah, byte ptr cs:[bx+gKeepTab]
++        or al, ah
+         stosb
+         mov bl, byte ptr [si+2]
+         mov al, byte ptr cs:[bx+0200h]
++        mov bl, al
++        mov ah, byte ptr cs:[bp+1]
++        and ah, byte ptr cs:[bx+gKeepTab]
++        or al, ah
+         stosb
+         mov bl, byte ptr [si+1]
+         mov al, byte ptr cs:[bx+0200h]
++        mov bl, al
++        mov ah, byte ptr cs:[bp+2]
++        and ah, byte ptr cs:[bx+gKeepTab]
++        or al, ah
+         stosb
+-        mov bl, byte ptr [si]
++        mov bl, byte ptr [si+0]
+         mov al, byte ptr cs:[bx+0200h]
++        mov bl, al
++        mov ah, byte ptr cs:[bp+3]
++        and ah, byte ptr cs:[bx+gKeepTab]
++        or al, ah
+         stosb
++        add bp, 4
+         add si, 4
+         add di, 1FFCh
+-        mov bl, byte ptr [si+3]
+-        mov al, byte ptr cs:[bx+0200h]
++        jns TT_cr1a
++        sub di, 7F60h
++TT_cr1a:
++        loop TT_cr1
++        jmp short TT_cz
++TT_cn:
++        push di
++        mov cx, 8
++TT_cr2:
++        lodsb
++        mov bl, al
++        mov ah, byte ptr cs:[bp+0]
++        and ah, byte ptr cs:[bx+gKeepTab]
++        or al, ah
+         stosb
+-        mov bl, byte ptr [si+2]
+-        mov al, byte ptr cs:[bx+0200h]
++        lodsb
++        mov bl, al
++        mov ah, byte ptr cs:[bp+1]
++        and ah, byte ptr cs:[bx+gKeepTab]
++        or al, ah
+         stosb
+-        mov bl, byte ptr [si+1]
+-        mov al, byte ptr cs:[bx+0200h]
++        lodsb
++        mov bl, al
++        mov ah, byte ptr cs:[bp+2]
++        and ah, byte ptr cs:[bx+gKeepTab]
++        or al, ah
+         stosb
+-        mov bl, byte ptr [si]
+-        mov al, byte ptr cs:[bx+0200h]
++        lodsb
++        mov bl, al
++        mov ah, byte ptr cs:[bp+3]
++        and ah, byte ptr cs:[bx+gKeepTab]
++        or al, ah
+         stosb
+-        add si, 4
+-        sub di, 5F64h
+-        mov bl, byte ptr [si+3]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        mov bl, byte ptr [si+2]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        mov bl, byte ptr [si+1]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        mov bl, byte ptr [si]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        add si, 4
++        add bp, 4
+         add di, 1FFCh
+-        mov bl, byte ptr [si+3]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        mov bl, byte ptr [si+2]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        mov bl, byte ptr [si+1]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        mov bl, byte ptr [si]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        add si, 4
+-        add di, 1FFCh
+-        mov bl, byte ptr [si+3]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        mov bl, byte ptr [si+2]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        mov bl, byte ptr [si+1]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        mov bl, byte ptr [si]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        add si, 4
+-        add di, 1FFCh
+-        mov bl, byte ptr [si+3]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        mov bl, byte ptr [si+2]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        mov bl, byte ptr [si+1]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        mov bl, byte ptr [si]
+-        mov al, byte ptr cs:[bx+0200h]
+-        stosb
+-        add si, 4
+-        sub di, 60A0h
+-        pop bx
+-        pop si
+-L0A33:
+-        dec cx
+-        je L0A39
+-        jmp L0859
+-L0A39:
+-        add di, 0E8h
+-        mov ax, 212Eh
+-        mov ds, ax
+-        dec word ptr cs:[gTileRows]
+-        je L0A4C
+-        jmp L0856
+-L0A4C:
+-        jmp L0D17
+-L0A4F:
+-        test ax, 4000h
+-        je L0A5E
+-        and ax, 3FFFh
+-        mov word ptr cs:[gPlaneSelect], 1
+-L0A5E:
+-        shl ax, 1
+-        add ax, word ptr cs:[gSrcSeg2]
+-        mov word ptr cs:[gSrcSeg], ax
+-        mov si, word ptr cs:[gSrcOff]
+-        push si
+-        mov word ptr cs:[gSrcPlaneSelect], 0
+-        mov ax, word ptr [bx+0294h]
+-        test ax, 4000h
+-        je L0A89
+-        and ax, 3FFFh
+-        mov word ptr cs:[gSrcPlaneSelect], 1
+-L0A89:
+-        add bx, 2
+-        push bx
+-        mov bx, word ptr cs:[gSrcOff]
+-        shl ax, 1
+-        add ax, word ptr cs:[gSrcSeg2]
+-        mov word ptr cs:[gDstSeg], ax
+-        call _BlitMaskedByte
+-        add di, 1FFCh
+-        call _BlitMaskedByte
+-        add di, 1FFCh
+-        call _BlitMaskedByte
+-        add di, 1FFCh
+-        call _BlitMaskedByte
+-        sub di, 5F64h
+-        call _BlitMaskedByte
+-        add di, 1FFCh
+-        call _BlitMaskedByte
+-        add di, 1FFCh
+-        call _BlitMaskedByte
+-        add di, 1FFCh
+-        call _BlitMaskedByte
+-        sub di, 60A0h
++        jns TT_cr2a
++        sub di, 7F60h
++TT_cr2a:
++        loop TT_cr2
++TT_cz:
++        pop di
++        add di, 4
++        sub si, 32
++TT_ce:
+         pop bx
+-        pop si
+-        jmp L0A33
++        pop cx
++        pop bp
++        mov dx, word ptr cs:[gSrcSeg2]
++        jmp TT_next
+ L0ADA:
+         mov word ptr cs:[gTileRows2], 16h
+ L0AE1:
+@@ -1209,151 +1230,57 @@
+ ; source offset SI (gSrcOff, CS:03DF, is loaded by the caller), translate each through the
+ ; table at CS:0200 when its plane is 1, combine them, and store at ES:DI. Called from
+ ; DrawTile (17A6:0A9D..0AD1).
+-        PUBLIC  _BlitMaskedByte              ; @ 17A6:0D20
+-_BlitMaskedByte PROC NEAR
+-        push dx
+-        mov dx, bx
+-        mov ds, word ptr cs:[gDstSeg]
+-        cmp word ptr cs:[gSrcPlaneSelect], 1
+-        jne L0D3E
+-        mov ah, byte ptr [bx+3]
+-        xor bx, bx
+-        mov bl, ah
+-        mov ah, byte ptr cs:[bx+0200h]
+-        jmp short L0D41
+-L0D3E:
+-        mov ah, byte ptr [bx]
+-        inc dx
+-L0D41:
+-        mov ds, word ptr cs:[gSrcSeg]
+-        cmp word ptr cs:[gPlaneSelect], 1
+-        jne L0D5A
+-        xor bx, bx
+-        mov bl, byte ptr [si+3]
+-        mov al, byte ptr cs:[bx+0200h]
+-        jmp short L0D5B
+-L0D5A:
+-        lodsb
+-L0D5B:
+-        test al, 0F0h
+-        je L0D62
+-        and ah, 0Fh
+-L0D62:
+-        test al, 0Fh
+-        je L0D69
+-        and ah, 0F0h
+-L0D69:
+-        or al, ah
+-        stosb
+-        mov bx, dx
+-        mov ds, word ptr cs:[gDstSeg]
+-        cmp word ptr cs:[gSrcPlaneSelect], 1
+-        jne L0D89
+-        mov ah, byte ptr [bx+2]
+-        xor bx, bx
+-        mov bl, ah
+-        mov ah, byte ptr cs:[bx+0200h]
+-        jmp short L0D8C
+-L0D89:
+-        mov ah, byte ptr [bx]
+-        inc dx
+-L0D8C:
+-        mov ds, word ptr cs:[gSrcSeg]
+-        cmp word ptr cs:[gPlaneSelect], 1
+-        jne L0DA5
+-        xor bx, bx
+-        mov bl, byte ptr [si+2]
+-        mov al, byte ptr cs:[bx+0200h]
+-        jmp short L0DA6
+-L0DA5:
+-        lodsb
+-L0DA6:
+-        test al, 0F0h
+-        je L0DAD
+-        and ah, 0Fh
+-L0DAD:
+-        test al, 0Fh
+-        je L0DB4
+-        and ah, 0F0h
+-L0DB4:
+-        or al, ah
+-        stosb
+-        mov bx, dx
+-        mov ds, word ptr cs:[gDstSeg]
+-        cmp word ptr cs:[gSrcPlaneSelect], 1
+-        jne L0DD4
+-        mov ah, byte ptr [bx+1]
+-        xor bx, bx
+-        mov bl, ah
+-        mov ah, byte ptr cs:[bx+0200h]
+-        jmp short L0DD7
+-L0DD4:
+-        mov ah, byte ptr [bx]
+-        inc dx
+-L0DD7:
+-        mov ds, word ptr cs:[gSrcSeg]
+-        cmp word ptr cs:[gPlaneSelect], 1
+-        jne L0DF0
+-        xor bx, bx
+-        mov bl, byte ptr [si+1]
+-        mov al, byte ptr cs:[bx+0200h]
+-        jmp short L0DF1
+-L0DF0:
+-        lodsb
+-L0DF1:
+-        test al, 0F0h
+-        je L0DF8
+-        and ah, 0Fh
+-L0DF8:
+-        test al, 0Fh
+-        je L0DFF
+-        and ah, 0F0h
+-L0DFF:
+-        or al, ah
+-        stosb
+-        mov bx, dx
+-        mov ds, word ptr cs:[gDstSeg]
+-        cmp word ptr cs:[gSrcPlaneSelect], 1
+-        jne L0E21
+-        mov ah, byte ptr [bx]
+-        add dx, 4
+-        xor bx, bx
+-        mov bl, ah
+-        mov ah, byte ptr cs:[bx+0200h]
+-        jmp short L0E24
+-L0E21:
+-        mov ah, byte ptr [bx]
+-        inc dx
+-L0E24:
+-        mov ds, word ptr cs:[gSrcSeg]
+-        cmp word ptr cs:[gPlaneSelect], 1
+-        jne L0E3D
+-        mov bl, byte ptr [si]
+-        add si, 4
+-        mov al, byte ptr cs:[bx+0200h]
+-        jmp short L0E3E
+-L0E3D:
+-        lodsb
+-L0E3E:
+-        test al, 0F0h
+-        je L0E45
+-        and ah, 0Fh
+-L0E45:
+-        test al, 0Fh
+-        je L0E4C
+-        and ah, 0F0h
+-L0E4C:
+-        or al, ah
+-        stosb
+-        mov bx, dx
+-        pop dx
+-        ret
+-_BlitMaskedByte ENDP
++; (port) NodeScan(struct Node far * far *head): DispatchNodeEvent's walk when nothing happened (no key, no mouse): the
++; first node at or after *head whose state bits differ from their previous values, left in *head (returns 1), or the
++; end of the walk (returns 0: the list ran out, or a node with state bit 2 and flag 20h stops it). The inactive nodes
++; are skipped. What the walk does at every other node has no effect (state and flags are written back unchanged).
++        PUBLIC  _NodeScan
++_NodeScan PROC FAR
++        push bp
++        mov bp, sp
++        les bx, dword ptr [bp+6]
++        les bx, dword ptr es:[bx]
++NS_loop:
++        test byte ptr es:[bx+0Eh], 8
++        jnz NS_next
++        mov ax, word ptr es:[bx+2Eh]
++        mov dx, ax
++        and dx, 9
++        jz NS_a
++        cmp dx, 9
++        jne NS_walk
++NS_a:
++        mov dx, ax
++        and dx, 14h
++        jz NS_b
++        cmp dx, 14h
++        jne NS_walk
++NS_b:
++        test al, 2
++        jz NS_next
++        test byte ptr es:[bx+0Eh], 20h
++        jnz NS_end
++NS_next:
++        les bx, dword ptr es:[bx]
++        mov ax, es
++        or ax, bx
++        jnz NS_loop
++NS_end:
++        xor ax, ax
++        pop bp
++        retf
++NS_walk:
++        mov ax, bx
++        mov dx, es
++        les bx, dword ptr [bp+6]
++        mov word ptr es:[bx], ax
++        mov word ptr es:[bx+2], dx
++        mov ax, 1
++        pop bp
++        retf
++_NodeScan ENDP
+ 
+-; ---- 0E53..0EEE
+-; 17A6:0E53: one masked word of the EGA tile path: read a word from the destination and a
+-; word from the source, translate both bytes of each through the table at CS:0100, combine
+-; them, and store at ES:DI. Called from DrawTile (17A6:0816..0847).
++; (port) _BlitMaskedByte's only callers were the old Tandy composite path
+         PUBLIC  _BlitMaskedWord              ; @ 17A6:0E53
+ _BlitMaskedWord PROC NEAR
+         mov ds, word ptr cs:[gSrcSeg]

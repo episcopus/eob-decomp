@@ -1,0 +1,119 @@
+--- a/drivers/TGA.ASM
++++ b/drivers/TGA.ASM
+@@ -70,7 +70,7 @@
+ 	dd	SaveRectFromPage		; export 14, slot 21, ds:807E gSaveRectFromPage
+ 	dd	GetSpriteCell		; export 15, slot 22, ds:8082 gGetSpriteCellRle
+ 	dd	GetSpriteCell		; export 16, slot 23, ds:8086 gGetSpriteCell
+-	dd	DrawMaskedCell16		; export 17, slot 24, ds:808A
++	dd	DissolvePixels		; export 17, slot 24, ds:808A
+ 	dd	CopyToPlanar		; export 18, slot 25, ds:808E gCopyToPlanar
+ 	dd	SwapPageWithScreen		; export 19, slot 26, ds:8092
+ 	dd	DrawShapeMaskedFlipped		; export 20, slot 27, ds:8096 gDrawShapeMaskedFlipped
+@@ -2796,6 +2796,107 @@
+ 	retf
+ BurstFrame	ENDP
+ 
++; a dissolve between two pages (Dissolve in INTRO.EXE, ShuffleGrid in EOB.EXE): one loop in registers, the same pixels in the
++; same order as a GetPixel and a PutPixel each. Slot 24, ds:808A (INTRO.EXE ds:1F16), which nothing else calls.
++; DissolvePixels(xs far, ys far, x, y, width, height, srcSeg, dstSeg). tab[0..319]: a column's byte offset (low byte) and its
++; pixel's nibble mask (high byte); tab[320..]: a row's offset; tab[520], the end of the rows; tab[521], the column count.
++DissolvePixels	PROC	NEAR
++	push	bp
++	mov	bp, sp
++	sub	sp, 1044
++	push	ds
++	push	si
++	push	di
++	mov	ax, ss
++	mov	es, ax
++	lea	di, [bp - 1044]
++	lds	si, dword ptr [bp + 6]
++	mov	cx, word ptr [bp + 12h]
++DP_Col:
++	lodsw
++	add	ax, word ptr [bp + 0Eh]
++	mov	bx, ax
++	shr	bx, 1
++	mov	bh, 0F0h
++	test	al, 1
++	jz	DP_C2
++	mov	bh, 0Fh
++DP_C2:
++	mov	ax, bx
++	stosw
++	loop	DP_Col
++	lea	di, [bp - 1044 + 640]
++	lds	si, dword ptr [bp + 0Ah]
++	mov	cx, word ptr [bp + 14h]
++DP_Row:
++	lodsw
++	add	ax, word ptr [bp + 10h]
++	mov	bx, ax
++	shl	bx, 1
++	mov	ax, word ptr cs:[bx + gRowOffsets]
++	stosw
++	loop	DP_Row
++	mov	ax, word ptr [bp + 14h]
++	shl	ax, 1
++	add	ax, 640
++	mov	word ptr [bp - 1044 + 1040], ax
++	mov	ax, word ptr [bp + 12h]
++	mov	word ptr [bp - 1044 + 1042], ax
++	mov	ax, word ptr [bp + 16h]
++	mov	es, word ptr [bp + 18h]
++	mov	cl, byte ptr [bp + 14h]
++	lea	bx, [bp - 1044]
++	mov	ds, ax
++	mov	di, 640
++	push	bp
++	mov	bp, bx
++DP_Line:
++	mov	dx, word ptr [bp + 1042]
++	xor	si, si
++	push	di
++DP_Run:
++	mov	ax, word ptr [bp + 1040]
++	sub	ax, di
++	shr	ax, 1			; pixels to the row table's end
++	cmp	ax, dx
++	jbe	DP_R1
++	mov	ax, dx
++DP_R1:
++	sub	dx, ax
++	push	dx
++	mov	dx, ax
++DP_Pixel:
++	mov	bx, word ptr [bp + si]
++	mov	ch, bh
++	xor	bh, bh
++	add	bx, word ptr [bp + di]
++	mov	al, byte ptr [bx]
++	xor	al, byte ptr es:[bx]
++	and	al, ch
++	xor	byte ptr es:[bx], al
++	add	si, 2
++	add	di, 2
++	dec	dx
++	jnz	DP_Pixel
++	pop	dx
++	or	dx, dx
++	jz	DP_EndLine
++	mov	di, 640
++	jmp	short DP_Run
++DP_EndLine:
++	pop	di
++	add	di, 2
++	dec	cl
++	jnz	DP_Line
++	pop	bp
++	pop	di
++	pop	si
++	pop	ds
++	mov	sp, bp
++	pop	bp
++	retf
++DissolvePixels	ENDP
++
+ ; TGA.OVL 1732 (export 23, gRestoreDrawState): puts back the region SaveDrawState kept
+ RestoreDrawState	PROC	NEAR
+ 	push	bp

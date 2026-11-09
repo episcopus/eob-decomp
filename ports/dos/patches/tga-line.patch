@@ -1,0 +1,99 @@
+--- a/drivers/TGA.ASM
++++ b/drivers/TGA.ASM
+@@ -886,6 +886,14 @@
+ 	xchg	dx, bx
+ 	xchg	cx, ax
+ L_0AA8:
++	cmp	dx, bx
++	jne	L_NotHorz
++	jmp	near ptr HLine
++L_NotHorz:
++	cmp	cx, ax
++	jne	L_0AAA
++	jmp	near ptr VLine
++L_0AAA:
+ 	xor	si, si
+ 	sub	dx, bx
+ 	sub	cx, ax
+@@ -1109,6 +1117,81 @@
+ 	pop	ax
+ 	pop	bp
+ 	ret
++
++; a horizontal line: bytes filled, the end pixels by nibble (a fast path of DrawLineInside: ax, cx = x1, x2, bx = y)
++HLine:
++	cmp	cx, ax
++	jge	HL_Ord
++	xchg	cx, ax
++HL_Ord:
++	sub	cx, ax
++	inc	cx			; pixels
++	shl	bx, 1
++	mov	di, word ptr cs:[bx + gRowOffsets]
++	mov	bx, ax
++	shr	bx, 1
++	add	di, bx
++	mov	bl, byte ptr cs:[gLineColour]
++	and	bl, 0Fh
++	mov	bh, bl			; bh: colour in the low nibble
++	shl	bl, 1
++	shl	bl, 1
++	shl	bl, 1
++	shl	bl, 1
++	mov	dl, bl			; dl: colour in the high nibble
++	or	bl, bh			; bl: in both
++	test	al, 1
++	jz	HL_Even
++	mov	al, byte ptr es:[di]
++	and	al, 0F0h
++	or	al, bh
++	stosb
++	dec	cx
++	jz	HL_Done
++HL_Even:
++	mov	al, bl
++	shr	cx, 1
++	rep	stosb
++	jnc	HL_Done
++	mov	al, byte ptr es:[di]
++	and	al, 0Fh
++	or	al, dl
++	stosb
++HL_Done:
++	jmp	near ptr L_0C5F
++
++; a vertical line: ax = x, bx = y1, dx = y2 (y1 <= y2), one nibble of a byte a line
++VLine:
++	mov	cx, dx
++	sub	cx, bx
++	inc	cx
++	shl	bx, 1
++	mov	di, word ptr cs:[bx + gRowOffsets]
++	mov	bx, ax
++	shr	bx, 1
++	add	di, bx
++	mov	dl, byte ptr cs:[gLineColour]
++	and	dl, 0Fh
++	mov	dh, 0F0h		; dh: what is kept of the screen byte
++	test	al, 1
++	jnz	VL_Loop
++	shl	dl, 1
++	shl	dl, 1
++	shl	dl, 1
++	shl	dl, 1
++	mov	dh, 0Fh
++VL_Loop:
++	mov	al, byte ptr es:[di]
++	and	al, dh
++	or	al, dl
++	mov	byte ptr es:[di], al
++	add	di, BANK
++	jns	VL_Next
++	sub	di, BANK_WRAP
++VL_Next:
++	loop	VL_Loop
++	jmp	near ptr L_0C5F
++
+ ; TGA.OVL 0C69 (export 9, gFillRect): FillRect(x1, y1, x2, y2, colour) fills the rectangle on the draw page
+ ; with colour AND 0Fh (gFillPattern, the colour in both nibbles), keeping the other pixel of its first and last
+ ; bytes when the span starts or ends inside one

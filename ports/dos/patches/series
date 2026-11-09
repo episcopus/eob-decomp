@@ -1,0 +1,11 @@
+# ports/dos/patches/series: the patches, in order. tools/func.py must show the same game for each.
+tga-glyph.patch      # TGA.OVL DrawGlyph: tables for the current colours, a row at a time, the two fonts' only size (all text)
+tile-draw.patch      # E17A6 DrawTile's Tandy path: tiles in registers, the composite tiles from one built base tile, the flipped ones by xlat; NodeScan
+dispatch-idle.patch  # E16A5 DispatchNodeEvent: the keyboard-only idle pass is a scan (the map loop and every menu poll)
+view-columns.patch   # EOV4 CopyViewColumn, ToggleViewColumn, ComputeViewSpan (the wall block map of a frame): inner loops in assembly
+tandy-dissolve.patch # INTRO's Dissolve and EOV5's ShuffleGrid (the logo cards, the title): on Tandy one driver call (tga-dissolve.patch) does all the pixels
+heapcheck.patch      # EOV1 RunCampMenu: no heap walk before every menu (a debugging check left in the camp loop)
+tga-line.patch       # TGA.OVL DrawLine: horizontal and vertical lines filled, not stepped pixel by pixel (panel frames, menu boxes)
+particle-burst.patch # EOB.EXE AnimateParticleBurst (spell hits): on Tandy one driver routine does a frame in registers; the C loop remains for the other drivers
+tga-glyph2.patch     # TGA.OVL DrawGlyph again: an even-x loop of two words a row, the row masks kept between glyphs, the slow path's bookkeeping out of the fast path, DrawPageSeg shorter
+tga-dissolve.patch   # TGA.OVL DissolvePixels: the dissolve's tables and its loop, in registers, same pixels in the same order

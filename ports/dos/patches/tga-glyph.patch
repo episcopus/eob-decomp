@@ -1,0 +1,301 @@
+--- a/drivers/TGA.ASM
++++ b/drivers/TGA.ASM
+@@ -3529,8 +3529,118 @@
+ 	REPT	16
+ 	dw	((GlyphBits SHR 3) * 0F0h) OR (((GlyphBits SHR 2) AND 1) * 0Fh) OR (((GlyphBits SHR 1) AND 1) * 0F000h) OR ((GlyphBits AND 1) * 0F00h)
+ GlyphBits = GlyphBits + 1
++	ENDM
++
++; (port) DrawGlyph's fast loops. For the current text colours gGlyphWords holds, for each four glyph bits, the word of
++; four pixels they become; gNibbleHi and gNibbleLo give a byte's two nibbles as word indexes.
++gGlyphKey	dw	0FFFFh		; the colours gGlyphWords is built for: foreground in the high byte, background low
++gGlyphOpaque	db	0		; 1: clear bits draw the background; 0: clear bits keep the screen
++gGlyphWords	dw	16 dup (0)
++gNibbleHi LABEL BYTE
++NibbleIndex = 0
++	REPT	256
++	db	(NibbleIndex SHR 4) * 2
++NibbleIndex = NibbleIndex + 1
++	ENDM
++gNibbleLo LABEL BYTE
++NibbleIndex = 0
++	REPT	256
++	db	(NibbleIndex AND 0Fh) * 2
++NibbleIndex = NibbleIndex + 1
+ 	ENDM
++
++gIterWords	dw	18 dup (0)	; per glyph iteration: the mask of its first and second word, the mask byte
++gIterStep	dw	0		; the bytes bp moves over the iterations of a row
++
++; (near) From the mask bytes at cs:bp, one per iteration of a row, the masks in the words the iterations write; leaves
++; bp at gIterWords.
++GlyphMasks	PROC	NEAR
++	push	ax
++	push	bx
++	push	cx
++	push	si
++	mov	cx, word ptr cs:[gBlitBytes]
++	mov	ax, cx
++	shl	ax, 1
++	add	ax, cx
++	shl	ax, 1
++	mov	word ptr cs:[gIterStep], ax
++	inc	cx
++	mov	si, OFFSET gIterWords
++L_GM1:
++	mov	al, byte ptr cs:[bp]
++	inc	bp
++	xor	ah, ah
++	mov	word ptr cs:[si + 4], ax
++	mov	bx, ax
++	mov	bl, byte ptr cs:[bx + gNibbleHi]
++	xor	bh, bh
++	mov	bx, word ptr cs:[bx + gNibblePixels]
++	mov	word ptr cs:[si], bx
++	mov	bx, ax
++	mov	bl, byte ptr cs:[bx + gNibbleLo]
++	xor	bh, bh
++	mov	bx, word ptr cs:[bx + gNibblePixels]
++	mov	word ptr cs:[si + 2], bx
++	add	si, 6
++	loop	L_GM1
++	mov	bp, OFFSET gIterWords
++	pop	si
++	pop	cx
++	pop	bx
++	pop	ax
++	ret
++GlyphMasks	ENDP
+ 
++; (near) Build gGlyphWords for the colours of the text being drawn, unless it already is.
++GlyphPrep	PROC	NEAR
++	mov	al, byte ptr cs:[gBlitBack]
++	mov	ah, byte ptr cs:[gBlitColour]
++	and	ah, 0Fh
++	cmp	ax, word ptr cs:[gGlyphKey]
++	jne	L_GP0
++	ret
++L_GP0:
++	mov	word ptr cs:[gGlyphKey], ax
++	push	bx
++	push	cx
++	push	dx
++	push	si
++	push	di
++	push	es
++	mov	bx, cs
++	mov	es, bx
++	mov	si, word ptr cs:[gBackPattern]
++	test	al, 0Fh
++	mov	al, 1
++	jne	L_GP1
++	xor	si, si
++	xor	al, al
++L_GP1:
++	mov	byte ptr cs:[gGlyphOpaque], al
++	mov	dx, word ptr cs:[gTextPattern]
++	mov	di, OFFSET gGlyphWords
++	xor	bx, bx
++L_GP2:
++	mov	ax, word ptr cs:[bx + gNibblePixels]
++	mov	cx, ax
++	not	cx
++	and	cx, si
++	and	ax, dx
++	or	ax, cx
++	stosw
++	add	bx, 2
++	cmp	bx, 32
++	jne	L_GP2
++	pop	es
++	pop	di
++	pop	si
++	pop	dx
++	pop	cx
++	pop	bx
++	ret
++GlyphPrep	ENDP
++
+ ; TGA.OVL 21C1 (near): DrawGlyph(ch, x, y), as MCGA.OVL 241E: each four glyph bits become a word of four pixels
+ ; through gNibblePixels, drawn in gTextPattern (set bits) and gBackPattern (clear bits), each unless its colour
+ ; is 0
+@@ -3600,18 +3710,10 @@
+ 	shl	ax, 1
+ 	add	bp, ax
+ 	mov	bp, word ptr cs:[bp]
+-	mov	ax, dx
+-	and	ax, 3FCh
+-	mov	dx, SCREEN_COLS
+-	mul	dx
++	mov	bx, dx
++	shl	bx, 1
++	mov	ax, word ptr cs:[bx + gRowOffsets]
+ 	and	byte ptr cs:[gBlitBank], 3
+-	je	L_2286
+-	xor	ch, ch
+-	mov	cl, byte ptr cs:[gBlitBank]
+-L_2281:
+-	add	ax, BANK
+-	loop	L_2281
+-L_2286:
+ 	add	di, ax
+ 	xor	ah, ah
+ 	mov	al, byte ptr cs:[gGlyphBytes]
+@@ -3631,6 +3733,157 @@
+ 	mov	dx, es
+ 	mov	es, ax
+ 	mov	ds, dx
++	test	byte ptr cs:[gBlitColour], 0Fh	; (port) a transparent foreground stays on the original path
++	jne	L_F0
++	jmp	L_F99
++L_F0:
++	cmp	byte ptr cs:[gGlyphBytes], 1	; (port) every font of the game: one byte a row, and the shifted-out bits
++	je	L_F01
++	jmp	L_F99
++L_F01:
++	call	GlyphPrep
++	call	GlyphMasks
++	mov	cl, byte ptr cs:[gBlitX]
++	mov	ch, byte ptr cs:[gBlitRows]
++	xor	bx, bx
++	cmp	byte ptr cs:[gGlyphOpaque], 0
++	jne	L_FGO
++	jmp	L_FGT
++L_FGO:
++L_FGRO:
++	mov	ah, byte ptr [si]
++	inc	si
++	xor	al, al
++	shr	ax, cl
++	mov	dx, ax
++	mov	bl, dh
++	mov	bl, byte ptr cs:[bx + gNibbleHi]
++	mov	ax, word ptr cs:[bx + gGlyphWords]
++	mov	bp, word ptr cs:[gIterWords + 0]
++	cmp	bp, 0FFFFh
++	je	L_FGO1F
++	or	bp, bp
++	je	L_FGO1X
++	xor	ax, word ptr es:[di + 0]
++	and	ax, bp
++	xor	word ptr es:[di + 0], ax
++	jmp	short L_FGO1X
++L_FGO1F:
++	mov	word ptr es:[di + 0], ax
++L_FGO1X:
++	mov	bl, dh
++	mov	bl, byte ptr cs:[bx + gNibbleLo]
++	mov	ax, word ptr cs:[bx + gGlyphWords]
++	mov	bp, word ptr cs:[gIterWords + 2]
++	cmp	bp, 0FFFFh
++	je	L_FGO2F
++	or	bp, bp
++	je	L_FGO2X
++	xor	ax, word ptr es:[di + 2]
++	and	ax, bp
++	xor	word ptr es:[di + 2], ax
++	jmp	short L_FGO2X
++L_FGO2F:
++	mov	word ptr es:[di + 2], ax
++L_FGO2X:
++	mov	bl, dl
++	mov	bl, byte ptr cs:[bx + gNibbleHi]
++	mov	ax, word ptr cs:[bx + gGlyphWords]
++	mov	bp, word ptr cs:[gIterWords + 6]
++	cmp	bp, 0FFFFh
++	je	L_FGO3F
++	or	bp, bp
++	je	L_FGO3X
++	xor	ax, word ptr es:[di + 4]
++	and	ax, bp
++	xor	word ptr es:[di + 4], ax
++	jmp	short L_FGO3X
++L_FGO3F:
++	mov	word ptr es:[di + 4], ax
++L_FGO3X:
++	mov	bl, dl
++	mov	bl, byte ptr cs:[bx + gNibbleLo]
++	mov	ax, word ptr cs:[bx + gGlyphWords]
++	mov	bp, word ptr cs:[gIterWords + 8]
++	cmp	bp, 0FFFFh
++	je	L_FGO4F
++	or	bp, bp
++	je	L_FGO4X
++	xor	ax, word ptr es:[di + 6]
++	and	ax, bp
++	xor	word ptr es:[di + 6], ax
++	jmp	short L_FGO4X
++L_FGO4F:
++	mov	word ptr es:[di + 6], ax
++L_FGO4X:
++	add	di, BANK
++	jns	L_FGOY
++	sub	di, BANK_WRAP
++L_FGOY:
++	dec	ch
++	je	L_FGEO
++	jmp	L_FGRO
++L_FGEO:
++	jmp	L_23D6
++L_FGT:
++L_FGRT:
++	mov	ah, byte ptr [si]
++	inc	si
++	xor	al, al
++	shr	ax, cl
++	and	ah, byte ptr cs:[gIterWords + 4]
++	and	al, byte ptr cs:[gIterWords + 10]
++	mov	dx, ax
++	mov	bl, dh
++	mov	bl, byte ptr cs:[bx + gNibbleHi]
++	or	bl, bl
++	je	L_FGT1X
++	mov	ax, word ptr cs:[bx + gNibblePixels]
++	not	ax
++	and	ax, word ptr es:[di + 0]
++	or	ax, word ptr cs:[bx + gGlyphWords]
++	mov	word ptr es:[di + 0], ax
++L_FGT1X:
++	mov	bl, dh
++	mov	bl, byte ptr cs:[bx + gNibbleLo]
++	or	bl, bl
++	je	L_FGT2X
++	mov	ax, word ptr cs:[bx + gNibblePixels]
++	not	ax
++	and	ax, word ptr es:[di + 2]
++	or	ax, word ptr cs:[bx + gGlyphWords]
++	mov	word ptr es:[di + 2], ax
++L_FGT2X:
++	mov	bl, dl
++	mov	bl, byte ptr cs:[bx + gNibbleHi]
++	or	bl, bl
++	je	L_FGT3X
++	mov	ax, word ptr cs:[bx + gNibblePixels]
++	not	ax
++	and	ax, word ptr es:[di + 4]
++	or	ax, word ptr cs:[bx + gGlyphWords]
++	mov	word ptr es:[di + 4], ax
++L_FGT3X:
++	mov	bl, dl
++	mov	bl, byte ptr cs:[bx + gNibbleLo]
++	or	bl, bl
++	je	L_FGT4X
++	mov	ax, word ptr cs:[bx + gNibblePixels]
++	not	ax
++	and	ax, word ptr es:[di + 6]
++	or	ax, word ptr cs:[bx + gGlyphWords]
++	mov	word ptr es:[di + 6], ax
++L_FGT4X:
++	add	di, BANK
++	jns	L_FGTY
++	sub	di, BANK_WRAP
++L_FGTY:
++	dec	ch
++	je	L_FGET
++	jmp	L_FGRT
++L_FGET:
++	jmp	L_23D6
++L_F99:
+ 	mov	bh, byte ptr cs:[gBlitColour]
+ 	mov	cl, 4
+ 	shl	bh, cl

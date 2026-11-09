@@ -1,0 +1,7 @@
+wait 400
+shot a
+wait 200
+shot b
+wait 200
+shot c
+quit

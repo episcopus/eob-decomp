@@ -1,0 +1,40 @@
+EYE OF THE BEHOLDER: FASTER BUILD FOR THE TANDY 1000 EX
+
+This is the same game, rebuilt from its decompiled source with the drawing, menu and intro code tuned for an 8088 with
+Tandy video. The game plays the same way: same screens, same sound, same saved games. Three files change:
+
+  EOB.EXE     the game program
+  INTRO.EXE   the logos and the introduction
+  TGA.OVL     the Tandy graphics driver
+
+They were built from version 1.9 of the game (the copy this project works from). Use them with that version.
+
+INSTALL
+
+1. Make a copy of the three original files on your EX, in the game directory:
+
+     COPY EOB.EXE EOB.ORG
+     COPY INTRO.EXE INTRO.ORG
+     COPY TGA.OVL TGA.ORG
+
+2. Copy EOB.EXE, INTRO.EXE and TGA.OVL from this folder over the originals (keep the three together; a mix will not
+   work well).
+
+3. Run the game the usual way (START1, Tandy graphics, Tandy sound). Saved games and everything else are shared with
+   the original.
+
+To go back: COPY EOB.ORG EOB.EXE, COPY INTRO.ORG INTRO.EXE and COPY TGA.ORG TGA.OVL.
+
+The game needs about 2 KB more memory than the original (the text tables and the new routines in TGA.OVL). SHA256.TXT
+lists the checksums of the three files.
+
+WHAT CHANGES
+
+The logo and title dissolves take about 1.6 seconds each instead of about 15 (the title 3 instead of 30). A spell hit's
+sparkles run at the game's own pace, about 1.9 seconds instead of 3.9. Moving the highlight in the camp menu takes about
+0.06 seconds of work per key press instead of 0.3, and each menu page draws about 2 to 2.5 times faster. A step or a turn
+in the dungeon is about 1.6 times faster than the original. These figures are from a model of an 8088 at 7.16 MHz; the
+real machine is the final judge. Level loading is unchanged (it is limited by the disk).
+
+One thing is left out on purpose: the camp menu no longer checks the far heap before each page (a debugging check that
+printed "Far heap corrupt!" if memory had been damaged). It took a quarter of a second at every key press.
