@@ -8,7 +8,7 @@ YMFM := $(ROOT)/tools/vendor/ymfm/src
 SOUND := build/sound
 CAPTURES := $(SOUND)/sfx-adlib.json $(SOUND)/sfx-tandy.json $(SOUND)/intro-adlib.json $(SOUND)/intro-tandy.json
 
-.PHONY: help game ref func prof spans tandy test dist play sound sn sound-check clean
+.PHONY: help game ref func prof spans tandy test dist play sound sn music sound-check clean
 .DEFAULT_GOAL := help
 
 help:
@@ -24,6 +24,7 @@ help:
 	@echo "  make play    DOSBox-X window on the Tandy machine, for a look (not a measurement)"
 	@echo "  make sound   the Tandy FM study: AdLib, today's Tandy and the mapper model side by side (sound/README.md)"
 	@echo "  make sn      build/sound/SN.DAT and SNSOUND.DAT: the Tandy's sounds (sound/picks.json, the intro's rich), and their player"
+	@echo "  make music   build/sound/music.html: the four pieces arranged for the chip, beside the AdLib and the mapping"
 	@echo "  make sound-check  the patched game plays every sound of SN.DAT, and the intro all of SNSOUND.DAT, as the model does"
 
 game: $(SOUND)/SN.DAT $(SOUND)/SNSOUND.DAT
@@ -89,12 +90,18 @@ $(SOUND)/clips-intro.json: $(SOUND)/render $(SOUND)/introparts-adlib.json sound/
 	$(PY) sound/tandymap.py intro
 
 # sndat.py build writes both files
-$(SOUND)/SN.DAT: $(SOUND)/clips.json $(SOUND)/clips-intro.json sound/picks.json sound/sndat.py sound/SNPLAY.ASM
+$(SOUND)/SN.DAT: $(SOUND)/clips.json $(SOUND)/clips-intro.json sound/picks.json sound/sndat.py sound/SNPLAY.ASM \
+		sound/arrange.py sound/score.py
 	$(PY) sound/sndat.py build
+	$(PY) sound/sndat.py selftest
 
 $(SOUND)/SNSOUND.DAT: $(SOUND)/SN.DAT
 
 sn: $(SOUND)/SN.DAT $(SOUND)/SNSOUND.DAT
+
+# the music arranged for the chip beside the AdLib and the mapping: build/sound/music.html
+music: $(SOUND)/clips.json $(SOUND)/clips-intro.json
+	$(PY) sound/arrange.py clips
 
 sound-check: game
 	$(PY) sound/capture.py sfx --card tandy --build game

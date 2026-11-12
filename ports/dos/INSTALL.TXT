@@ -38,12 +38,13 @@ WHAT CHANGES
 
 With Tandy sound, every sound effect is new: made for the Tandy's three tones and noise channel and chosen by ear, one
 for each thing the game does (footsteps and attacks for each monster, each spell, doors, levers, items). The original
-Tandy version played only about half of the game's sounds; this one plays all of them, quieter when a monster is far
-away, as the AdLib version does, and the music of the party creation screens, which it did not have. The introduction's
-music and sounds are new too, taken from the AdLib's: all three of its pieces of music (the original Tandy version had
-two), with the sound effects playing over the music as they do on the AdLib. Because the introduction's pictures now
-come faster, its music runs longer than the scenes it was written for: the title music starts just before the logo
-music ends. The PC speaker and AdLib sound are as they were.
+Tandy version played only about half of the game's sounds; this one plays all of them, up to three at once with the
+music, sharing the chip's channels so that the nearest sound is heard first, as the AdLib version does. Monsters fade
+with distance as they do on the AdLib, and from 11 squares away they are not heard. The music of the party creation
+screens and of the introduction is arranged for the Tandy's chip from the AdLib's notes, with instruments made for
+it; the introduction's sound effects play over its music. Because the introduction's pictures now come faster, its
+music runs longer than the scenes it was written for: the title music starts just before the logo music ends. The PC
+speaker and AdLib sound are as they were.
 
 The logo and title dissolves take about 1.6 seconds each instead of about 15 (the title 3 instead of 30). A spell hit's
 sparkles (magic missile, fireball, lightning and the rest) run at the game's own pace, about 2 seconds instead of 4 to 5.

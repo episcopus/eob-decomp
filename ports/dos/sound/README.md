@@ -208,42 +208,63 @@ make -C ports/dos sound-check   # the patched programs play every sound as the m
   step of up to 7 or a byte, or its period; a volume or the noise as one nibble; pauses. What cannot be heard is left
   out (the period of a silent tone, unless tone 2 clocks a sounding noise; the noise register while the noise is off).
   `Player` is the player in Python, call for call, and the build checks that every sound comes back from it as picked.
-- `SNPLAY.ASM` is the player (695 bytes with its state), assembled by the pinned TASM and linked by TLINK. Both files
-  carry the same player.
+- `SNPLAY.ASM` is the player (2,060 bytes with its state and tables), assembled by the pinned TASM and linked by
+  TLINK. Both files carry the same player.
 - The files have the layout `PCGAMESN.DAT` and `PCSOUND.DAT` have, so the loaders read them the same way: the 120-byte
   map of sounds, then the driver block, which goes to cs:0416 of the AdLib driver's segment, which a Tandy never runs:
   a table of 128 driver sounds, the player, the streams. `SN.DAT`: 114 streams (two pairs of game sounds share one:
-  16 and 103, 108 and 109; and 78 and 18), 19,505 bytes, the block 19,385 of the 19,474 bytes to the end of EOB.EXE's
-  AdLib driver. `SNSOUND.DAT`: the intro's 14 sounds, 11,036 bytes, the block 10,916 of the 14,000 INTRO.EXE reads.
-- The player has two slots, the music and an effect, which play at once. A sound whose table word has bit 15 set is
-  music (the intro's sounds 1 to 3); every other sound is an effect (all of EOB.EXE's). A new sound replaces the one
-  in its slot. The effect takes each channel it writes, silencing it first, and holds it to its end; the music's
-  writes to those channels are kept, not made, and when the effect ends each channel it held gets the music's
-  period (or noise) and volume back. With no music playing that is silence, so the game plays one sound at a time,
-  as the old driver did. Every fourth pass of the driver's timer (72.8 Hz) a slot plays one frame. An effect from a
-  distance of 16 or more is not played and what plays goes on, as on the AdLib; nearer, each volume is
-  (distance - 1) x 7/8 steps quieter, the AdLib's level offset at 4 OPL2 steps to one 2 dB step.
+  16 and 103, 108 and 109; and 78 and 18), 19,458 bytes, the block 19,338 of the 19,474 bytes to the end of EOB.EXE's
+  AdLib driver. `SNSOUND.DAT`: the intro's 14 sounds, 8,052 bytes, the block 7,932 of the 14,000 INTRO.EXE reads.
+- The player has four slots, which play at once: the music and three effects. A sound whose table word has bit 15 set
+  is music (the character generation music and the intro's sounds 1 to 3): notes and instruments ("The music",
+  below). Every other sound is an effect: its stream of the chip's changes, after a first byte that says which of
+  its channels it uses. A new effect takes a free slot, or the one with the weakest claim if that is no stronger.
+- The chip's four channels are shared by claim: an effect's is 20h less its distance, as the AdLib's priority
+  (177D:01DA, the byte PlaySoundAtCell sets to 20h - distance), the music's 0, and the newer of two equal claims
+  wins. A slot that writes a channel held by a weaker claim takes it and writes all of it (period or noise, and
+  volume); a weaker one keeps what it would write and writes nothing. When a slot ends, each channel it held goes to
+  the slot with the strongest claim that sounds there, which writes all of it, or is silenced. An effect's tones go,
+  when it starts, to the chip's tones free first, then the music's, then those of the effect with the weakest claim;
+  a noise clocked by tone 2 keeps its tone 2. 99 of the 116 game sounds use the noise channel, so that is where they
+  meet most; the nearest wins it. The player works on every fourth call of the driver's timer (291 Hz), when every
+  slot moves one frame, and returns at once on the other three: with music playing the first version of this player
+  cost about 7% of the 8088 (the intro session's work, 94.6 s to 102.6 s), most of it in calls with nothing to do.
+- Distance: the AdLib moves a sound's level (d - 1) / 16 of the way to silence, about 2.95 dB a cell for a sound at
+  full level (177D:01AF). Each volume of an effect is now (d - 1) x 3 / 2 steps quieter, the same 2.95 dB a cell, and
+  from 11 cells it is silent and not played. The first version gave (d - 1) x 7 / 8, the mapper's squeeze of the
+  AdLib's 45 dB into the chip's 30, which left a sound 15 cells away 24 dB down where the AdLib has it 41 dB down:
+  on the EX every monster could be heard.
+- Of the starts between two calls of the player only one reaches it (the driver has one song pointer), and the game
+  starts sounds in bursts as the monsters move: in the spell session 37 of 55 were lost so, all five from 1 cell away
+  among them, to steps 9 to 14 cells off. PlaySoundAtCell now starts a sound only when it is no farther than the
+  start still waiting (the player sets the distance back to 7FFFh, none, when it takes one up), so the nearest of a
+  burst is heard; PlaySound's (distance 0) always is.
+- Driver sound 0, the silence the game plays when the map screen opens (`src/EOV3.C:726`), stops every sound,
+  music included, as the AdLib's silence script does.
 - The patch: `LoadSoundDriver` opens `sn.dat` on a Tandy (the literal `pcgamesn.dat` from its seventh letter, so
   DGROUP keeps its layout) and reads up to the larger block; `PlaySound` and `PlaySoundAtCell` write the distance
-  of the sound they start where the player reads it (0, or `gCurAttenuation`); `_SoundTick` calls the player when
+  of the sound they start where the player reads it (0, or `gCurAttenuation`, the nearer start kept, above); `_SoundTick` calls the player when
   the song's segment holds its mark ('SN' at cs:051A), with the offset of its `gSongPtr` (the driver's variables lie
   4 bytes further on in INTRO.EXE, whose copy of the driver is built from the same file), and otherwise plays notes
   as before, so the PC speaker is unchanged. INTRO.EXE's Tandy case opens its literal `pcsound.dat` through
   `FileOpenSn` (a new routine at the end of `E1C0E`, the file layer), which makes the name's first two letters "sn":
   a new literal, or code that moved, would cost the rebuild its places for the unit's literals (it finds them by
   matching the code), so StartupGame keeps every byte but that call's target. The bytes come from code with no
-  effect: two dead blocks and a repeated read in `E177D`, register saves and a clamp no path reached in `E1948`;
-  `E1C0E` has room after pak-lookup.patch.
+  effect: four dead blocks (`gTandyOn` is 1 from start-up to shut-down on a Tandy, `src/E07C8.C:455` and `:482`)
+  and a repeated read in `E177D`, register saves and a clamp no path reached in `E1948`; `E1C0E` has room after
+  pak-lookup.patch.
 - The character generation music (game sound 20) ends 102.1 s after its start, where the AdLib sets the script flag
   (measured on the reference: the `C7h 01` at the end of driver sound 67), and sets it too, so the character screens
   play it again while they wait for a key (`WaitKeyOrPause`, `src/EOV0.C:232`). The old Tandy driver had no music. It
-  plays as an effect, as the old player had it: a sound in character generation still cuts it.
+  plays in the music slot: the click of every button there (sound 76, `src/EOV0.C:280`) no longer cuts it, which in
+  the first version kept it from ever coming back, since the cut music never set the flag.
 
 The intro (`capture.py introparts`, `tandymap.py intro`): the pick was rich for the 170 s of the intro the study had
 captured as one clip, music and effects together. That clip cannot be played as it is: the intro runs about 250 s
 before it waits for a key, its scenes start the sounds at their own pace (on the Tandy model the title comes at 73 s,
 on the AdLib at 79 s; with this port's speed patches at 29 s), and each sound must start when its scene asks for it.
-So each of the intro's sounds was captured alone on the AdLib (every other request skipped) and mapped alone, rich:
+So each of the intro's sounds was captured alone on the AdLib (every other request skipped) and mapped alone, rich
+(the music, in the first version; it is now arranged, "The music" below):
 
 | Sound | AdLib driver | What | Length | Envelope match |
 |---|---|---|---:|---:|
@@ -252,8 +273,7 @@ So each of the intro's sounds was captured alone on the AdLib (every other reque
 | 3 | 15h | music: the last scene | 27.9 s | 0.84 |
 | 4 to 14 | 1Eh to 29h | effects (a rumble, hits, steps, magic) | 0.1 to 5 s | 0.28 to 0.98 |
 
-- The music uses the three tones as the whole intro did (the low drone of the first part as before, `TWEAK` "low").
-  The effects play over it, so `tandymap.py` maps them without the further lines (they take no more tones than they
+- The effects play over the music, so `tandymap.py` maps them without the further lines (they take no more tones than they
   have voices that sound) and from tone 2 down, where the music has its further lines.
 - Sounds 3, 4, 8 and 9 come after the 170 s the listening passes heard: nobody has listened to them yet. The clips
   are in `build/sound/clips/intro01` to `intro14` (`adlib.wav`, `tandy-rich.wav`); 4 (a rumble on noise clocked by
@@ -261,24 +281,63 @@ So each of the intro's sounds was captured alone on the AdLib (every other reque
 - With the speed patches the intro's scenes run faster than the music was written for: the title's music starts 2 s
   before the Westwood card's ends and cuts it, and runs on under the scenes after it to 114 s.
 
+## The music (2026-11-11, after the first test on the EX)
+
+Heard on the EX, the mapped music "mixes awkwardly", with blips and pops. The mapper gives the chip's tones to the
+loudest AdLib voices tick by tick, so a channel went from one voice to another without a pause: the character
+generation music had 205 pitch jumps on a sounding channel against 21 tone runs. The four pieces are now arranged for
+the chip from the AdLib's own notes:
+
+```bash
+make -C ports/dos music         # build/sound/music.html: each piece on the AdLib, mapped (rich), arranged
+```
+
+- `score.py` reads the notes from the OPL2 captures: each key-on to its key-off, the pitch the mapper hears at its
+  start, the carrier's level, how long it sounds (`score.py show game020`). The scores are small (game 20: 459 notes
+  in 8 voices) and play most lines twice: in unison (game 20's pads, voices 0 and 1, 3 and 4, 5 and 6; the last
+  scene's chord) or an octave apart (the title's bass and its middle line).
+- `arrange.py` gives each tone channel a part: the AdLib voices it plays, preferred first (`ARRANGEMENTS`). A channel
+  changes note only when a note starts; it takes a preferred voice's note, and goes back to another voice only at that
+  voice's next note. A note keeps the level the AdLib plays it at (3 dB to one step, the mapper's rule), so the swells
+  and fades stay; notes below A2, the chip's lowest, go up by octaves.
+- The instruments are made for the chip (`INSTRUMENTS`): a table of volumes from the note's start, a slow fall while
+  it is held, a release after it, and for the leads a vibrato (6 Hz, after 8 ticks, a period step of period / 64):
+  a pad that swells in, a lead, a bell and a pluck that die away, a bass.
+- Character generation: the top of the pad, then from 32 s the high line (voice 7) as a bell; a counter melody
+  (voice 6) over the middle of the pad; the bass (voice 2) two octaves up. The Westwood card: two of its four
+  arpeggios, its bell, its bass, and its 16 Hz drone (the AdLib's loudest voice there, "too loud, grating" in the
+  first listening) as a quiet pad three octaves up. The title: the melody, the middle line, the bass. The last scene:
+  the melody over the chord's top, the chord's middle, the bass. The noise channel is left to the effects.
+- The player plays the notes itself: a stream of instruments and events (wait, note: channel, note, instrument,
+  gain, length; sndat.py `music`) instead of the chip's changes, so the music is smaller too: game 20 is 1,658 bytes
+  (3,183 mapped), the intro's three 4,852 (9,213). That paid for the mixer.
+- `arrange.render` is the arrangement's own render; the build checks that the player gives back exactly its chip
+  states. Nobody has listened to the arrangements yet: they are a first version for the page and the EX, and
+  `ARRANGEMENTS` and `INSTRUMENTS` are where a listening pass would change them.
+
 How it was checked:
 
-- `sndat.py build`: every sound through `Player` gives the picked audible state at every tick, in the slot it is in.
+- `sndat.py build`: every sound through `Player` gives the picked audible state at every tick, in the slot it is in
+  (the music: the arrangement's own render).
+- `sndat.py selftest` (after every build): the assembled player alone under the CPU emulator, 60,000 calls of random
+  starts (any sound, at any distance, often with all three effect slots busy, music among them) and stops, against
+  `Player`, every call's writes compared, for both files. Its first run found a channel handed back wrongly (a
+  register the release loop reused); in 120,000 calls since, 1,906 channels were taken by a stronger claim and 607
+  handed back when a sound ended.
 - `make sound-check`: the patched game, from the title screen on the 8088 model, plays each of the 116 game sounds;
   its chip writes are those of the model byte for byte, tick for tick (2026-11-11: 116 of 116). Then the patched
   intro through all its scenes: every one of the player's calls writes what the model's does for the same starts
-  (2026-11-11: 47 sounds asked for, 47 starts taken up, 3 of them music, 41,790 calls as the model's;
-  two errors planted in the model, an effect that gives its channels back without their volumes and music written
-  over a channel the effect holds, were each caught at the first call they changed).
+  (2026-11-11, the second version: 62 sounds asked for, 62 starts taken up, 3 of them music, 43,332 calls as the
+  model's). With the first version two errors planted in the model, an effect that gives its channels back without
+  their volumes and music written over a channel the effect holds, were each caught at the first call they changed.
 - `make func`: with the patch the gate compares the sounds the programs ask for (EOB.EXE's `PlaySound` and
   `PlaySoundAtCell`: the time, the sound, the cell; INTRO.EXE's `PlaySound`, through `GetSoundData`) instead of the
   chip writes, checks every call of the player against the model, and leaves out of DGROUP the old player's state
   and its playing flags, and of the file reads the old and the new sound files (2026-11-11: the seven sessions the
   same; the intro's 46 sounds all played as the model has them).
 
-Not done: nothing has been heard on a real EX: periodic noise on its chip is still the open question (below). A
-priority between effects (a far step cutting a near spell) is not there: the newest effect wins, as with the old
-driver.
+Not done: the arrangements have not been listened to (`make music`, then the EX), nor the mixer and the new distance
+heard on the EX. Periodic noise on the EX's chip is still the open question (below).
 
 ## What this does not tell
 

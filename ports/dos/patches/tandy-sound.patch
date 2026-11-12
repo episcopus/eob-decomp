@@ -14,8 +14,8 @@
  extern void SoundDriverResume(void); /*@ 1948:0458 */
  extern int Distance(int x, int y); /*@ 17A6:0F61 */
  
-+/* (port, tandy-sound.patch) on a Tandy the driver block holds SN.DAT's player (ports/dos/sound/SNPLAY.ASM),
-+   which reads the distance of the sound it starts at cs:051C, 106h bytes into the block */
++/* (port, tandy-sound.patch) on a Tandy the driver block holds SN.DAT's player (ports/dos/sound/SNPLAY.ASM), which
++   reads the distance of the sound it starts at cs:051C, 106h bytes in, and sets it to 7FFFh when it takes it up */
 +extern char far DriverBlock[]; /*@ 0000:0416 */
 +#define TANDY_DISTANCE (*(int far *)(DriverBlock + 0x106))
 +
@@ -42,7 +42,7 @@
      FileRead(slot, gSoundMap, SOUND_MAP_SIZE);
      FileRead(slot, GetDriverBlock(), DRIVER_BLOCK_SIZE);
      FileClose(slot);
-@@ -191,14 +202,12 @@
+@@ -191,14 +202,10 @@
              return;
          }
          if (gTandySelected == 1) {
@@ -50,16 +50,18 @@
 -                gTandyOn = 0;
 -                SoundDriverResume();
 -            }
-+            /* (port) the original's `driverSound < 0` block, dead (the QUIRK above), is gone */
-             if (driverSound > 0 && gTandyOn == 0) {
-                 gTandyOn = 1;
-                 SoundDriverResume();
-             }
+-            if (driverSound > 0 && gTandyOn == 0) {
+-                gTandyOn = 1;
+-                SoundDriverResume();
+-            }
++            /* (port) the original's `driverSound < 0` block, dead (the QUIRK above), is gone, and so is its
++               `gTandyOn == 0` block: on a Tandy StartupGame sets gTandyOn to 1 (src/E07C8.C:455) and only
++               ShutdownGame clears it (src/E07C8.C:482), so no sound finds it 0 */
 +            TANDY_DISTANCE = 0;
          }
          driverSound &= SPEAKER_ROUTINE_MASK;
          routine = GetSoundData(driverSound);
-@@ -264,10 +273,9 @@
+@@ -264,10 +271,9 @@
                  gPrevSound = gCurSound;
                  gSoundLevel = GetSoundByte(gCurSound, 3);
                  gSoundReg1 = GetSoundByte(gCurSound, 1);
@@ -73,7 +75,7 @@
                  if (gCurAttenuation > 0) {
                      /* the level moves (gCurAttenuation - 1) / 16 of the way from gSoundLevel to
                         LEVEL_FULL_ATTENUATION (177D:01AF to 01C7) */
-@@ -280,14 +288,12 @@
+@@ -280,14 +286,13 @@
              }
          } else {
              if (gTandySelected == 1) {
@@ -81,15 +83,28 @@
 -                    gTandyOn = 0;
 -                    SoundDriverResume();
 -                }
-+                /* (port) the original's `gCurSound < 0` block, dead (the QUIRK above), is gone */
-                 if (gCurSound > 0 && gTandyOn == 0) {
-                     gTandyOn = 1;
-                     SoundDriverResume();
-                 }
+-                if (gCurSound > 0 && gTandyOn == 0) {
+-                    gTandyOn = 1;
+-                    SoundDriverResume();
+-                }
++                /* (port) the original's `gCurSound < 0` and `gTandyOn == 0` blocks, dead (the QUIRK above, and
++                   PlaySound's note), are gone. A start the player has not taken up yet (it sets the distance back
++                   to 7FFFh when it does) stays when it is nearer: of the sounds the game starts at once, as the
++                   monsters move, the nearest is heard, as the AdLib's priority 20h - distance has it */
++                if (gCurAttenuation > TANDY_DISTANCE)
++                    goto record;
 +                TANDY_DISTANCE = gCurAttenuation;
              }
              /* masks gCurSound in place (177D:0240) before the play; the store at 177D:0288
                 overwrites it with gSoundMap[sound] afterwards */
+@@ -296,6 +301,7 @@
+             StartSound(routine);
+         }
+     }
++record:
+     gCurAttenuation = cell ? Distance(gPartyCell, cell) : 0;
+     gCurSound = gSoundMap[sound];
+ }
 --- a/E1948.ASM
 +++ b/E1948.ASM
 @@ -213,6 +213,28 @@
