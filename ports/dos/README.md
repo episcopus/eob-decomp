@@ -1,7 +1,8 @@
 # ports/dos: Eye of the Beholder for the Tandy 1000 EX
 
 The DOS game rebuilt from `src/` by the pinned Turbo C++ 1.00, TASM and TLINK, with a patch series that makes it faster on
-a Tandy 1000 EX (8088 at 7.16 MHz, Tandy video and sound) and changes nothing about what the game does. Same method as
+a Tandy 1000 EX (8088 at 7.16 MHz, Tandy video and sound) and changes nothing about what the game does, except one patch
+that gives the Tandy new sound (`tandy-sound.patch`, below). Same method as
 `../../poolrad-decomp/ports/dos`, with two differences forced by this binary: a C translation is not used, and every unit
 keeps its original length (see below).
 
@@ -12,11 +13,11 @@ make -C ports/dos test
 make -C ports/dos dist
 ```
 
-`build/dist` then holds `EOB.EXE`, `INTRO.EXE`, `TGA.OVL`, `INSTALL.TXT` and `SHA256.TXT`. Copy the three programs over the ones in the game directory on the EX, keeping backups (`INSTALL.TXT`).
+`build/dist` then holds `EOB.EXE`, `INTRO.EXE`, `TGA.OVL`, `SN.DAT`, `SNSOUND.DAT`, `INSTALL.TXT` and `SHA256.TXT`. Copy the three programs over the ones in the game directory on the EX, keeping backups, and `SN.DAT` and `SNSOUND.DAT` beside them (`INSTALL.TXT`). `make game` builds the two sound files first (`make sn`, from the sound study's clips: `make sound`, a quarter of an hour the first time, and the intro's sounds captured one by one, about a minute; needs `make ymfm` at the repository root).
 
 | Target | What |
 |---|---|
-| `make game` | `build/game/EOB.EXE` and `TGA.OVL`: the patches of `patches/series` |
+| `make game` | `build/game/EOB.EXE`, `INTRO.EXE`, `TGA.OVL`, `SN.DAT` and `SNSOUND.DAT`: the patches of `patches/series` |
 | `make ref` | `build/ref`: no patches; must link the original program (the reference) |
 | `make func` | the gate: both builds play `sessions/*.keys` on the program clock; screen, pages, DGROUP, sound and file reads must be the same at every checkpoint |
 | `make prof` | 8088 model: what each action costs, ref against game (`BUS=4\|5\|6`: wait states on the bus, `SESSION=`) |
@@ -24,6 +25,7 @@ make -C ports/dos dist
 | `make spans` | the timed effects: every spell burst and logo dissolve, ref against game |
 | `make dist` | the files to copy to the machine |
 | `make play` | a DOSBox-X window on the Tandy machine (for a look, not a measurement) |
+| `make sn`, `make sound-check` | the Tandy's sounds (`sound/README.md`, "The game's sound"); the patched game plays each as the player's model does, and so does the intro |
 
 ## How it is built
 
@@ -44,12 +46,12 @@ The padding is the first thing this port learned. Code offsets are written as nu
 | `heapcheck.patch` | `RunCampMenu`: no walk of the far heap at every menu key (a debugging check left in the loop). Its message stays in the literal pool, so DGROUP keeps its layout | EOV1 |
 | `tga-line.patch` | `DrawLine`: horizontal lines filled by bytes, vertical lines one nibble a row, instead of the general stepping loop (panel frames, menu boxes) | TGA.OVL |
 | `particle-burst.patch` | `AnimateParticleBurst` (spell hits): on Tandy a driver routine does a frame in registers; the C loop stays for the other video modes. The four-way `switch` that starts it is compacted to pay for the call | E0EF3, TGA.OVL |
-| `tga-glyph2.patch` | `DrawGlyph` again: a two-word loop for even x, the row masks kept between glyphs of the same width and parity, the slow path's bookkeeping out of the fast path; `DrawPageSeg` shorter | TGA.OVL |
-
 | `cone-frame.patch` | `AnimateConeOfCold`: on Tandy a driver routine (`ConeFrame`, the unused `SetLineClip` slot) does a frame in registers. The particle's screen position is kept from the draw pass for the erase pass, and retired or held particles skip their pixel work, whose save and restore cannot change the screen because they nest. The C loop stays for the other video modes | E0EF3, TGA.OVL |
 | `pak-lookup.patch` | `LookupFileEntry`: a PAK's directory in one 1 KB read instead of a DOS call per byte (the largest directory in the game is 808 bytes); `FindFile` compares first letters first, and the three other name searches call it | E1C0E |
 | `tga-convert.patch` | `CopyPage`, `GetSpriteCell`: the art-to-screen pixel packing unrolled, shifts by one bit instead of by `CL` | TGA.OVL |
 | `tandy-sound.patch` | On a Tandy the sounds the listening passes picked (`sound/picks.json`) and the intro's, mapped from the AdLib's: `LoadSoundDriver` opens `SN.DAT` and the intro's StartupGame `SNSOUND.DAT` (through `FileOpenSn`, new at the end of `E1C0E`), whose blocks hold them and their player (`sound/SNPLAY.ASM`, music and an effect at once) in the AdLib driver's segment; `PlaySound` and `PlaySoundAtCell` pass the player the sound's distance; `_SoundTick` calls the player when it is there. The only patch that changes what the game does: `make func` then compares the sounds asked for, not the chip writes, and checks every call of the player against its model (`sound/README.md`) | E177D, E1948, E1C0E, I0892 |
+| `tga-glyph2.patch` | `DrawGlyph` again: a two-word loop for even x, the row masks kept between glyphs of the same width and parity, the slow path's bookkeeping out of the fast path; `DrawPageSeg` shorter | TGA.OVL |
+
 The two new driver routines use export slots no other code calls (`SetTileSet`, `DrawMaskedCell16`, which do nothing on this driver). A driver routine was needed: compiling `IOV0.C` through the inline-assembler route shifted its string literals and broke the logo file table, which is a reason for any further patch to prefer the driver or an assembly unit over `#pragma inline` in a C unit with strings.
 
 `make func` is the gate for any further patch: each must leave the game identical (`tools/func.py`).
@@ -58,13 +60,11 @@ The two new driver routines use export slots no other code calls (`SetTileSet`, 
 
 Nothing here ran on a real EX. Three separate measurements back each other up:
 
-1. `tools/func.py` plays each session on a program clock (`tools/tandybox.py`): virtual time moves only at the game's own waits (keyboard polls, retrace reads, tick waits, the frame counter spin in `DrawViewFrame`), so a faster build sees the same times and must do the same things. At every checkpoint it compares the 32 KB of Tandy video memory, the 64 KB of pages below it, all of DGROUP (the heap shift of a larger driver, the driver's table of its own offsets, and the pointers to routines a patch moved aside), the Tandy sound writes and the file reads. `INTRO.EXE`'s DGROUP is not compared (it is mostly far pointers to heap blocks whose places follow the driver and overlay sizes); its screen, pages, sound and file reads are. It also gives the paired cost of every action: the same game state, both builds, so the difference is exactly what the patches saved. The method was checked with a planted bug (one entry of the 16-entry glyph table off by one): caught at the first checkpoint.
+1. `tools/func.py` plays each session on a program clock (`tools/tandybox.py`): virtual time moves only at the game's own waits (keyboard polls, retrace reads, tick waits, the frame counter spin in `DrawViewFrame`), so a faster build sees the same times and must do the same things. At every checkpoint it compares the 32 KB of Tandy video memory, the 64 KB of pages below it, all of DGROUP (the heap shift of a larger driver, the driver's table of its own offsets, and the pointers to routines a patch moved aside), the Tandy sound writes (with `tandy-sound.patch`: the sounds asked for, and each call of the player against its model) and the file reads. `INTRO.EXE`'s DGROUP is not compared (it is mostly far pointers to heap blocks whose places follow the driver and overlay sizes); its screen, pages, sound and file reads are. It also gives the paired cost of every action: the same game state, both builds, so the difference is exactly what the patches saved. The method was checked with a planted bug (one entry of the 16-entry glyph table off by one): caught at the first checkpoint.
 2. `tools/m8088.py` is an 8088 model: the Intel table clocks, a 4-byte prefetch queue, conditional jumps charged by which way they went, REP per repetition. The bus cycle is 5 clocks (4 plus one wait state: the Tandy 1000 HX technical reference says RAM shared with video inserts "typically one or two" wait cycles; the EX is the same design). `make prof BUS=4` and `BUS=6` are the two ends. The ratios hold across them (below); the seconds do not, and they are estimates.
 3. `tools/dbx.py`: DOSBox-X `machine=tandy`, headless, both builds typing the same keys: load the game, turn, sheet. All 7 steady reference screens appear in the game, pixel for pixel, at 320x200.
 
 Disk time is not in any figure: a real floppy or hard card will be slower still on level loads and the first time something is used. Level load is unchanged by these patches (18.9 s to 18.4 s in the model, mostly `Unpack4`, sprite cutting and 5,958 small file reads). The model charges no wait for keyboard and BIOS work beyond the instructions themselves.
-
-## Results, second pass
 
 ## Results, third pass (the rest of the spells, load times)
 
@@ -83,6 +83,8 @@ The two flashes are paced by the game's own waits (`WaitTicks(2)` between passes
 Level load (the saved game entered, key press to idle, `prof actions`): 18.94 s to 14.83 s of work in the model, and DOS read calls 5,958 to 86. The model charges nothing for the DOS kernel or the disk, so the gain from those 5,872 calls is not in that figure. What remains is `Unpack4` 4.95 s, `GetSpriteCell` 2.31, `Unpack1` 1.83, `CopyPage` 1.48, and the 228 KB read from disk.
 
 Tried and dropped: `Unpack4` copying by words. The copies it makes are mostly short and the gain was nil (4.93 s to 4.95 s), so the patch, which also removed the unused format 3 decoder, is gone.
+
+## Results, second pass
 
 What the player asked to be faster, from the same 8088 model and the same gate (`make func`, sessions `walk`, `combat`, `panels`, `menus`, `spell`, `intro`).
 

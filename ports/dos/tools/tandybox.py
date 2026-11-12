@@ -148,6 +148,9 @@ class TandyMachine(Machine):
         no_mouse(self)
         self.vfs.alias(build.program, build.exe)
         self.vfs.alias("TGA.OVL", build.drv)
+        for f in ("SN.DAT", "SNSOUND.DAT"):                 # tandy-sound.patch: the Tandy's sounds (sound/sndat.py)
+            if (build.exe.parent / f).exists():
+                self.vfs.alias(f, build.exe.parent / f)
         if save is not None:
             self._use_save(save)
         self._map_video()

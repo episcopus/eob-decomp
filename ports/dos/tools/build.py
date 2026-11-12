@@ -87,6 +87,9 @@ DATA_DEF = re.compile("""),
 ]
 
 
+SOUND_FILES = ("SN.DAT", "SNSOUND.DAT")   # tandy-sound.patch: EOB.EXE's and INTRO.EXE's Tandy sounds (sound/sndat.py)
+
+
 def apply(stage: Path, patch: str) -> None:
     p = PORT / "patches" / patch
     r = subprocess.run(["patch", "-p1", "--fuzz=0", "--no-backup-if-mismatch", "-i", str(p)], cwd=stage / "src",
@@ -182,9 +185,6 @@ def main(argv=None) -> int:
             sys.exit("build: units not back at the original length: %s" % left)
     r2 = subprocess.run([py, str(stage / "tools/rebuild/rebuild.py"), "TGA.OVL"], cwd=stage, capture_output=True, text=True)
     r3 = subprocess.run([py, str(rb), "INTRO.EXE"], cwd=stage, capture_output=True, text=True)
-    exe = stage / "build/rebuild/eob/eob.exe"
-    drv = stage / "build/rebuild/tga/d.exe"
-    intro = stage / "build/rebuild/intro/intro.exe"
     if patches and (stage / "build/rebuild/intro/intro.map").exists():      # INTRO.EXE shares units with EOB.EXE (the file layer, the unpackers)
         pads = compute_pads(stage / "build/rebuild/intro/intro.map", "intro")
         if pads:
@@ -193,6 +193,9 @@ def main(argv=None) -> int:
             left = compute_pads(stage / "build/rebuild/intro/intro.map", "intro")
             if left:
                 sys.exit("build: INTRO.EXE units not back at the original length: %s" % left)
+    exe = stage / "build/rebuild/eob/eob.exe"
+    drv = stage / "build/rebuild/tga/d.exe"
+    intro = stage / "build/rebuild/intro/intro.exe"
     if not intro.exists() or "Error:" in r3.stdout or "does not build" in r3.stdout:
         print(r3.stdout[-3000:], r3.stderr[-1000:])
         return 1
@@ -206,7 +209,16 @@ def main(argv=None) -> int:
     shutil.copy(stage / "build/rebuild/intro/intro.map", w / "intro.map")
     shutil.copy(stage / "build/rebuild/eob/eob.map", w / "eob.map")
     shutil.copy(stage / "build/rebuild/tga/d.lst", w / "d.lst")
+    for f in SOUND_FILES:
+        (w / f).unlink(missing_ok=True)
+    if "tandy-sound.patch" in patches:                  # the patch opens these on a Tandy: the sounds and their player
+        for f in SOUND_FILES:
+            sn = PORT / "build/sound" / f
+            if not sn.exists():
+                sys.exit("build: tandy-sound.patch needs build/sound/%s (make sn)" % f)
+            shutil.copy(sn, w / f)
     info = {"patches": patches, "EOB.EXE": sha(w / "EOB.EXE"), "INTRO.EXE": sha(w / "INTRO.EXE"), "TGA.OVL": sha(w / "TGA.OVL"),
+            **{f: sha(w / f) if (w / f).exists() else None for f in SOUND_FILES},
             "sizes": {f: (w / f).stat().st_size for f in ("EOB.EXE", "INTRO.EXE", "TGA.OVL")}}
     (w / "build.json").write_text(json.dumps(info, indent=1))
     print("%s: %d patches, EOB.EXE %d, INTRO.EXE %d, TGA.OVL %d bytes" % (a.name, len(patches), info["sizes"]["EOB.EXE"], info["sizes"]["INTRO.EXE"], info["sizes"]["TGA.OVL"]))

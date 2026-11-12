@@ -1,11 +1,14 @@
 EYE OF THE BEHOLDER: FASTER BUILD FOR THE TANDY 1000 EX
 
 This is the same game, rebuilt from its decompiled source with the drawing, menu and intro code tuned for an 8088 with
-Tandy video. The game plays the same way: same screens, same sound, same saved games. Three files change:
+Tandy video, and with new sound for the Tandy's sound chip. The game plays the same way: same screens, same saved
+games. Three files change and two are new:
 
   EOB.EXE     the game program
   INTRO.EXE   the logos and the introduction
   TGA.OVL     the Tandy graphics driver
+  SN.DAT      the game's sounds for Tandy sound (new)
+  SNSOUND.DAT the introduction's music and sounds for Tandy sound (new)
 
 They were built from version 1.9 of the game (the copy this project works from). Use them with that version.
 
@@ -17,18 +20,30 @@ INSTALL
      COPY INTRO.EXE INTRO.ORG
      COPY TGA.OVL TGA.ORG
 
-2. Copy EOB.EXE, INTRO.EXE and TGA.OVL from this folder over the originals (keep the three together; a mix will not
-   work well).
+2. Copy EOB.EXE, INTRO.EXE, TGA.OVL, SN.DAT and SNSOUND.DAT from this folder into the game directory, over the
+   originals (keep them together; a mix will not work well). With Tandy sound the game will not start without
+   SN.DAT and SNSOUND.DAT.
 
 3. Run the game the usual way (START1, Tandy graphics, Tandy sound). Saved games and everything else are shared with
    the original.
 
-To go back: COPY EOB.ORG EOB.EXE, COPY INTRO.ORG INTRO.EXE and COPY TGA.ORG TGA.OVL.
+To go back: COPY EOB.ORG EOB.EXE, COPY INTRO.ORG INTRO.EXE and COPY TGA.ORG TGA.OVL (SN.DAT and SNSOUND.DAT can stay;
+the original does not read them).
 
-The game needs about 2 KB more memory than the original (the text tables and the new routines in TGA.OVL). SHA256.TXT
-lists the checksums of the three files.
+The game needs about 3 KB more memory than the original (the text tables and the new routines in TGA.OVL). SHA256.TXT
+lists the checksums of the five files. SN.DAT and SNSOUND.DAT take no memory of their own: they are loaded where the
+AdLib sound driver sits, which is unused with Tandy sound.
 
 WHAT CHANGES
+
+With Tandy sound, every sound effect is new: made for the Tandy's three tones and noise channel and chosen by ear, one
+for each thing the game does (footsteps and attacks for each monster, each spell, doors, levers, items). The original
+Tandy version played only about half of the game's sounds; this one plays all of them, quieter when a monster is far
+away, as the AdLib version does, and the music of the party creation screens, which it did not have. The introduction's
+music and sounds are new too, taken from the AdLib's: all three of its pieces of music (the original Tandy version had
+two), with the sound effects playing over the music as they do on the AdLib. Because the introduction's pictures now
+come faster, its music runs longer than the scenes it was written for: the title music starts just before the logo
+music ends. The PC speaker and AdLib sound are as they were.
 
 The logo and title dissolves take about 1.6 seconds each instead of about 15 (the title 3 instead of 30). A spell hit's
 sparkles (magic missile, fireball, lightning and the rest) run at the game's own pace, about 2 seconds instead of 4 to 5.

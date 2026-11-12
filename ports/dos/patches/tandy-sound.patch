@@ -1,0 +1,301 @@
+--- a/E177D.C
++++ b/E177D.C
+@@ -19,7 +19,8 @@
+ /* Meaningful constants of this unit. */
+ /* the length read for the driver block (at most this many bytes, whitepaper 4.4); the FileRead
+    length at 177D:004C */
+-#define DRIVER_BLOCK_SIZE 0x32C8L
++#define DRIVER_BLOCK_SIZE 0x4C12L  /* (port, tandy-sound.patch) was 32C8h: SN.DAT's block runs to the end of the
++                                      AdLib driver, 0000:5028; FileRead stops at the end of the shorter files */
+ /* the length of the 120-byte sound map StartupAlloc allocates (src/E07A9.C:216); the FileRead
+    length at 177D:004C */
+ #include "EOB.H"
+@@ -131,6 +132,11 @@
+ extern void SoundDriverResume(void); /*@ 1948:0458 */
+ extern int Distance(int x, int y); /*@ 17A6:0F61 */
+ 
++/* (port, tandy-sound.patch) on a Tandy the driver block holds SN.DAT's player (ports/dos/sound/SNPLAY.ASM),
++   which reads the distance of the sound it starts at cs:051C, 106h bytes into the block */
++extern char far DriverBlock[]; /*@ 0000:0416 */
++#define TANDY_DISTANCE (*(int far *)(DriverBlock + 0x106))
++
+ /* forward declaration: PlaySoundDefault (177D:00F3) calls it before its definition below */
+ void PlaySoundAtCell(int sound, int cell);
+ 
+@@ -153,12 +159,17 @@
+ /*@ 177D:000A */ void LoadSoundDriver(void)
+ {
+     int slot;
++    char *name;
+ 
+     /* FileOpen mode 1 is read (0x8001, src/E1C0E.C:216) */
+     if (gSoundCard == 0)
+         slot = FileOpen("adlib.dat", 1);
+-    else
+-        slot = FileOpen("pcgamesn.dat", 1);
++    else {
++        name = "pcgamesn.dat";
++        if (gSoundCard == 2)
++            name += 6;          /* (port) "sn.dat": the Tandy's sounds and their player (ports/dos/sound) */
++        slot = FileOpen(name, 1);
++    }
+     FileRead(slot, gSoundMap, SOUND_MAP_SIZE);
+     FileRead(slot, GetDriverBlock(), DRIVER_BLOCK_SIZE);
+     FileClose(slot);
+@@ -191,14 +202,12 @@
+             return;
+         }
+         if (gTandySelected == 1) {
+-            if (driverSound < 0 && gTandyOn) {
+-                gTandyOn = 0;
+-                SoundDriverResume();
+-            }
++            /* (port) the original's `driverSound < 0` block, dead (the QUIRK above), is gone */
+             if (driverSound > 0 && gTandyOn == 0) {
+                 gTandyOn = 1;
+                 SoundDriverResume();
+             }
++            TANDY_DISTANCE = 0;
+         }
+         driverSound &= SPEAKER_ROUTINE_MASK;
+         routine = GetSoundData(driverSound);
+@@ -264,10 +273,9 @@
+                 gPrevSound = gCurSound;
+                 gSoundLevel = GetSoundByte(gCurSound, 3);
+                 gSoundReg1 = GetSoundByte(gCurSound, 1);
+-                /* QUIRK 177D:0194: register 3 is read a second time here (177D:0170 and 177D:0194);
+-                   it is what the original does, not a slip. The store to `level` is dead on every
+-                   path: it is reassigned at 177D:01C7 before its only read (177D:01C9) */
+-                level = gSoundLevel = GetSoundByte(gCurSound, 3);
++                /* QUIRK 177D:0194: the original reads register 3 a second time here (177D:0170 and
++                   177D:0194) and stores it in gSoundLevel and `level`, both dead stores of the value
++                   they hold. (port, tandy-sound.patch) gone, to pay for the Tandy's distance below */
+                 if (gCurAttenuation > 0) {
+                     /* the level moves (gCurAttenuation - 1) / 16 of the way from gSoundLevel to
+                        LEVEL_FULL_ATTENUATION (177D:01AF to 01C7) */
+@@ -280,14 +288,12 @@
+             }
+         } else {
+             if (gTandySelected == 1) {
+-                if (gCurSound < 0 && gTandyOn) {
+-                    gTandyOn = 0;
+-                    SoundDriverResume();
+-                }
++                /* (port) the original's `gCurSound < 0` block, dead (the QUIRK above), is gone */
+                 if (gCurSound > 0 && gTandyOn == 0) {
+                     gTandyOn = 1;
+                     SoundDriverResume();
+                 }
++                TANDY_DISTANCE = gCurAttenuation;
+             }
+             /* masks gCurSound in place (177D:0240) before the play; the store at 177D:0288
+                overwrites it with gSoundMap[sound] afterwards */
+--- a/E1948.ASM
++++ b/E1948.ASM
+@@ -213,6 +213,28 @@
+ ; note it reads never ends. When all voices end silent, the song stops. Called by the handler.
+         PUBLIC  _SoundTick              ; @ 1948:0050
+ _SoundTick PROC NEAR
++        ; (port, tandy-sound.patch) when the segment of the song holds the Tandy player of SN.DAT or SNSOUND.DAT
++        ; (the mark 'SN' at 051Ah, ports/dos/sound/SNPLAY.ASM), the player does the tick: ES its segment, which it
++        ; also gets at 0518h for the far call through 0516h, and AX the offset of gSongPtr, from which it finds
++        ; this unit's variables (this segment lies at another offset in each program's DGROUP: EOB.EXE's
++        ; variables are 4 bytes lower than INTRO.EXE's). Both programs load the player on a Tandy; on the
++        ; speaker the segment holds the AdLib driver's data there and the notes play as before. Paid for by
++        ; saves of registers the routines below do not change and the E8h clamp no path reaches.
++        cmp     byte ptr [gPlaying], 0
++        jne     tickPlayer
++        ret
++tickPlayer:
++        push    es
++        mov     es, [gSongPtrSeg]
++        cmp     word ptr es:[51Ah], 4E53h
++        jne     tickNotes
++        mov     es:[518h], es
++        mov     ax, offset gSongPtr
++        call    dword ptr es:[516h]
++        pop     es
++        ret
++tickNotes:
++        pop     es
+         cmp     byte ptr [gStartRequest], 0
+         je      checkPlaying
+         mov     byte ptr [gRunning], 1
+@@ -429,14 +451,10 @@
+         inc     bx
+         mov     al, es:[bx]
+         sub     byte ptr [si+gVoiceLengthMul], al
+-        jno     cmdE8Ok
+-        jne     cmdE8Ok         ; QUIRK 1948:0228: E8h never clamps to 1: sub sets OF only on signed
++                                ; QUIRK 1948:0228: E8h never clamps to 1: sub sets OF only on signed
+                                 ; overflow, so an underflow that stays in the signed range wraps (5 minus
+-                                ; 10 gives 251) and the jno at 1948:0226 takes the normal path. The clamp
+-                                ; at 1948:022A is reached only on signed overflow, and there this jne
+-                                ; always jumps (a zero result cannot overflow), so even it is dead; a
+-                                ; zero multiplier is one instance of the missing clamp
+-        mov     byte ptr [si+gVoiceLengthMul], 1
++                                ; 10 gives 251). The original's clamp (jno, then a jne that always jumps
++                                ; there, then a store of 1) is gone (port): no path reached its store
+ cmdE8Ok:
+         inc     bx
+         add     bp, 2
+@@ -651,9 +669,7 @@
+ ; Tandy branch is reached only if a PlaySound call set gTandyOn to 1 first (src/E177D.C:199).
+         PUBLIC  _SoundDriverInstall     ; @ 1948:0377
+ _SoundDriverInstall PROC FAR
+-        push    bp
+-        mov     bp, sp
+-        push    di
++        ; (port) bp and di saved no more: this routine does not change them
+         push    si
+         push    ds
+         mov     ax, 29B8h
+@@ -695,8 +711,6 @@
+ installDone:
+         pop     ds
+         pop     si
+-        pop     di
+-        pop     bp
+         ret
+ _SoundDriverInstall ENDP
+ 
+@@ -706,9 +720,7 @@
+ ; ShutdownGame (src/E07C8.C:391 and 376, the gSoundCard 1 and 2 cases).
+         PUBLIC  _SoundDriverUninstall   ; @ 1948:03DA
+ _SoundDriverUninstall PROC FAR
+-        push    bp
+-        mov     bp, sp
+-        push    di
++        ; (port) bp and di saved no more: this routine does not change them
+         push    si
+         push    ds
+         mov     ax, 29B8h
+@@ -734,8 +746,6 @@
+         call    _SetOneVoice
+         pop     ds
+         pop     si
+-        pop     di
+-        pop     bp
+         ret
+ _SoundDriverUninstall ENDP
+ 
+@@ -750,10 +760,9 @@
+ ; [bp+6] offset, [bp+8] segment.
+         PUBLIC  _StartSound             ; @ 1948:0418
+ _StartSound PROC FAR
++        ; (port) di and si saved no more: this routine does not change them
+         push    bp
+         mov     bp, sp
+-        push    di
+-        push    si
+         push    ds
+         mov     ax, 29B8h
+         mov     ds, ax
+@@ -765,8 +774,6 @@
+         mov     byte ptr [gPlaying], 1
+         mov     byte ptr [gRunning], 1
+         pop     ds
+-        pop     si
+-        pop     di
+         pop     bp
+         ret
+ _StartSound ENDP
+@@ -778,18 +785,12 @@
+ ; is unknown.
+         PUBLIC  _StopSound              ; @ 1948:0443
+ _StopSound PROC FAR
+-        push    bp
+-        mov     bp, sp
+-        push    di
+-        push    si
++        ; (port) bp, di and si saved no more: this routine does not change them
+         push    ds
+         mov     ax, 29B8h
+         mov     ds, ax
+         mov     byte ptr [gStopRequest], 1
+         pop     ds
+-        pop     si
+-        pop     di
+-        pop     bp
+         ret
+ _StopSound ENDP
+ 
+@@ -805,9 +806,7 @@
+ ; call dead. StartupGame calls it once after the Tandy install (src/E07C8.C:371 to 351).
+         PUBLIC  _SoundDriverResume      ; @ 1948:0458
+ _SoundDriverResume PROC FAR
+-        push    bp
+-        mov     bp, sp
+-        push    di
++        ; (port) bp and di saved no more: this routine does not change them
+         push    si
+         push    ds
+         mov     ax, 29B8h
+@@ -815,8 +814,6 @@
+         call    _SetThreeVoices
+         pop     ds
+         pop     si
+-        pop     di
+-        pop     bp
+         ret
+ _SoundDriverResume ENDP
+ 
+@@ -833,9 +830,7 @@
+ ; before it.
+         PUBLIC  _SoundDriverSilenceToOneVoice       ; @ 1948:046B
+ _SoundDriverSilenceToOneVoice PROC FAR
+-        push    bp
+-        mov     bp, sp
+-        push    di
++        ; (port) bp and di saved no more: this routine does not change them
+         push    si
+         push    ds
+         mov     ax, 29B8h
+@@ -844,8 +839,6 @@
+         call    _SetOneVoice
+         pop     ds
+         pop     si
+-        pop     di
+-        pop     bp
+         ret
+ _SoundDriverSilenceToOneVoice ENDP
+ 
+--- a/E1C0E.C
++++ b/E1C0E.C
+@@ -1079,4 +1079,14 @@
+     gRecordLength = next;
+     gRecordOffset = offset;
+     return next;
++}
++
++/* (port, tandy-sound.patch) FileOpen with the name's first two letters made "sn", in place: INTRO.EXE's Tandy case
++   (src/I0892.C, StartupGame) opens SNSOUND.DAT through it from its literal "pcsound.dat". Here, after the unit's last
++   function, it moves no code; EOB.EXE links it and does not call it. */
++int FileOpenSn(char far *name, int mode)
++{
++    name[0] = 's';
++    name[1] = 'n';
++    return FileOpen(name, mode);
+ }
+--- a/I0892.C
++++ b/I0892.C
+@@ -150,6 +150,10 @@
+ extern void SetFont(void far *font);          /*@ 09B5:0172 */
+ extern void far *GetDriverBlock(void);           /*@ 0000:03AA: the i_text sound driver data block */
+ extern void RebaseDriverBlock(void);             /*@ 0000:03FA */
++/* (port, tandy-sound.patch) FileOpen with the name's first two letters made "sn" (src/E1C0E.C): the Tandy case opens
++   SNSOUND.DAT, the intro's own sounds and their player (ports/dos/sound/sndat.py), from its literal "pcsound.dat",
++   so that the unit keeps its code and its data in place */
++extern int FileOpenSn(char far *name, int mode);
+ extern void LoadFile(char far *name, void far *buf, unsigned len); /*@ 0AED:000D: the file loader
+                                                      (i0aed is e1b82 in another version, src/E1B82.C) */
+ extern int heapcheck(void);                      /*@ 0000:7F20 */
+@@ -411,7 +415,7 @@
+         break;
+     case 3:
+         gSoundMap = MemAlloc(SOUND_MAP_SIZE, 0);
+-        slot = FileOpen("pcsound.dat", 1);
++        slot = FileOpenSn("pcsound.dat", 1);
+         FileRead(slot, gSoundMap, SOUND_MAP_SIZE);
+         FileRead(slot, GetDriverBlock(), DRIVER_BLOCK_SIZE);
+         FileClose(slot);
