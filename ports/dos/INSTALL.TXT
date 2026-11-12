@@ -31,10 +31,12 @@ lists the checksums of the three files.
 WHAT CHANGES
 
 The logo and title dissolves take about 1.6 seconds each instead of about 15 (the title 3 instead of 30). A spell hit's
-sparkles run at the game's own pace, about 1.9 seconds instead of 3.9. Moving the highlight in the camp menu takes about
-0.06 seconds of work per key press instead of 0.3, and each menu page draws about 2 to 2.5 times faster. A step or a turn
-in the dungeon is about 1.6 times faster than the original. These figures are from a model of an 8088 at 7.16 MHz; the
-real machine is the final judge. Level loading is unchanged (it is limited by the disk).
+sparkles (magic missile, fireball, lightning and the rest) run at the game's own pace, about 2 seconds instead of 4 to 5.
+Cone of cold takes about 11 seconds instead of 36. Moving the highlight in the camp menu takes about 0.06 seconds of
+work per key press instead of 0.3, and each menu page draws about 2 to 2.5 times faster. A step or a turn in the dungeon
+is about 1.6 times faster than the original. Loading a level does about 4 seconds less work and makes 86 DOS read calls
+instead of about 6,000, which should matter more on the real machine than these figures show. These figures are from a
+model of an 8088 at 7.16 MHz, which does not include disk or DOS time; the real machine is the final judge.
 
 One thing is left out on purpose: the camp menu no longer checks the far heap before each page (a debugging check that
 printed "Far heap corrupt!" if memory had been damaged). It took a quarter of a second at every key press.

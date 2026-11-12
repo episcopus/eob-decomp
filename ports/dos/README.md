@@ -46,6 +46,10 @@ The padding is the first thing this port learned. Code offsets are written as nu
 | `particle-burst.patch` | `AnimateParticleBurst` (spell hits): on Tandy a driver routine does a frame in registers; the C loop stays for the other video modes. The four-way `switch` that starts it is compacted to pay for the call | E0EF3, TGA.OVL |
 | `tga-glyph2.patch` | `DrawGlyph` again: a two-word loop for even x, the row masks kept between glyphs of the same width and parity, the slow path's bookkeeping out of the fast path; `DrawPageSeg` shorter | TGA.OVL |
 
+| `cone-frame.patch` | `AnimateConeOfCold`: on Tandy a driver routine (`ConeFrame`, the unused `SetLineClip` slot) does a frame in registers. The particle's screen position is kept from the draw pass for the erase pass, and retired or held particles skip their pixel work, whose save and restore cannot change the screen because they nest. The C loop stays for the other video modes | E0EF3, TGA.OVL |
+| `pak-lookup.patch` | `LookupFileEntry`: a PAK's directory in one 1 KB read instead of a DOS call per byte (the largest directory in the game is 808 bytes); `FindFile` compares first letters first, and the three other name searches call it | E1C0E |
+| `tga-convert.patch` | `CopyPage`, `GetSpriteCell`: the art-to-screen pixel packing unrolled, shifts by one bit instead of by `CL` | TGA.OVL |
+| `tandy-sound.patch` | On a Tandy the sounds the listening passes picked (`sound/picks.json`) and the intro's, mapped from the AdLib's: `LoadSoundDriver` opens `SN.DAT` and the intro's StartupGame `SNSOUND.DAT` (through `FileOpenSn`, new at the end of `E1C0E`), whose blocks hold them and their player (`sound/SNPLAY.ASM`, music and an effect at once) in the AdLib driver's segment; `PlaySound` and `PlaySoundAtCell` pass the player the sound's distance; `_SoundTick` calls the player when it is there. The only patch that changes what the game does: `make func` then compares the sounds asked for, not the chip writes, and checks every call of the player against its model (`sound/README.md`) | E177D, E1948, E1C0E, I0892 |
 The two new driver routines use export slots no other code calls (`SetTileSet`, `DrawMaskedCell16`, which do nothing on this driver). A driver routine was needed: compiling `IOV0.C` through the inline-assembler route shifted its string literals and broke the logo file table, which is a reason for any further patch to prefer the driver or an assembly unit over `#pragma inline` in a C unit with strings.
 
 `make func` is the gate for any further patch: each must leave the game identical (`tools/func.py`).
@@ -61,6 +65,24 @@ Nothing here ran on a real EX. Three separate measurements back each other up:
 Disk time is not in any figure: a real floppy or hard card will be slower still on level loads and the first time something is used. Level load is unchanged by these patches (18.9 s to 18.4 s in the model, mostly `Unpack4`, sprite cutting and 5,958 small file reads). The model charges no wait for keyboard and BIOS work beyond the instructions themselves.
 
 ## Results, second pass
+
+## Results, third pass (the rest of the spells, load times)
+
+Timed from the first instruction of the effect to the last (`make spans`, one wait state):
+
+| Effect | Reference | Now | Gain |
+|---|---:|---:|---:|
+| Cone of cold | 35.6 s | 10.7 s | 3.3x |
+| Fireball, lightning bolt | 4.7 s | 2.2 s | 2.1x |
+| Ice storm | 3.6 s | 1.7 s | 2.0x |
+| Armor, portrait flash | 1.8 s | 1.35 s | 1.3x |
+| Fear, view flash | 1.74 s | 1.76 s | none |
+
+The two flashes are paced by the game's own waits (`WaitTicks(2)` between passes), so they sit near their floor. Burning hands draws its flames once and is not slow (0.13 s). Paired work of the same game state, from `make func` (ms): cone 33,909 to 9,282; bolt 760 to 428; fireball 834 to 493; ice storm 699 to 395; burning hands 1,888 to 1,198; armor 1,666 to 1,193.
+
+Level load (the saved game entered, key press to idle, `prof actions`): 18.94 s to 14.83 s of work in the model, and DOS read calls 5,958 to 86. The model charges nothing for the DOS kernel or the disk, so the gain from those 5,872 calls is not in that figure. What remains is `Unpack4` 4.95 s, `GetSpriteCell` 2.31, `Unpack1` 1.83, `CopyPage` 1.48, and the 228 KB read from disk.
+
+Tried and dropped: `Unpack4` copying by words. The copies it makes are mostly short and the gain was nil (4.93 s to 4.95 s), so the patch, which also removed the unused format 3 decoder, is gone.
 
 What the player asked to be faster, from the same 8088 model and the same gate (`make func`, sessions `walk`, `combat`, `panels`, `menus`, `spell`, `intro`).
 
@@ -141,12 +163,12 @@ Each patch's share (cumulative, medians of paired work, same order as `patches/s
 | + dispatch-idle | 269 (1.23x) | 270 (1.16x) | 564 | 114 (1.40x) |
 | + view-columns | 209 (1.59x) | 202 (1.55x) | 564 | 114 |
 
-Sizes now: EOB.EXE 264,528 bytes (+64 from the reference), INTRO.EXE 88,080 (+48), TGA.OVL 13,509 (+2,069). The game needs about 2 KB more memory than the original (the driver's tables and two new routines; the first pass measured 16.6 KB of DOS free against 17.6 KB at the same point in the session, before this pass's 1 KB of driver code).
+Sizes now: EOB.EXE 264,528 bytes (+64 from the reference), INTRO.EXE 88,080 (+48), TGA.OVL 14,161 (+2,721). The game needs about 3 KB more memory than the original (the driver's tables and three new routines; the first pass measured 16.6 KB of DOS free against 17.6 KB at the same point in the session, before this pass's 1 KB of driver code).
 
 ## Where the time goes now, and what to try next
 
 Step and turn, per action, after these patches (`make prof`): `DrawTile` 75 ms (flipped tiles about 28 of it, by far the costliest per tile), page-to-screen copy 24, `ComputeViewSpan` 16, `DispatchNodeEvent` and `NodeScan` 17, `DrawShape` 10, sound interrupt 10. The transfers themselves are near the floor of the bus: the view is 10,560 bytes written twice, about 55 ms of the 8088's bus; everything else is the C code around it, so a large further gain would have to redraw less, not faster.
 
-Candidates (each needs `make func` and a measurement): `AnimateConeOfCold` by the same driver route as the burst (level 5 spell, not yet profiled); `DrawTile`'s flipped path as a tile-at-a-time routine (28 of its 75 ms a step, no cache: see above); a 256-entry text colour table once the colour changes are measured; `Unpack4` copying by words (needs a byte of room in E1D9A). Also an option rather than an optimization: halving the two retrace waits per frame of the spell sparkles, if the sparkles should feel faster than the game's original pacing. And the real machine: copy `build/dist` to the EX and compare by hand; the model is the only timing evidence so far.
+Candidates (each needs `make func` and a measurement): `Unpack4`'s control-byte loop (about 60,000 tokens a load, each reading its limits from memory); `DrawTile`'s flipped path as a tile-at-a-time routine (28 of its 75 ms a step, no cache: see above); a 256-entry text colour table once the colour changes are measured. Also an option rather than an optimization: halving the two retrace waits per frame of the spell sparkles, if the sparkles should feel faster than the game's original pacing. And the real machine: copy `build/dist` to the EX and compare by hand; the model is the only timing evidence so far.
 
 What is left unverified: nothing here ran on an 8088; a real EX may have DMA and bus behaviour the model does not, and the disk is not modelled. Behaviour was checked in the oracle and DOSBox-X only.

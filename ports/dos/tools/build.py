@@ -69,7 +69,7 @@ REBUILD_PATCH = [("""            args = ["-c", "-ID:\\\\INCLUDE"] + [f for f in 
     space = Space(program)""",
 """    w.mkdir(parents=True)
     import os as _os, json as _json
-    pads = _json.loads(_os.environ.get("EOB_PADS", "{}")) if program == "EOB.EXE" else {}
+    pads = _json.loads(_os.environ.get("EOB_PADS" if program == "EOB.EXE" else "INTRO_PADS", "{}")) if program in ("EOB.EXE", "INTRO.EXE") else {}
     for stem, (seg, n) in pads.items():
         text = "%s SEGMENT BYTE PUBLIC 'CODE'\\r\\n db %d dup (90h)\\r\\n%s ENDS\\r\\nEND\\r\\n" % (seg, n, seg)
         assemble(w, "PD_" + stem[:5], text)
@@ -106,11 +106,11 @@ def segments(map_path: Path) -> dict:
     return out
 
 
-def compute_pads(map_path: Path) -> dict:
+def compute_pads(map_path: Path, stem: str = "eob") -> dict:
     """{module stem: (segment name, bytes)} for each code module shorter than the reference; a module longer than its
     original cannot be built here, a patch must move the extra code."""
     ours = segments(map_path)
-    ref = segments(PORT / "build/ref/eob.map")
+    ref = segments(PORT / "build/ref" / (stem + ".map"))
     pads = {}
     bad = []
     for name, classes in ref.items():
@@ -185,6 +185,14 @@ def main(argv=None) -> int:
     exe = stage / "build/rebuild/eob/eob.exe"
     drv = stage / "build/rebuild/tga/d.exe"
     intro = stage / "build/rebuild/intro/intro.exe"
+    if patches and (stage / "build/rebuild/intro/intro.map").exists():      # INTRO.EXE shares units with EOB.EXE (the file layer, the unpackers)
+        pads = compute_pads(stage / "build/rebuild/intro/intro.map", "intro")
+        if pads:
+            r3 = subprocess.run([py, str(rb), "INTRO.EXE"], cwd=stage, capture_output=True, text=True,
+                                env=dict(os.environ, INTRO_PADS=json.dumps(pads)))
+            left = compute_pads(stage / "build/rebuild/intro/intro.map", "intro")
+            if left:
+                sys.exit("build: INTRO.EXE units not back at the original length: %s" % left)
     if not intro.exists() or "Error:" in r3.stdout or "does not build" in r3.stdout:
         print(r3.stdout[-3000:], r3.stderr[-1000:])
         return 1

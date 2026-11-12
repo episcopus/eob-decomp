@@ -1,0 +1,141 @@
+--- a/drivers/TGA.ASM
++++ b/drivers/TGA.ASM
+@@ -229,21 +229,84 @@
+ 	mov	dx, SCREEN_HEIGHT
+ 	mov	cl, 4
+ L_0631:
+-	mov	bp, LINE_BYTES
++	mov	bp, LINE_BYTES / 8
+ L_0634:
+ 	lodsw
+ 	and	ax, bx
+-	shl	al, cl
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	or	al, ah
++	stosb
++	lodsw
++	and	ax, bx
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	or	al, ah
++	stosb
++	lodsw
++	and	ax, bx
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	or	al, ah
++	stosb
++	lodsw
++	and	ax, bx
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	or	al, ah
++	stosb
++	lodsw
++	and	ax, bx
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	or	al, ah
++	stosb
++	lodsw
++	and	ax, bx
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	or	al, ah
++	stosb
++	lodsw
++	and	ax, bx
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	or	al, ah
++	stosb
++	lodsw
++	and	ax, bx
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
+ 	or	al, ah
+ 	stosb
+ 	dec	bp
+-	jne	L_0634
++	je	L_0636
++	jmp	short L_0634
++L_0636:
+ 	dec	dx
+ 	je	L_064E
+ 	add	di, BANK - LINE_BYTES
+-	jns	L_0631
++	js	L_0640
++	jmp	near ptr L_0631
++L_0640:
+ 	sub	di, BANK_WRAP
+-	jmp	short L_0631
++	jmp	near ptr L_0631
+ L_064E:
+ 	pop	es
+ 	pop	ds
+@@ -1723,18 +1786,41 @@
+ 	add	si, ax
+ L_1015:
+ 	mov	word ptr cs:[gCellRowStart], si
+-	mov	al, 8
+-	mul	dl
+-	add	ax, si
+-	mov	bx, ax
+-	mov	cl, 4
++	mov	cl, dl
+ L_1024:
+ 	lodsw
+ 	and	ax, 0F0Fh
+-	shl	al, cl
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	or	al, ah
++	stosb
++	lodsw
++	and	ax, 0F0Fh
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
+ 	or	al, ah
+ 	stosb
+-	cmp	si, bx
++	lodsw
++	and	ax, 0F0Fh
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	or	al, ah
++	stosb
++	lodsw
++	and	ax, 0F0Fh
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	or	al, ah
++	stosb
++	dec	cl
+ 	jne	L_1024
+ 	mov	si, word ptr cs:[gCellRowStart]
+ 	add	si, SCREEN_WIDTH

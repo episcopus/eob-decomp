@@ -57,7 +57,9 @@ def run(build: str, session: str, pad_to: int = 0) -> dict:
     orig = s.checkpoint
     s.checkpoint = lambda name: (orig(name), snapshot("shot " + name))
     reason = m.run_clocked(int(3000 * T.CLOCK))
-    return {"reason": reason, "done": s.done(), "points": points, "tandy": m.tandy_log, "reads": [(r[1], r[2], r[3]) for r in m.reads_log],
+    # a read inside a PAK's directory is how a file is found, not what is loaded (pak-lookup.patch reads the directory at once)
+    reads = [(r[1], r[2], r[3]) for r in m.reads_log if not (r[1].endswith(".PAK") and r[2] < pak_dir_end(r[1]))]
+    return {"reason": reason, "done": s.done(), "points": points, "tandy": m.tandy_log, "reads": reads,
             "work": m.work, "program": b.program}
 
 
@@ -130,6 +132,16 @@ def first_diff(a, b, moves=frozenset()):
     if a["reason"] != b["reason"]:
         return "the runs ended differently: %s / %s" % (a["reason"], b["reason"])
     return None
+
+
+PAK_DIR = {}
+
+
+def pak_dir_end(name: str) -> int:
+    """The end of a PAK's directory: the offset of its first file."""
+    if name not in PAK_DIR:
+        PAK_DIR[name] = struct.unpack("<I", (T.GAME / name).read_bytes()[:4])[0]
+    return PAK_DIR[name]
 
 
 def job(a):

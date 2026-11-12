@@ -1,0 +1,350 @@
+--- a/drivers/TGA.ASM
++++ b/drivers/TGA.ASM
+@@ -80,7 +80,7 @@
+ 	dd	DrawShapeFlipped		; export 24, slot 31, ds:80A6 gDrawShapeFlipped
+ 	dd	SaveDrawState		; export 25, slot 32, ds:80AA gSaveDrawState
+ 	dd	SaveRect		; export 26, slot 33, ds:80AE gSaveRect
+-	dd	SetLineClip		; export 27, slot 34, ds:80B2
++	dd	ConeFrame		; export 27, slot 34, ds:80B2 (the dead SetLineClip's slot: ConeFrame)
+ 	dd	SetRegion		; export 28, slot 35, ds:80B6 gSetRegion
+ 	dd	SetPalette		; export 29, slot 36, ds:80BA gSetPalette
+ 	dd	SetTileFormat		; export 30, slot 37, ds:80BE
+@@ -2982,6 +2982,228 @@
+ 	pop	bp
+ 	retf
+ DissolvePixels	ENDP
++
++; one frame of the cone of cold (AnimateConeOfCold, EOB.EXE 0EF3:2EBC), in registers, the same pixels in the same order. Slot 34,
++; ds:80B2, which nothing else calls. ConeFrame(rows far, count, step, sum, frameTable far, useMask, erase) returns the new state
++ConeFrame	PROC	NEAR
++	push	bp
++	mov	bp, sp
++	sub	sp, 8
++	push	ds
++	push	si
++	push	di
++	lds	si, dword ptr cs:[gPageSegsPtr]
++	mov	ax, word ptr [si]
++	mov	word ptr [bp - 2], ax	; page 0
++	mov	ax, word ptr [si + 4]
++	mov	word ptr [bp - 4], ax	; page 2
++	mov	es, word ptr [bp - 2]
++	mov	ds, word ptr [bp + 8]
++	mov	ax, word ptr [bp + 0Ah]
++	mov	word ptr [bp - 6], ax
++	cmp	word ptr [bp + 16h], 0
++	je	CN_DrawStart
++	mov	di, word ptr [bp + 6]
++	dec	ax
++	shl	ax, 1
++	add	di, ax
++CN_Erase:
++	mov	ax, word ptr [di + 960h]
++	cmp	ax, 0FFFFh
++	je	CN_E9
++	shr	ax, 1
++	mov	si, ax
++	mov	dl, byte ptr [di + 4B0h]
++	and	dl, 0Fh
++	mov	dh, 0F0h
++	jc	CN_E2
++	shl	dl, 1
++	shl	dl, 1
++	shl	dl, 1
++	shl	dl, 1
++	mov	dh, 0Fh
++CN_E2:
++	mov	al, byte ptr es:[si]
++	and	al, dh
++	or	al, dl
++	mov	byte ptr es:[si], al
++CN_E9:
++	sub	di, 2
++	dec	word ptr [bp - 6]
++	jnz	CN_Erase
++	mov	ax, word ptr [bp + 0Ah]
++	mov	word ptr [bp - 6], ax
++CN_DrawStart:
++	mov	word ptr [bp - 8], 0
++	mov	di, word ptr [bp + 6]
++CN_Draw:
++	cmp	word ptr [di + 5DCh], 0	; a retired particle never draws again: nothing to move, save or restore
++	jne	CN_D0
++	mov	word ptr [di + 960h], 0FFFFh
++	jmp	near ptr CN_Next
++CN_D0:
++	mov	ax, word ptr [di + 834h]
++	or	ax, ax
++	jz	CN_Move
++	dec	ax
++	mov	word ptr [di + 834h], ax
++	jz	CN_Place
++	mov	word ptr [di + 960h], 0FFFFh	; still held: no pixel to save
++	xor	dx, dx
++	xor	cx, cx
++	jmp	near ptr CN_Stored
++CN_Move:
++	mov	bx, word ptr [bp + 0Ch]
++	mov	dx, word ptr [bp + 0Eh]
++	mov	si, word ptr [di + 258h]
++	cmp	word ptr [di], 0
++	jle	CN_M1
++	or	si, si
++	jle	CN_M2
++	sub	si, bx
++	jmp	short CN_M4
++CN_M2:
++	sub	si, dx
++	jmp	short CN_M4
++CN_M1:
++	or	si, si
++	jge	CN_M3
++	add	si, bx
++	jmp	short CN_M4
++CN_M3:
++	add	si, dx
++CN_M4:
++	mov	word ptr [di + 258h], si
++	mov	ax, word ptr [di + 384h]
++	cmp	word ptr [di + 12Ch], 0
++	jle	CN_M5
++	or	ax, ax
++	jle	CN_M6
++	sub	ax, bx
++	jmp	short CN_M8
++CN_M6:
++	sub	ax, dx
++	jmp	short CN_M8
++CN_M5:
++	or	ax, ax
++	jge	CN_M7
++	add	ax, bx
++	jmp	short CN_M8
++CN_M7:
++	add	ax, dx
++CN_M8:
++	mov	word ptr [di + 384h], ax
++	add	word ptr [di], si
++	add	word ptr [di + 12Ch], ax
++	mov	ax, word ptr [di + 5DCh]
++	add	word ptr [di + 708h], ax
++CN_Place:
++	mov	ax, word ptr [di]
++	sar	ax, 1
++	sar	ax, 1
++	sar	ax, 1
++	sar	ax, 1
++	sar	ax, 1
++	sar	ax, 1
++	add	ax, 58h
++	mov	bx, word ptr [di + 12Ch]
++	sar	bx, 1
++	sar	bx, 1
++	sar	bx, 1
++	sar	bx, 1
++	sar	bx, 1
++	sar	bx, 1
++	add	bx, 30h
++	xor	dx, dx
++	xor	cx, cx			; cl bit 0: right pixel, bit 1: on the screen
++	mov	word ptr [di + 960h], 0FFFFh
++	cmp	ax, 320
++	jae	CN_Stored
++	cmp	bx, 200
++	jae	CN_Stored
++	mov	cl, al
++	and	cl, 1
++	or	cl, 2
++	shl	bx, 1
++	mov	si, word ptr cs:[bx + gRowOffsets]
++	shr	ax, 1
++	add	si, ax
++	mov	ax, si
++	shl	ax, 1
++	or	al, cl
++	and	al, 0FDh		; bit 0: the right pixel; bit 1 was the on-screen flag
++	mov	word ptr [di + 960h], ax
++	cmp	word ptr [bp + 14h], 0
++	je	CN_NoMask
++	mov	es, word ptr [bp - 4]
++	mov	dl, byte ptr es:[si]
++	mov	es, word ptr [bp - 2]
++CN_NoMask:
++	mov	dh, byte ptr es:[si]
++	test	cl, 1
++	jnz	CN_Low
++	shr	dl, 1
++	shr	dl, 1
++	shr	dl, 1
++	shr	dl, 1
++	shr	dh, 1
++	shr	dh, 1
++	shr	dh, 1
++	shr	dh, 1
++	jmp	short CN_Stored
++CN_Low:
++	and	dx, 0F0Fh
++CN_Stored:
++	mov	byte ptr [di + 4B0h], dh
++	mov	byte ptr [di + 4B1h], 0
++	mov	al, byte ptr [di + 709h]
++	cbw
++	shl	ax, 1
++	mov	bx, ax
++	add	bx, word ptr [bp + 10h]
++	mov	es, word ptr [bp + 12h]
++	mov	ax, word ptr es:[bx]
++	mov	es, word ptr [bp - 2]
++	or	ax, ax
++	jnz	CN_Live
++	mov	word ptr [di + 5DCh], 0
++	jmp	short CN_Next
++CN_Live:
++	mov	word ptr [bp - 8], 1
++	or	dl, dl
++	jnz	CN_Next
++	cmp	word ptr [di + 834h], 0
++	jne	CN_Next
++	test	cl, 2
++	jz	CN_Next
++	and	al, 0Fh
++	mov	ah, 0F0h
++	test	cl, 1
++	jnz	CN_P1
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	shl	al, 1
++	mov	ah, 0Fh
++CN_P1:
++	mov	bl, byte ptr es:[si]
++	and	bl, ah
++	or	bl, al
++	mov	byte ptr es:[si], bl
++CN_Next:
++	add	di, 2
++	dec	word ptr [bp - 6]
++	jz	CN_Done
++	jmp	near ptr CN_Draw
++CN_Done:
++	mov	ax, word ptr [bp - 8]
++	pop	di
++	pop	si
++	pop	ds
++	mov	sp, bp
++	pop	bp
++	retf
++ConeFrame	ENDP
+ 
+ ; TGA.OVL 1732 (export 23, gRestoreDrawState): puts back the region SaveDrawState kept
+ RestoreDrawState	PROC	NEAR
+--- a/E0EF3.C
++++ b/E0EF3.C
+@@ -2292,6 +2292,13 @@
+    `count` is capped at 0x96, `divisor` scales the frame range, `frameTable` is the frame word
+    table. `cycle` is only incremented (its value never used here). Called by 0EF3:18D8 with
+    (0x96, 0x32, 0x0A, 1, 0x64, gConeOfColdColours). */
++static int ConeAccel(int pos, int vel, int step, int sum)
++{
++    if (pos > 0)
++        return vel > 0 ? vel - step : vel - sum;
++    return vel < 0 ? vel + step : vel + sum;
++}
++
+ /*@ 0EF3:2EBC */ void AnimateConeOfCold(int count, int spread, int step, int cycle, int divisor,
+                                   int far *frameTable)
+ {
+@@ -2342,31 +2349,18 @@
+             speed += step;
+             total += speed;
+         }
+-        switch (RandomByte() & 3) {
+-        case 0:
+-            row0[i] = 0x20;
+-            row1[i] = total;
+-            row2[i] = speed;
+-            row3[i] = 0;
+-            break;
+-        case 1:
+-            row0[i] = total;
++        x = RandomByte() & 3;
++        y = (x & 2) ? -total : total;
++        if (x & 1) {
++            row0[i] = y;
+             row1[i] = 0x20;
+             row2[i] = 0;
+             row3[i] = speed;
+-            break;
+-        case 2:
++        } else {
+             row0[i] = 0x20;
+-            row1[i] = -total;
++            row1[i] = y;
+             row2[i] = speed;
+             row3[i] = 0;
+-            break;
+-        case 3:
+-            row0[i] = -total;
+-            row1[i] = 0x20;
+-            row2[i] = 0;
+-            row3[i] = speed;
+-            break;
+         }
+         if (RandomByte() & 1) {
+             row2[i] *= -1;
+@@ -2378,7 +2372,11 @@
+     }
+     state = 2;
+     frameCount = 0;
++    sum = (step >> 1) + (step >> 2) + (step >> 3);
+     while (state != 0) {
++        if (gGraphicsChoice == 1) {
++            state = (*(int (far * near *)())0x80B2)(base, count, step, sum, frameTable, divisor >> 2 <= frameCount, state - 2);
++        } else {
+         if (state != 2) {
+             for (i = count - 1; i >= 0; i--) {
+                 x = (row0[i] >> 6) + originX;
+@@ -2387,33 +2385,12 @@
+             }
+         }
+         state = 0;
+-        sum = (step >> 1) + (step >> 2) + (step >> 3);
+         for (i = 0; i < count; i++) {
+             if (row7[i] != 0) {
+                 row7[i]--;
+             } else {
+-                if (row0[i] > 0) {
+-                    if (row2[i] > 0)
+-                        row2[i] -= step;
+-                    else
+-                        row2[i] -= sum;
+-                } else {
+-                    if (row2[i] < 0)
+-                        row2[i] += step;
+-                    else
+-                        row2[i] += sum;
+-                }
+-                if (row1[i] > 0) {
+-                    if (row3[i] > 0)
+-                        row3[i] -= step;
+-                    else
+-                        row3[i] -= sum;
+-                } else {
+-                    if (row3[i] < 0)
+-                        row3[i] += step;
+-                    else
+-                        row3[i] += sum;
+-                }
++                row2[i] = ConeAccel(row0[i], row2[i], step, sum);
++                row3[i] = ConeAccel(row1[i], row3[i], step, sum);
+                 row0[i] += row2[i];
+                 row1[i] += row3[i];
+                 row6[i] += row5[i];
+@@ -2437,6 +2414,7 @@
+                 row5[i] = 0;
+             }
+         }
++        }
+         WaitFrame();
+         frameCount++;
+     }
