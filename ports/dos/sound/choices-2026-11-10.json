@@ -1,0 +1,350 @@
+{
+ "intro": {
+  "pick": "rich"
+ },
+ "game020": {
+  "pick": "rich"
+ },
+ "game001": {
+  "pick": "now"
+ },
+ "game002": {
+  "pick": "rich"
+ },
+ "game003": {
+  "pick": "now"
+ },
+ "game004": {
+  "pick": "now"
+ },
+ "game005": {
+  "pick": "now"
+ },
+ "game006": {
+  "pick": "rich"
+ },
+ "game007": {
+  "pick": "now"
+ },
+ "game008": {
+  "pick": "now"
+ },
+ "game009": {
+  "pick": "rich"
+ },
+ "game010": {
+  "pick": "plain"
+ },
+ "game011": {
+  "pick": "rich"
+ },
+ "game012": {
+  "pick": "now"
+ },
+ "game013": {
+  "pick": "rich"
+ },
+ "game014": {
+  "pick": "now"
+ },
+ "game015": {
+  "pick": "none good"
+ },
+ "game016": {
+  "pick": "plain"
+ },
+ "game017": {
+  "pick": "rich"
+ },
+ "game018": {
+  "pick": "rich"
+ },
+ "game019": {
+  "pick": "none good"
+ },
+ "game021": {
+  "pick": "rich"
+ },
+ "game022": {
+  "pick": "rich"
+ },
+ "game023": {
+  "pick": "plain"
+ },
+ "game024": {
+  "pick": "rich"
+ },
+ "game025": {
+  "pick": "now"
+ },
+ "game026": {
+  "pick": "now"
+ },
+ "game027": {
+  "pick": "now"
+ },
+ "game028": {
+  "pick": "rich"
+ },
+ "game029": {
+  "pick": "now"
+ },
+ "game030": {
+  "pick": "plain"
+ },
+ "game031": {
+  "pick": "rich"
+ },
+ "game032": {
+  "pick": "rich"
+ },
+ "game033": {
+  "pick": "plain"
+ },
+ "game034": {
+  "pick": "now"
+ },
+ "game035": {
+  "pick": "rich"
+ },
+ "game036": {
+  "pick": "plain"
+ },
+ "game037": {
+  "pick": "plain"
+ },
+ "game038": {
+  "pick": "rich"
+ },
+ "game039": {
+  "pick": "plain"
+ },
+ "game040": {
+  "pick": "none good"
+ },
+ "game041": {
+  "pick": "rich"
+ },
+ "game042": {
+  "pick": "plain"
+ },
+ "game043": {
+  "pick": "plain"
+ },
+ "game044": {
+  "pick": "none good"
+ },
+ "game045": {
+  "pick": "plain"
+ },
+ "game046": {
+  "pick": "plain"
+ },
+ "game047": {
+  "pick": "now"
+ },
+ "game048": {
+  "pick": "plain"
+ },
+ "game049": {
+  "pick": "now"
+ },
+ "game050": {
+  "pick": "rich"
+ },
+ "game051": {
+  "pick": "plain"
+ },
+ "game052": {
+  "pick": "rich"
+ },
+ "game053": {
+  "pick": "plain"
+ },
+ "game054": {
+  "pick": "plain"
+ },
+ "game055": {
+  "pick": "plain"
+ },
+ "game056": {
+  "pick": "plain"
+ },
+ "game057": {
+  "pick": "none good"
+ },
+ "game058": {
+  "pick": "rich"
+ },
+ "game059": {
+  "pick": "plain"
+ },
+ "game060": {
+  "pick": "plain"
+ },
+ "game061": {
+  "pick": "plain"
+ },
+ "game062": {
+  "pick": "rich"
+ },
+ "game063": {
+  "pick": "plain"
+ },
+ "game064": {
+  "pick": "rich"
+ },
+ "game065": {
+  "pick": "plain"
+ },
+ "game066": {
+  "pick": "plain"
+ },
+ "game067": {
+  "pick": "rich"
+ },
+ "game068": {
+  "pick": "rich"
+ },
+ "game069": {
+  "pick": "none good"
+ },
+ "game071": {
+  "pick": "none good"
+ },
+ "game072": {
+  "pick": "now"
+ },
+ "game073": {
+  "pick": "rich"
+ },
+ "game074": {
+  "pick": "none good"
+ },
+ "game075": {
+  "pick": "none good"
+ },
+ "game076": {
+  "pick": "now"
+ },
+ "game078": {
+  "pick": "rich"
+ },
+ "game079": {
+  "pick": "plain"
+ },
+ "game080": {
+  "pick": "plain"
+ },
+ "game081": {
+  "pick": "plain"
+ },
+ "game082": {
+  "pick": "plain"
+ },
+ "game083": {
+  "pick": "none good"
+ },
+ "game085": {
+  "pick": "plain"
+ },
+ "game086": {
+  "pick": "none good"
+ },
+ "game087": {
+  "pick": "none good"
+ },
+ "game088": {
+  "pick": "rich"
+ },
+ "game089": {
+  "pick": "now"
+ },
+ "game090": {
+  "pick": "none good"
+ },
+ "game091": {
+  "pick": "rich"
+ },
+ "game092": {
+  "pick": "plain"
+ },
+ "game093": {
+  "pick": "plain"
+ },
+ "game094": {
+  "pick": "now"
+ },
+ "game095": {
+  "pick": "rich"
+ },
+ "game096": {
+  "pick": "rich"
+ },
+ "game097": {
+  "pick": "none good"
+ },
+ "game098": {
+  "pick": "rich"
+ },
+ "game099": {
+  "pick": "plain"
+ },
+ "game100": {
+  "pick": "rich"
+ },
+ "game101": {
+  "pick": "now"
+ },
+ "game102": {
+  "pick": "rich"
+ },
+ "game103": {
+  "pick": "plain"
+ },
+ "game104": {
+  "pick": "plain"
+ },
+ "game105": {
+  "pick": "plain"
+ },
+ "game106": {
+  "pick": "plain"
+ },
+ "game107": {
+  "pick": "none good"
+ },
+ "game108": {
+  "pick": "none good"
+ },
+ "game109": {
+  "pick": "none good"
+ },
+ "game110": {
+  "pick": "now"
+ },
+ "game111": {
+  "pick": "rich"
+ },
+ "game112": {
+  "pick": "plain"
+ },
+ "game113": {
+  "pick": "plain"
+ },
+ "game114": {
+  "pick": "none good"
+ },
+ "game116": {
+  "pick": "rich"
+ },
+ "game117": {
+  "pick": "plain"
+ },
+ "game118": {
+  "pick": "rich"
+ },
+ "game119": {
+  "pick": "now"
+ }
+}

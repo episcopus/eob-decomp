@@ -1,0 +1,73 @@
+# spells2: every other kind of spell effect, cast by the mage (AZALIS, member 3) at the monsters of cell 436 as in spell.keys:
+# burning hands, fear (the view flash), fireball, lightning bolt, ice storm, cone of cold, then armor on the party (the portrait flash).
+option save fixtures/EOBDATA.SAV
+idle
+mark load
+key ENTER
+idle
+poke FBCA 468
+poke FBCC 0
+poke 7294 1
+poke F890 0x1402
+poke F892 0x120D
+poke F894 0x1815
+poke F6AE 0x6464
+idle
+shot start
+mark cursor
+key z
+key z
+key z
+key s
+mark panel
+key u
+mark burning
+key SPACE
+wait 40
+idle
+shot burning
+mark panel
+key u
+mark fear
+key SPACE
+wait 40
+idle
+shot fear
+mark panel
+key u
+mark fireball
+key SPACE
+wait 60
+idle
+shot fireball
+mark panel
+key u
+mark bolt
+key SPACE
+wait 60
+idle
+shot bolt
+mark panel
+key u
+mark icestorm
+key SPACE
+wait 60
+idle
+shot icestorm
+mark panel
+key u
+mark cone
+key SPACE
+wait 60
+idle
+shot cone
+poke F890 0x0001
+mark panel
+key u
+mark armor
+key SPACE
+key F1
+wait 40
+idle
+shot armor
+quit

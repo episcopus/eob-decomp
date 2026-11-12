@@ -1,0 +1,375 @@
+{
+ "intro": {
+  "pick": "rich",
+  "kept": true
+ },
+ "game020": {
+  "pick": "rich",
+  "kept": true
+ },
+ "game001": {
+  "pick": "designed"
+ },
+ "game002": {
+  "pick": "designed"
+ },
+ "game003": {
+  "pick": "now",
+  "kept": true
+ },
+ "game004": {
+  "pick": "now",
+  "kept": true
+ },
+ "game005": {
+  "pick": "designed"
+ },
+ "game006": {
+  "pick": "now"
+ },
+ "game007": {
+  "pick": "designed"
+ },
+ "game008": {
+  "pick": "designed"
+ },
+ "game009": {
+  "pick": "designed"
+ },
+ "game010": {
+  "pick": "designed"
+ },
+ "game011": {
+  "pick": "designed"
+ },
+ "game012": {
+  "pick": "designed"
+ },
+ "game013": {
+  "pick": "designed"
+ },
+ "game014": {
+  "pick": "designed"
+ },
+ "game015": {
+  "pick": "designed",
+  "kept": true
+ },
+ "game016": {
+  "pick": "designed"
+ },
+ "game017": {
+  "pick": "designed"
+ },
+ "game018": {
+  "pick": "designed"
+ },
+ "game019": {
+  "pick": "designed",
+  "kept": true
+ },
+ "game021": {
+  "pick": "designed"
+ },
+ "game022": {
+  "pick": "designed"
+ },
+ "game023": {
+  "pick": "designed"
+ },
+ "game024": {
+  "pick": "designed"
+ },
+ "game025": {
+  "pick": "designed"
+ },
+ "game026": {
+  "pick": "designed"
+ },
+ "game027": {
+  "pick": "designed"
+ },
+ "game028": {
+  "pick": "designed"
+ },
+ "game029": {
+  "pick": "designed"
+ },
+ "game030": {
+  "pick": "designed"
+ },
+ "game031": {
+  "pick": "designed"
+ },
+ "game032": {
+  "pick": "designed"
+ },
+ "game033": {
+  "pick": "designed"
+ },
+ "game034": {
+  "pick": "designed"
+ },
+ "game035": {
+  "pick": "designed"
+ },
+ "game036": {
+  "pick": "designed"
+ },
+ "game037": {
+  "pick": "designed"
+ },
+ "game038": {
+  "pick": "designed"
+ },
+ "game039": {
+  "pick": "designed"
+ },
+ "game040": {
+  "pick": "designed",
+  "kept": true
+ },
+ "game041": {
+  "pick": "designed"
+ },
+ "game042": {
+  "pick": "designed"
+ },
+ "game043": {
+  "pick": "designed"
+ },
+ "game044": {
+  "pick": "designed",
+  "kept": true
+ },
+ "game045": {
+  "pick": "designed"
+ },
+ "game046": {
+  "pick": "designed"
+ },
+ "game047": {
+  "pick": "designed"
+ },
+ "game048": {
+  "pick": "designed"
+ },
+ "game049": {
+  "pick": "designed"
+ },
+ "game050": {
+  "pick": "designed"
+ },
+ "game051": {
+  "pick": "designed"
+ },
+ "game052": {
+  "pick": "designed"
+ },
+ "game053": {
+  "pick": "designed"
+ },
+ "game054": {
+  "pick": "designed"
+ },
+ "game055": {
+  "pick": "designed"
+ },
+ "game056": {
+  "pick": "designed"
+ },
+ "game057": {
+  "pick": "designed",
+  "kept": true
+ },
+ "game058": {
+  "pick": "designed"
+ },
+ "game059": {
+  "pick": "designed"
+ },
+ "game060": {
+  "pick": "designed"
+ },
+ "game061": {
+  "pick": "designed"
+ },
+ "game062": {
+  "pick": "designed"
+ },
+ "game063": {
+  "pick": "designed"
+ },
+ "game064": {
+  "pick": "designed"
+ },
+ "game065": {
+  "pick": "designed"
+ },
+ "game066": {
+  "pick": "designed"
+ },
+ "game067": {
+  "pick": "designed"
+ },
+ "game068": {
+  "pick": "designed"
+ },
+ "game069": {
+  "pick": "designed",
+  "kept": true
+ },
+ "game071": {
+  "pick": "designed",
+  "kept": true
+ },
+ "game072": {
+  "pick": "designed"
+ },
+ "game073": {
+  "pick": "designed"
+ },
+ "game074": {
+  "pick": "designed",
+  "kept": true
+ },
+ "game075": {
+  "pick": "designed",
+  "kept": true
+ },
+ "game076": {
+  "pick": "now"
+ },
+ "game078": {
+  "pick": "designed"
+ },
+ "game079": {
+  "pick": "designed"
+ },
+ "game080": {
+  "pick": "designed"
+ },
+ "game081": {
+  "pick": "designed"
+ },
+ "game082": {
+  "pick": "designed"
+ },
+ "game083": {
+  "pick": "designed",
+  "kept": true
+ },
+ "game085": {
+  "pick": "designed"
+ },
+ "game086": {
+  "pick": "designed",
+  "kept": true
+ },
+ "game087": {
+  "pick": "designed",
+  "kept": true
+ },
+ "game088": {
+  "pick": "designed"
+ },
+ "game089": {
+  "pick": "designed"
+ },
+ "game090": {
+  "pick": "designed",
+  "kept": true
+ },
+ "game091": {
+  "pick": "designed"
+ },
+ "game092": {
+  "pick": "designed"
+ },
+ "game093": {
+  "pick": "designed"
+ },
+ "game094": {
+  "pick": "designed"
+ },
+ "game095": {
+  "pick": "designed"
+ },
+ "game096": {
+  "pick": "designed"
+ },
+ "game097": {
+  "pick": "designed",
+  "kept": true
+ },
+ "game098": {
+  "pick": "designed"
+ },
+ "game099": {
+  "pick": "designed"
+ },
+ "game100": {
+  "pick": "designed"
+ },
+ "game101": {
+  "pick": "designed"
+ },
+ "game102": {
+  "pick": "designed"
+ },
+ "game103": {
+  "pick": "designed"
+ },
+ "game104": {
+  "pick": "designed"
+ },
+ "game105": {
+  "pick": "designed"
+ },
+ "game106": {
+  "pick": "designed"
+ },
+ "game107": {
+  "pick": "designed",
+  "kept": true
+ },
+ "game108": {
+  "pick": "designed",
+  "kept": true
+ },
+ "game109": {
+  "pick": "designed",
+  "kept": true
+ },
+ "game110": {
+  "pick": "designed"
+ },
+ "game111": {
+  "pick": "designed"
+ },
+ "game112": {
+  "pick": "designed"
+ },
+ "game113": {
+  "pick": "designed"
+ },
+ "game114": {
+  "pick": "designed",
+  "kept": true
+ },
+ "game115": {
+  "pick": "designed"
+ },
+ "game116": {
+  "pick": "designed"
+ },
+ "game117": {
+  "pick": "designed"
+ },
+ "game118": {
+  "pick": "designed"
+ },
+ "game119": {
+  "pick": "plain"
+ }
+}

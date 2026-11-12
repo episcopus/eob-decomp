@@ -24,8 +24,8 @@ import tandybox as T  # noqa: E402
 PORT = HERE.parent
 OUT = PORT / ("build/prof" + ("" if T.m8088.BUS == 5 else "-bus%d" % T.m8088.BUS))
 SESSIONS = PORT / "sessions"
-SUITE = ["walk", "combat", "panels", "spell", "menus", "intro"]
-WATCH = ("_AnimateParticleBurst", "_AnimateConeOfCold", "_Dissolve", "TGA.DissolvePixels", "_RevealInStrips", "_GrowFrame")
+SUITE = ["walk", "combat", "panels", "spell", "spells2", "menus", "intro"]
+WATCH = ("_AnimateParticleBurst", "_AnimateConeOfCold", "_FlashPartyMembers", "_FlashViewDamage", "_CastBurningHands", "_Dissolve", "TGA.DissolvePixels", "_RevealInStrips", "_GrowFrame")
 WAITS = {"_WaitTicks", "_WaitRetrace", "_IsInVerticalRetrace", "WaitFrames", "_WaitFrames"}
 
 

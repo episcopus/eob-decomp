@@ -9,3 +9,7 @@ tga-line.patch       # TGA.OVL DrawLine: horizontal and vertical lines filled, n
 particle-burst.patch # EOB.EXE AnimateParticleBurst (spell hits): on Tandy one driver routine does a frame in registers; the C loop remains for the other drivers
 tga-glyph2.patch     # TGA.OVL DrawGlyph again: an even-x loop of two words a row, the row masks kept between glyphs, the slow path's bookkeeping out of the fast path, DrawPageSeg shorter
 tga-dissolve.patch   # TGA.OVL DissolvePixels: the dissolve's tables and its loop, in registers, same pixels in the same order
+pak-lookup.patch     # E1C0E LookupFileEntry: a PAK's directory in one read, not a DOS call per byte; file names compared by first letter first
+tga-convert.patch    # TGA.OVL CopyPage, GetSpriteCell: the art-to-screen pixel packing unrolled, shifts by one bit
+cone-frame.patch     # EOB.EXE AnimateConeOfCold: on Tandy a driver routine does a frame in registers (TGA.OVL ConeFrame)
+tandy-sound.patch    # E1948 _SoundTick, E177D LoadSoundDriver, PlaySound, PlaySoundAtCell, I0892 StartupGame, E1C0E FileOpenSn: on Tandy the sounds of sound/picks.json from SN.DAT and the intro's from SNSOUND.DAT, played by their own player (sound/SNPLAY.ASM); changes the sound

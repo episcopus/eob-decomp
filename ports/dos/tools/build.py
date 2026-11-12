@@ -69,7 +69,7 @@ REBUILD_PATCH = [("""            args = ["-c", "-ID:\\\\INCLUDE"] + [f for f in 
     space = Space(program)""",
 """    w.mkdir(parents=True)
     import os as _os, json as _json
-    pads = _json.loads(_os.environ.get("EOB_PADS", "{}")) if program == "EOB.EXE" else {}
+    pads = _json.loads(_os.environ.get("EOB_PADS" if program == "EOB.EXE" else "INTRO_PADS", "{}")) if program in ("EOB.EXE", "INTRO.EXE") else {}
     for stem, (seg, n) in pads.items():
         text = "%s SEGMENT BYTE PUBLIC 'CODE'\\r\\n db %d dup (90h)\\r\\n%s ENDS\\r\\nEND\\r\\n" % (seg, n, seg)
         assemble(w, "PD_" + stem[:5], text)
@@ -85,6 +85,9 @@ REBUILD_PATCH = [("""            args = ["-c", "-ID:\\\\INCLUDE"] + [f for f in 
 ("""DATA_DEF = re.compile(""", """PADS = set()
 DATA_DEF = re.compile("""),
 ]
+
+
+SOUND_FILES = ("SN.DAT", "SNSOUND.DAT")   # tandy-sound.patch: EOB.EXE's and INTRO.EXE's Tandy sounds (sound/sndat.py)
 
 
 def apply(stage: Path, patch: str) -> None:
@@ -106,11 +109,11 @@ def segments(map_path: Path) -> dict:
     return out
 
 
-def compute_pads(map_path: Path) -> dict:
+def compute_pads(map_path: Path, stem: str = "eob") -> dict:
     """{module stem: (segment name, bytes)} for each code module shorter than the reference; a module longer than its
     original cannot be built here, a patch must move the extra code."""
     ours = segments(map_path)
-    ref = segments(PORT / "build/ref/eob.map")
+    ref = segments(PORT / "build/ref" / (stem + ".map"))
     pads = {}
     bad = []
     for name, classes in ref.items():
@@ -182,6 +185,14 @@ def main(argv=None) -> int:
             sys.exit("build: units not back at the original length: %s" % left)
     r2 = subprocess.run([py, str(stage / "tools/rebuild/rebuild.py"), "TGA.OVL"], cwd=stage, capture_output=True, text=True)
     r3 = subprocess.run([py, str(rb), "INTRO.EXE"], cwd=stage, capture_output=True, text=True)
+    if patches and (stage / "build/rebuild/intro/intro.map").exists():      # INTRO.EXE shares units with EOB.EXE (the file layer, the unpackers)
+        pads = compute_pads(stage / "build/rebuild/intro/intro.map", "intro")
+        if pads:
+            r3 = subprocess.run([py, str(rb), "INTRO.EXE"], cwd=stage, capture_output=True, text=True,
+                                env=dict(os.environ, INTRO_PADS=json.dumps(pads)))
+            left = compute_pads(stage / "build/rebuild/intro/intro.map", "intro")
+            if left:
+                sys.exit("build: INTRO.EXE units not back at the original length: %s" % left)
     exe = stage / "build/rebuild/eob/eob.exe"
     drv = stage / "build/rebuild/tga/d.exe"
     intro = stage / "build/rebuild/intro/intro.exe"
@@ -198,7 +209,16 @@ def main(argv=None) -> int:
     shutil.copy(stage / "build/rebuild/intro/intro.map", w / "intro.map")
     shutil.copy(stage / "build/rebuild/eob/eob.map", w / "eob.map")
     shutil.copy(stage / "build/rebuild/tga/d.lst", w / "d.lst")
+    for f in SOUND_FILES:
+        (w / f).unlink(missing_ok=True)
+    if "tandy-sound.patch" in patches:                  # the patch opens these on a Tandy: the sounds and their player
+        for f in SOUND_FILES:
+            sn = PORT / "build/sound" / f
+            if not sn.exists():
+                sys.exit("build: tandy-sound.patch needs build/sound/%s (make sn)" % f)
+            shutil.copy(sn, w / f)
     info = {"patches": patches, "EOB.EXE": sha(w / "EOB.EXE"), "INTRO.EXE": sha(w / "INTRO.EXE"), "TGA.OVL": sha(w / "TGA.OVL"),
+            **{f: sha(w / f) if (w / f).exists() else None for f in SOUND_FILES},
             "sizes": {f: (w / f).stat().st_size for f in ("EOB.EXE", "INTRO.EXE", "TGA.OVL")}}
     (w / "build.json").write_text(json.dumps(info, indent=1))
     print("%s: %d patches, EOB.EXE %d, INTRO.EXE %d, TGA.OVL %d bytes" % (a.name, len(patches), info["sizes"]["EOB.EXE"], info["sizes"]["INTRO.EXE"], info["sizes"]["TGA.OVL"]))

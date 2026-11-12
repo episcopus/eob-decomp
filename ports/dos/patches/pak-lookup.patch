@@ -1,0 +1,116 @@
+--- a/E1C0E.C
++++ b/E1C0E.C
+@@ -818,16 +818,11 @@
+    in the table or not loaded. */
+ /*@ 1C0E:1161 */ int IsFileInMemory(char far *name)
+ {
+-    int i = 0;
++    int i;
+ 
+     name = strupr(name);
+-    for (; gFiles[i].name[0] != 0; i++)
+-        if (strcmp(gFiles[i].name, name) == 0) {
+-            if (gFiles[i].data != 0)
+-                return 1;
+-            return 0;
+-        }
+-    return 0;
++    i = FindFile(name);
++    return i != -1 && gFiles[i].data != 0;
+ }
+ 
+ /* 1C0E:11D3: return the index of the record named `name` (upper cased in place); when no record
+@@ -836,12 +831,12 @@
+    then frees and uses record 0. */
+ /*@ 1C0E:11D3 */ int FindLoadedFile(char far *name)
+ {
+-    int i = 0;
++    int i;
+ 
+     name = strupr(name);
+-    for (; gFiles[i].name[0] != 0; i++)
+-        if (strcmp(gFiles[i].name, name) == 0)
+-            return i;
++    i = FindFile(name);
++    if (i != -1)
++        return i;
+     RetryFile(0xa, name);
+     return 0;
+ }
+@@ -1013,10 +1008,12 @@
+ /* 1C0E:1645: return the index of the record named `name` exactly, or -1. */
+ /*@ 1C0E:1645 */ int FindFile(char far *name)
+ {
++    struct FileEntry far *e;
+     int i;
+ 
+-    for (i = 0; gFiles[i].name[0] != 0; i++)
+-        if (strcmp(gFiles[i].name, name) == 0)
++    e = gFiles;
++    for (i = 0; e->name[0] != 0; i++, e++)
++        if (e->name[0] == *name && strcmp(e->name, name) == 0)
+             return i;
+     return -1;
+ }
+@@ -1025,16 +1022,15 @@
+    through the link field while it is negative, and return the terminal link value. */
+ /*@ 1C0E:168E */ int ResolveFileLink(char far *name)
+ {
+-    int i = 0;
++    int i;
+ 
+     name = strupr(name);
+-    for (; gFiles[i].name[0] != 0; i++)
+-        if (strcmp(gFiles[i].name, name) == 0) {
+-            while (gFiles[i].link < 0)
+-                i = gFiles[i].link & LINK_INDEX;
+-            return gFiles[i].link;
+-        }
+-    return -1;
++    i = FindFile(name);
++    if (i == -1)
++        return -1;
++    while (gFiles[i].link < 0)
++        i = gFiles[i].link & LINK_INDEX;
++    return gFiles[i].link;
+ }
+ 
+ /* 1C0E:171A: stop 1C0E:1310 from scanning the other drives for a file. */
+@@ -1057,20 +1053,27 @@
+    ds:FF02 (length) and ds:FF06 (offset) for the caller to store in the handle slot. */
+ /*@ 1C0E:172E */ long LookupFileEntry(int handle, char far *name)
+ {
+-    char buf[14];
++    /* (port) the directory at the start of the PAK in one read, not a DOS call per byte; the largest pinned directory is
++       808 bytes */
++    char dir[1024];
++    char far *p;
+     long offset;
+     long next;
+-    int i;
+ 
+     handle &= HANDLE_MASK;
+-    do {
+-        read(handle, &offset, 4);
+-        i = 0;
+-        do {
+-            read(handle, buf + i, 1);
+-        } while (buf[i++] != 0);
+-    } while (strcmp(buf, name) != 0);
+-    read(handle, &next, 4);
++    read(handle, dir, 1024);
++    p = dir;
++    for (;;) {
++        offset = *(long far *)p;
++        p += 4;
++        if (*p == *name && strcmp(p, name) == 0)
++            break;
++        while (*p++)
++            ;
++    }
++    while (*p++)
++        ;
++    next = *(long far *)p;
+     lseek(handle, offset, 0);
+     next -= offset;
+     gRecordLength = next;

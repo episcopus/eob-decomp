@@ -42,6 +42,9 @@ def game_dir(c: Path, build: Path) -> None:
     shutil.copy(build / "TGA.OVL", eob / "TGA.OVL")
     if (build / "INTRO.EXE").exists():
         shutil.copy(build / "INTRO.EXE", eob / "INTRO.EXE")
+    for f in ("SN.DAT", "SNSOUND.DAT"):                # tandy-sound.patch: the Tandy's sounds and their player
+        if (build / f).exists():
+            shutil.copy(build / f, eob / f)
     save = ROOT / "tests/sessions/fixtures/EOBDATA.SAV"
     shutil.copy(save, eob / "EOBDATA.SAV")
     import eobfmt
