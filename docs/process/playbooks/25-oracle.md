@@ -27,7 +27,7 @@ The command line is the game's configuration (whitepaper 2.6). A run stops with 
 
 ## Sessions and goldens
 
-A session is `tests/sessions/<name>.keys` (the format is in `tools/oracle/input.py`: `wait`, `key`, `text`, `mouse`, `click`, `shot`, `digest`, `quit`, and `option mouse | sound adlib | insns N | save FILE | program INTRO.EXE`). Timing is in ticks of virtual time (1/18.2 s); the title menu is up after about 550 ticks. The game buffers keys, so a key sent early is not lost.
+A session is `tests/sessions/<name>.keys` (the format is in `tools/oracle/input.py`: `wait`, `key`, `text`, `mouse`, `click`, `shot`, `digest`, `quit`, and `option mouse | sound adlib | insns N | save FILE | program INTRO.EXE`). Timing is in ticks of virtual time (1/18.2 s); the title menu is up after about 550 ticks. The game buffers keys, so a key sent early is not lost. A session that sits at a "press a key" screen with no key pending needs `option wait 101`: while an interrupt is pending the oracle looks again every `wait` instructions (default 100, which every golden uses), and `WaitKeyEvent`'s 8-instruction cli/sti loop (1AAD:05D3) can hide IF from every look at 100, so the timer interrupt is never taken and the run stops as stalled; any odd value reaches every phase of the loop. Changing the default would move the goldens' interrupts, so it stays.
 
 - `make golden NAME=x` runs the session twice and writes `tests/sessions/golden/x.json` (instructions, state digest, image hash of every checkpoint and of the end, sound digest) and the screenshots beside it, only if both runs agree.
 - `make golden CHECK=1` verifies every session; `make test-slow` does the same from pytest.

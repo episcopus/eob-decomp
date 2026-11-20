@@ -135,7 +135,8 @@ class Machine:
         # how often a pending interrupt is looked at again while it cannot be taken (IF off, a handler in
         # service); the sessions use 100. A guest loop whose length divides into it the same way each time
         # can keep IF off at every look (WaitKeyEvent's 8-instruction cli/sti loop sees 2 of its 8 phases),
-        # so the per-function bench looks at every instruction (tools/port/hybrid.py run_with_interrupts)
+        # so the per-function bench looks at every instruction (tools/port/hybrid.py run_with_interrupts),
+        # and a session that waits at a "press a key" screen sets an odd value (`option wait 101`, input.py)
         self.wait_chunk = 100
         self.next_irq0 = self._irq0_period()
         self.pic_mask = 0

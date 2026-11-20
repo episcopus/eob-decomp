@@ -22,7 +22,11 @@ Script (tests/sessions/*.keys), one command per line, `#` starts a comment:
     option mouse         run settings, read by the runner before the run: `option mouse`,
     option sound adlib   `option sound adlib`, `option insns 80000000` (the instruction budget),
                          `option save fixtures/EOBDATA.SAV` (the saved game, from tests/sessions/),
-                         `option program INTRO.EXE` (default EOB.EXE)
+                         `option program INTRO.EXE` (default EOB.EXE),
+                         `option wait 101` (instructions between looks at a pending interrupt while
+                         interrupts are off; default 100, see Machine.wait_chunk: a "press a key"
+                         screen's 8-instruction cli/sti loop can hide IF from every look at 100, so a
+                         session that waits on one uses an odd number, which reaches every phase)
 
 Every command runs when the previous ones are done: `key` takes 2 ticks, `click` 2 ticks,
 `text` 3 ticks per character, `wait N` N ticks; `mouse`, `shot`, `digest` take no time.

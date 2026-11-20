@@ -117,6 +117,8 @@ def run_session(script_text: str | None, *, out: Path, max_insns: int, args: str
         use_save(m, save)
     checkpoints = []
     script = Script(script_text or "")
+    if "wait" in script.options:           # `option wait N` (input.py): how often a pending interrupt is looked at
+        m.wait_chunk = max(1, int(script.options["wait"]))
 
     def on_checkpoint(mach, kind, name):
         cp = {"kind": kind, "name": name, "instructions": mach.insns, "digest": mach.state_digest()}
