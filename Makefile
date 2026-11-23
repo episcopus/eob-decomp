@@ -221,3 +221,6 @@ handbook-figs:    ## redraw every figure of the whitepaper (tools/handbook/figs/
 
 handbook: handbook-figs  ## typeset docs/design/WHITEPAPER.md into docs/Eye-of-the-Beholder-Whitepaper-v*.pdf
 	$(HBPY) tools/handbook/build.py
+
+# Publishing to the public repository (private side only: publish/ is not published, so this is a no-op there).
+-include publish/publish.mk
