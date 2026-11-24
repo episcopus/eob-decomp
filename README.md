@@ -9,6 +9,7 @@ Learn more at [anonymousformula.com/eob](https://anonymousformula.com/eob/), whe
 | Start here | |
 |---|---|
 | `docs/design/WHITEPAPER.md` | How the game works: the three programs, the main loop and its clock, the dungeon and its scripts, the 3D view, combat, magic, sound and video |
+| `docs/maps/` | Player maps of the twelve levels, drawn from the game's own level files (`make maps`): every wall, door, switch, trap, message, item and monster, and how the levels connect |
 | `docs/spec/SPEC.md` | The process specification: goals, approach, verification ladder, phases |
 | `AGENTS.md` | The operating manual the AI agents work from |
 | `src/` | The decompiled programs: one C or TASM file per original module, the graphics drivers in `src/drivers/` |
