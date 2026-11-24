@@ -6,7 +6,7 @@ PROGRAMS := eob/EOB.EXE eob/INTRO.EXE eob/START1.EXE
 
 .PHONY: help setup doctor inputs overlays pak data emu2 ymfm test p0-check tc-install tc-check rtl-compare map match oracle-run golden test-slow \
 	match-gate check queue next claim locks unlock packet skeleton handoff handoffs handoff-done integrate review-pass worker progress \
-	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port port-image port-replay port-play port-playtest port-asmdata port-literals port-hybrid handbook handbook-setup handbook-figs datamap data-skeleton
+	start-run stop-run run-status run-add watch-agents smoke-agent readability readability-gate rename names field port port-image port-replay port-play port-playtest port-asmdata port-literals port-hybrid handbook handbook-setup handbook-figs datamap data-skeleton maps
 
 help:
 	@echo "Phase 0:  setup doctor inputs overlays pak emu2 test p0-check"
@@ -221,6 +221,9 @@ handbook-figs:    ## redraw every figure of the whitepaper (tools/handbook/figs/
 
 handbook: handbook-figs  ## typeset docs/design/WHITEPAPER.md into docs/Eye-of-the-Beholder-Whitepaper-v*.pdf
 	$(HBPY) tools/handbook/build.py
+
+maps:             ## the player maps of the twelve levels into docs/maps/ (tools/maps/README.md; uv supplies reportlab)
+	uv run --with reportlab python tools/maps/build.py
 
 # Publishing to the public repository (private side only: publish/ is not published, so this is a no-op there).
 -include publish/publish.mk
